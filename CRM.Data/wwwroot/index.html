@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM HPD - WhatsApp</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --green: #0ea5e9;
+            --green-dark: #0369a1;
+            --green-soft: #dff7ff;
+            --ink: #14212b;
+            --muted: #60727d;
+            --line: #e2edf2;
+            --panel: #ffffff;
+            --soft: #f4f9fc;
+            --canvas: #ecf4f7;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: radial-gradient(circle at top, #f5fbff 0%, #edf3f6 45%, #e7eef2 100%);
+            color: var(--ink);
+        }
+
+        .app {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            height: 78px;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.96), rgba(239, 249, 255, 0.96));
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            box-shadow: 0 10px 30px rgba(15, 76, 100, 0.04);
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 750;
+            letter-spacing: .2px;
+        }
+
+            .logo span {
+                color: var(--green);
+            }
+
+        .header-caption {
+            color: var(--muted);
+            font-size: 12px;
+            margin-left: 12px;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 0 4px #dcfce7;
+        }
+
+        .main {
+            position: relative;
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .workspace-nav {
+            width: 78px;
+            background: linear-gradient(180deg, #132833 0%, #182f3a 100%);
+            color: #dce9df;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 18px 0;
+            gap: 10px;
+            box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.06);
+        }
+
+        .nav-mark {
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--green), #7dd3fc);
+            color: white;
+            font-weight: 800;
+            margin-bottom: 20px;
+            box-shadow: 0 12px 28px rgba(14, 165, 233, 0.35);
+        }
+
+        .nav-item {
+            width: 52px;
+            height: 48px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: #b8c8cf;
+            border-radius: 14px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s ease;
+        }
+
+            .nav-item:hover, .nav-item.active {
+                background: rgba(14, 165, 233, 0.12);
+                border-color: rgba(14, 165, 233, 0.22);
+                color: white;
+                transform: translateY(-1px);
+            }
+
+        .nav-label {
+            display: block;
+            font-size: 9px;
+            margin-top: 3px;
+        }
+
+        .sidebar {
+            width: 360px;
+            background: var(--panel);
+            border-right: 1px solid var(--line);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 22px 20px 16px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .sidebar-heading {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .sidebar-title {
+            font-size: 18px;
+            font-weight: 750;
+        }
+
+        .conversation-count {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .search {
+            width: 100%;
+            padding: 11px 13px;
+            border: 1px solid #d4ded7;
+            border-radius: 10px;
+            outline: none;
+            font-size: 14px;
+            background: var(--soft);
+        }
+
+            .search:focus {
+                border-color: var(--green);
+                background: #fff;
+                box-shadow: 0 0 0 3px #dcfce7;
+            }
+
+        .filters {
+            display: flex;
+            gap: 7px;
+            margin-top: 12px;
+        }
+
+        .filter-button {
+            border: 1px solid var(--line);
+            background: #fff;
+            color: var(--muted);
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+            .filter-button.active {
+                border-color: #bbf7d0;
+                background: #f0fdf4;
+                color: var(--green-dark);
+                font-weight: 700;
+            }
+
+        .conversation-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .conversation {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f3f1;
+            cursor: pointer;
+            transition: all 0.18s ease;
+        }
+
+            .conversation:hover, .conversation.active {
+                background: linear-gradient(90deg, rgba(14, 165, 233, 0.06), rgba(125, 211, 252, 0.04));
+            }
+
+            .conversation.active {
+                border-left: 4px solid var(--green);
+                padding-left: 16px;
+                box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.08);
+            }
+
+        .conversation-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .conversation-name {
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .conversation-time {
+            color: var(--muted);
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        .conversation-phone, .conversation-preview {
+            font-size: 13px;
+            color: var(--muted);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .conversation-status {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 3px 7px;
+            border-radius: 999px;
+            background: #ecfdf3;
+            color: var(--green-dark);
+            font-size: 11px;
+        }
+
+        .chat {
+            flex: 1;
+            min-width: 360px;
+            display: flex;
+            flex-direction: column;
+            background: #f3f7f4;
+        }
+
+        .chat-header {
+            background: #fff;
+            border-bottom: 1px solid var(--line);
+            padding: 16px 26px;
+        }
+
+        .chat-name {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .chat-phone {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 28px clamp(18px, 5vw, 70px);
+            background-image: radial-gradient(#dbe8df 1px, transparent 1px);
+            background-size: 18px 18px;
+        }
+
+        .message {
+            max-width: min(65%, 620px);
+            margin-bottom: 14px;
+            padding: 12px 15px;
+            border-radius: 5px 14px 14px 14px;
+            line-height: 1.45;
+            font-size: 14px;
+            box-shadow: 0 2px 5px rgba(33, 55, 42, .05);
+        }
+
+            .message.incoming {
+                background: #fff;
+                border: 1px solid var(--line);
+                margin-right: auto;
+            }
+
+            .message.outgoing {
+                background: #d9fbe2;
+                margin-left: auto;
+                border-radius: 14px 5px 14px 14px;
+            }
+
+            .message.has-image {
+                padding: 6px;
+                background: transparent;
+                box-shadow: none;
+            }
+
+                .message.has-image .image-card img {
+                    max-width: 280px;
+                    max-height: 320px;
+                }
+
+                .message.has-image .message-info {
+                    padding: 0 4px 2px;
+                }
+
+        .message-info {
+            margin-top: 6px;
+            font-size: 11px;
+            color: var(--muted);
+            text-align: right;
+        }
+
+        .composer {
+            background: #fff;
+            border-top: 1px solid var(--line);
+            padding: 15px 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .message-input {
+            flex: 1;
+            border: 1px solid #d1d5db;
+            border-radius: 9px;
+            padding: 12px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .attach-button {
+            width: 44px;
+            border: 1px solid var(--line);
+            background: var(--soft);
+            color: var(--green-dark);
+            border-radius: 9px;
+            cursor: pointer;
+            font-size: 19px;
+        }
+
+            .attach-button:hover {
+                background: #dcfce7;
+            }
+
+        .file-name {
+            align-self: center;
+            max-width: 180px;
+            color: var(--muted);
+            font-size: 12px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .attachment-preview {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            background: #f7faf7;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+        }
+
+        .attachment-preview.visible {
+            display: flex;
+        }
+
+        .attachment-thumb {
+            width: 54px;
+            height: 54px;
+            border-radius: 10px;
+            background: #e8f5eb;
+            display: grid;
+            place-items: center;
+            font-size: 24px;
+            overflow: hidden;
+        }
+
+        .attachment-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .attachment-meta {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .attachment-name {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--ink);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .attachment-size {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 3px;
+        }
+
+        .attachment-remove {
+            border: 0;
+            background: transparent;
+            color: var(--muted);
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .file-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--ink);
+            text-decoration: none;
+        }
+
+            .file-card:hover {
+                color: var(--green-dark);
+            }
+
+        .file-icon {
+            font-size: 25px;
+        }
+
+        .file-card small {
+            display: block;
+            color: var(--muted);
+            margin-top: 3px;
+        }
+
+        .image-card {
+            display: block;
+            line-height: 0;
+        }
+
+            .image-card img {
+                max-width: 260px;
+                max-height: 260px;
+                width: 100%;
+                border-radius: 10px;
+                object-fit: cover;
+                cursor: zoom-in;
+            }
+
+        .send-button {
+            border: 0;
+            background: var(--green);
+            color: #fff;
+            padding: 0 22px;
+            border-radius: 9px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+            .send-button:hover {
+                background: var(--green-dark);
+            }
+
+            .send-button:disabled {
+                background: #9ca3af;
+                cursor: not-allowed;
+            }
+
+        .details {
+            width: 286px;
+            background: var(--panel);
+            border-left: 1px solid var(--line);
+            padding: 24px 20px;
+            overflow-y: auto;
+        }
+
+        .details-title {
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            margin-bottom: 18px;
+        }
+
+        .contact-avatar {
+            width: 58px;
+            height: 58px;
+            border-radius: 16px;
+            display: grid;
+            place-items: center;
+            background: #dcfce7;
+            color: var(--green-dark);
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 12px;
+        }
+
+        .contact-name {
+            font-size: 18px;
+            font-weight: 750;
+        }
+
+        .contact-phone {
+            color: var(--muted);
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        .detail-section {
+            border-top: 1px solid var(--line);
+            margin-top: 22px;
+            padding-top: 18px;
+        }
+
+        .detail-label {
+            color: var(--muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+        }
+
+        .detail-value {
+            margin-top: 6px;
+            font-size: 14px;
+            font-weight: 650;
+        }
+
+        .pipeline {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 11px;
+        }
+
+        .pipeline-step {
+            height: 7px;
+            flex: 1;
+            border-radius: 99px;
+            background: #dce7df;
+        }
+
+            .pipeline-step.active {
+                background: var(--green);
+            }
+
+        .empty-detail {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .module-view {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 436px;
+            z-index: 5;
+            overflow-y: auto;
+            padding: 32px;
+            background: #f5f8f6;
+        }
+
+            .module-view.hidden {
+                display: none;
+            }
+
+        .module-heading {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+            .module-heading h1 {
+                margin: 0;
+                font-size: 26px;
+            }
+
+            .module-heading p {
+                margin: 6px 0 0;
+                color: var(--muted);
+            }
+
+        .module-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 14px;
+        }
+
+        .metric-card, .module-card {
+            background: linear-gradient(180deg, #ffffff 0%, #f9fcff 100%);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: 0 10px 24px rgba(20, 33, 43, 0.04);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+            .metric-card:hover, .module-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 16px 28px rgba(20, 33, 43, 0.08);
+            }
+
+        .metric-label {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .metric-value {
+            display: block;
+            margin-top: 8px;
+            font-size: 28px;
+            font-weight: 750;
+        }
+
+        .module-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+            .module-table th, .module-table td {
+                padding: 13px 15px;
+                border-bottom: 1px solid var(--line);
+                text-align: left;
+                font-size: 13px;
+            }
+
+            .module-table th {
+                color: var(--muted);
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: .06em;
+                background: var(--soft);
+            }
+
+            .module-table tr:last-child td {
+                border-bottom: 0;
+            }
+
+            .module-table select {
+                border: 1px solid #d4ded7;
+                border-radius: 7px;
+                padding: 6px;
+                background: #fff;
+            }
+
+        .user-form {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+            .user-form input, .user-form select, .user-form button {
+                min-width: 0;
+                padding: 10px 12px;
+                border: 1px solid var(--line);
+                border-radius: 8px;
+                background: #fff;
+                font: inherit;
+            }
+
+            .user-form button {
+                border-color: var(--green);
+                background: var(--green);
+                color: white;
+                cursor: pointer;
+                font-weight: 700;
+            }
+
+        .assignee-select {
+            width: 100%;
+            margin-top: 8px;
+            border: 1px solid #d4ded7;
+            border-radius: 7px;
+            padding: 6px;
+            background: #fff;
+        }
+
+        .stage-columns {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(220px, 1fr));
+            gap: 14px;
+            overflow-x: auto;
+        }
+
+        .stage-column {
+            min-height: 240px;
+            background: #eaf1ec;
+            border-radius: 12px;
+            padding: 13px;
+        }
+
+        .stage-title {
+            display: flex;
+            justify-content: space-between;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 750;
+            margin-bottom: 12px;
+        }
+
+        .deal-card {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 9px;
+            padding: 13px;
+            margin-bottom: 9px;
+            cursor: pointer;
+        }
+
+            .deal-card strong {
+                display: block;
+                margin-bottom: 5px;
+            }
+
+            .deal-card small {
+                color: var(--muted);
+            }
+
+        .empty, .error {
+            padding: 20px;
+            color: #6b7280;
+            text-align: center;
+        }
+
+        .error {
+            color: #b91c1c;
+            text-align: left;
+        }
+
+        @media (max-width: 1100px) {
+            .details {
+                display: none;
+            }
+        }
+
+        @media (max-width: 800px) {
+            .workspace-nav {
+                display: none;
+            }
+
+            .sidebar {
+                width: 280px;
+            }
+
+            .module-view {
+                left: 280px;
+            }
+
+            .message {
+                max-width: 80%;
+            }
+        }
+    </style>
+
+<style id="hpd-final-overrides">
+/* HPD Glass visual layer — does not replace the original CRM structure */
+:root {
+  --green:#00a4df;
+  --green-dark:#007fae;
+  --ink:#142a35;
+  --muted:#71828b;
+  --line:#e5edf1;
+  --panel:#fff;
+  --soft:#f5f9fb;
+  --hpd-lime:#c7df72;
+}
+
+.header {
+  height:76px;
+  padding:0 28px;
+  background:#fff;
+  position:relative;
+  z-index:30;
+}
+.header::after {
+  content:"";
+  position:absolute;
+  left:0;right:0;bottom:-1px;height:2px;
+  background:linear-gradient(90deg,#00a4df,#c7df72,#00a4df);
+}
+.header > div:first-child {
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.hpd-header-logo {
+  width:118px;
+  height:auto;
+  display:block;
+  object-fit:contain;
+}
+.header-caption {
+  border-left:1px solid #dfe7eb;
+  padding-left:12px;
+}
+
+.workspace-nav {
+  width:84px;
+  background:linear-gradient(180deg,#0d2733,#0b2029);
+  z-index:20;
+}
+.nav-mark {
+  width:48px;height:48px;
+  background:#fff !important;
+  color:#00a4df !important;
+  border-radius:13px;
+  overflow:hidden;
+  position:relative;
+}
+.nav-mark img {
+  width:100%;height:100%;object-fit:contain;padding:5px;
+}
+
+.sidebar {
+  width:355px;
+  position:relative;
+  z-index:10;
+}
+.chat {
+  position:relative;
+  z-index:1;
+}
+.details {
+  position:relative;
+  z-index:1;
+}
+
+.search {
+  border-radius:12px;
+  background:#f7fafb;
+}
+.search:focus {
+  border-color:#00a4df;
+  box-shadow:0 0 0 3px rgba(0,164,223,.10);
+}
+.filter-button.active {
+  border-color:#a8d9eb;
+  background:#eaf8fd;
+  color:#007fae;
+}
+.conversation:hover {
+  background:#f8fcfd;
+}
+.conversation.active {
+  background:#eefaff;
+  border-left-color:#00a4df;
+}
+
+.send-button {
+  background:#00a4df;
+}
+.send-button:hover {
+  background:#007fae;
+}
+.attach-button {
+  color:#007fae;
+}
+.pipeline-step.active {
+  background:#00a4df;
+}
+
+/*
+ * FIX PRINCIPAL:
+ * Las vistas de módulos ya no se colocan sobre la bandeja de conversaciones.
+ * Cuando Inbox está activo, moduleView se oculta.
+ * Cuando se abre otro módulo, ocupa solo el área de trabajo y no tapa el nav.
+ */
+.module-view {
+  left:84px !important;
+  right:0 !important;
+  top:0 !important;
+  bottom:0 !important;
+  z-index:6 !important;
+  padding:32px;
+}
+.module-view.hidden {
+  display:none !important;
+}
+/* Inbox is a section, not a permanent sidebar. It only exists while Inbox is active. */
+.sidebar.hidden,
+.chat.hidden,
+.details.hidden {
+  display:none !important;
+}
+
+</style>
+
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <div>
+                <img class="hpd-header-logo" src="data:image/png;base64,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" alt="HPD Glass Group">
+                <span class="header-caption">CRM · Centro de atención</span>
+            </div>
+            <div class="status"><span class="status-dot"></span><span id="status">Conectando...</span></div>
+        </header>
+        <main class="main">
+            <nav class="workspace-nav" aria-label="Navegacion del CRM">
+                <div class="nav-mark"><img src="data:image/png;base64,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" alt="HPD"></div>
+                <button class="nav-item active" data-module="inbox" title="Bandeja">&#9993;<span class="nav-label">Inbox</span></button>
+                <button class="nav-item" data-module="contactos" title="Contactos">&#9673;<span class="nav-label">Contactos</span></button>
+                <button class="nav-item" data-module="pipeline" title="Pipeline">&#9636;<span class="nav-label">Pipeline</span></button>
+                <button class="nav-item" data-module="reportes" title="Reportes">&#9645;<span class="nav-label">Reportes</span></button>
+                <button id="usersNav" class="nav-item hidden" data-module="usuarios" title="Usuarios">&#9679;<span class="nav-label">Usuarios</span></button>
+            </nav>
+            <aside class="sidebar hidden">
+                <div class="sidebar-header">
+                    <div class="sidebar-heading">
+                        <div class="sidebar-title">Conversaciones</div>
+                        <div id="conversationCount" class="conversation-count">0 chats</div>
+                    </div>
+                    <input id="searchInput" class="search" type="text" placeholder="Buscar cliente...">
+                    <div class="filters">
+                        <button class="filter-button active" data-filter="all">Todas</button>
+                        <button class="filter-button" data-filter="new">Nuevas</button>
+                        <button class="filter-button" data-filter="open">Abiertas</button>
+                    </div>
+                </div>
+                <div id="conversationList" class="conversation-list"></div>
+            </aside>
+            <section class="chat hidden">
+                <div id="chatHeader" class="chat-header">
+                    <div class="chat-name">Selecciona una conversacion</div>
+                    <div class="chat-phone">-</div>
+                </div>
+                <div id="messages" class="messages">
+                    <div class="empty">Selecciona una conversacion para ver los mensajes.</div>
+                </div>
+                <div id="attachmentPreview" class="attachment-preview" aria-live="polite">
+                    <div id="attachmentThumb" class="attachment-thumb">&#128206;</div>
+                    <div class="attachment-meta">
+                        <div id="attachmentName" class="attachment-name">Sin archivo</div>
+                        <div id="attachmentSize" class="attachment-size">0 KB</div>
+                    </div>
+                    <button id="removeAttachment" class="attachment-remove" type="button" aria-label="Quitar archivo">×</button>
+                </div>
+                <div class="composer">
+                    <input id="fileInput" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp" hidden>
+                    <button id="attachButton" class="attach-button" type="button" title="Adjuntar documento" disabled>&#128206;</button>
+                    <span id="fileName" class="file-name"></span>
+                    <input id="messageInput" class="message-input" type="text" placeholder="Escribir mensaje..." disabled>
+                    <button id="sendButton" class="send-button" disabled>Enviar</button>
+                </div>
+            </section>
+            <aside id="details" class="details hidden">
+                <div class="details-title">Ficha del cliente</div>
+                <div class="empty-detail">Selecciona una conversacion para ver sus datos y actividad.</div>
+            </aside>
+            <section id="moduleView" class="module-view hidden"></section>
+        </main>
+    </div>
+
+    <script>
+        const POLLING_MS = 3000;
+        let conversaciones = [];
+        let conversacionSeleccionada = null;
+        let actualizacionEnCurso = false;
+        let filtroActivo = "all";
+        let rolActual = "";
+
+        const lista = document.getElementById("conversationList");
+        const mensajes = document.getElementById("messages");
+        const estado = document.getElementById("status");
+        const input = document.getElementById("messageInput");
+        const boton = document.getElementById("sendButton");
+        const fileInput = document.getElementById("fileInput");
+        const attachButton = document.getElementById("attachButton");
+        const fileName = document.getElementById("fileName");
+        const attachmentPreview = document.getElementById("attachmentPreview");
+        const attachmentThumb = document.getElementById("attachmentThumb");
+        const attachmentName = document.getElementById("attachmentName");
+        const attachmentSize = document.getElementById("attachmentSize");
+        const removeAttachment = document.getElementById("removeAttachment");
+
+        async function api(url, options = {}) {
+            const separador = url.includes("?") ? "&" : "?";
+            const response = await fetch(`${url}${separador}_=${Date.now()}`, {
+                cache: "no-store",
+                credentials: "same-origin",
+                ...options,
+                headers: {
+                    "Cache-Control": "no-cache",
+                    ...(options.headers || {})
+                }
+            });
+            if (response.status === 401) {
+                window.location.href = "/login.html";
+            }
+            return response;
+        }
+
+        async function iniciarAplicacion() {
+            const response = await fetch("/api/auth/me", {
+                cache: "no-store",
+                credentials: "same-origin"
+            });
+            if (!response.ok) {
+                window.location.href = "/login.html";
+                return;
+            }
+
+            const sesion = await response.json();
+            rolActual = sesion.rol || "";
+            estado.textContent = `${sesion.usuario} · ${sesion.rol}`;
+            if (rolActual === "Administrador") {
+                document.getElementById("usersNav").classList.remove("hidden");
+            }
+            abrirModulo("inbox");
+            actualizarCRM();
+            setInterval(actualizarCRM, POLLING_MS);
+        }
+
+        async function cargarConversaciones() {
+            const response = await api("/api/whatsapp/test/todas");
+            if (!response.ok) throw new Error("No se pudieron cargar las conversaciones");
+            conversaciones = await response.json();
+            document.getElementById("conversationCount").textContent =
+                `${conversaciones.length} ${conversaciones.length === 1 ? "chat" : "chats"}`;
+            mostrarConversaciones();
+        }
+
+        function mostrarConversaciones() {
+            const filtro = document.getElementById("searchInput").value.toLowerCase().trim();
+            const resultado = conversaciones.filter(c => {
+                const coincideEstado = filtroActivo === "all" ||
+                    (filtroActivo === "new" && (c.estado || "").toUpperCase() === "NUEVO") ||
+                    (filtroActivo === "open" && (c.estado || "").toUpperCase() === "ABIERTO");
+                const coincideBusqueda =
+                    (c.nombre || "").toLowerCase().includes(filtro) ||
+                    (c.telefono || "").includes(filtro);
+                return coincideEstado && coincideBusqueda;
+            });
+
+            lista.innerHTML = "";
+            if (!resultado.length) {
+                lista.innerHTML = '<div class="empty">No hay conversaciones.</div>';
+                return;
+            }
+
+            resultado.forEach(conversacion => {
+                const elemento = document.createElement("div");
+                elemento.className = "conversation" +
+                    (conversacionSeleccionada && conversacionSeleccionada.id === conversacion.id ? " active" : "");
+                elemento.innerHTML = `
+                            <div class="conversation-top">
+                                <div class="conversation-name">${escapeHtml(conversacion.nombre || "Sin nombre")}</div>
+                                <div class="conversation-time">${formatearFecha(conversacion.ultimoMensaje)}</div>
+                            </div>
+                            <div class="conversation-phone">${escapeHtml(conversacion.telefono || "")}</div>
+                            <div class="conversation-preview">Ultima actividad del cliente</div>
+                            <div class="conversation-status">${escapeHtml(conversacion.estado || "")}</div>`;
+                elemento.addEventListener("click", () => seleccionarConversacion(conversacion.id));
+                lista.appendChild(elemento);
+            });
+        }
+
+        async function seleccionarConversacion(id) {
+            const response = await api(`/api/whatsapp/test/conversacion/${id}`);
+            if (!response.ok) throw new Error("No se pudo cargar la conversacion");
+            conversacionSeleccionada = await response.json();
+            mostrarConversaciones();
+            mostrarConversacion();
+        }
+
+        function mostrarConversacion() {
+            const conversacion = conversacionSeleccionada;
+            const cliente = conversacion.cliente;
+            document.getElementById("chatHeader").innerHTML = `
+                        <div class="chat-name">${escapeHtml(cliente.nombre || "Sin nombre")}</div>
+                        <div class="chat-phone">${escapeHtml(cliente.telefono || "")}</div>`;
+
+            mensajes.innerHTML = "";
+            conversacion.mensajes.forEach(mensaje => {
+                const elemento = document.createElement("div");
+                const entrante = mensaje.direccion === "E";
+                const esImagen = mensaje.tipo === "image";
+                elemento.className = `message ${entrante ? "incoming" : "outgoing"}${esImagen ? " has-image" : ""}`;
+                elemento.innerHTML = crearContenidoMensaje(mensaje) +
+                    `<div class="message-info">${entrante ? "Cliente" : "CRM"} · ${formatearFecha(mensaje.fecha)}</div>`;
+                mensajes.appendChild(elemento);
+            });
+            mensajes.scrollTop = mensajes.scrollHeight;
+            input.disabled = false;
+            boton.disabled = false;
+            attachButton.disabled = false;
+            mostrarFichaCliente(conversacion);
+        }
+
+        function crearContenidoMensaje(mensaje) {
+            const esAdjunto = mensaje.tipo === "image" || mensaje.tipo === "document" || mensaje.tipo === "application/pdf";
+            if (!esAdjunto) {
+                return `<div>${escapeHtml(mensaje.mensaje || "")}</div>`;
+            }
+
+            let archivo;
+            try {
+                archivo = JSON.parse(mensaje.mensaje);
+            } catch {
+                // Mensajes antiguos guardados antes de tener el JSON estructurado
+                return `<a href="${escapeAttribute(mensaje.mensaje)}" target="_blank" rel="noopener">Abrir documento</a>`;
+            }
+
+            const esImagen = mensaje.tipo === "image" || /\.(jpe?g|png|webp)$/i.test(archivo.nombre || archivo.url || "");
+
+            if (esImagen) {
+                return `<a href="${escapeAttribute(archivo.url)}" target="_blank" rel="noopener" class="image-card">
+                            <img src="${escapeAttribute(archivo.url)}" alt="${escapeAttribute(archivo.nombre || "Imagen")}" loading="lazy">
+                        </a>`;
+            }
+
+            return `<a href="${escapeAttribute(archivo.url)}" target="_blank" rel="noopener" class="file-card">
+                        <span class="file-icon">&#128196;</span>
+                        <span><strong>${escapeHtml(archivo.nombre)}</strong><small>Abrir documento</small></span>
+                    </a>`;
+        }
+
+        function mostrarFichaCliente(conversacion) {
+            const cliente = conversacion.cliente || {};
+            const iniciales = (cliente.nombre || "C")
+                .split(" ")
+                .slice(0, 2)
+                .map(nombre => nombre.charAt(0))
+                .join("")
+                .toUpperCase();
+            const pasos = conversacion.estado === "CERRADO" ? 3 : conversacion.estado === "ABIERTO" ? 2 : 1;
+
+            document.getElementById("details").innerHTML = `
+                        <div class="details-title">Ficha del cliente</div>
+                        <div class="contact-avatar">${escapeHtml(iniciales)}</div>
+                        <div class="contact-name">${escapeHtml(cliente.nombre || "Sin nombre")}</div>
+                        <div class="contact-phone">${escapeHtml(cliente.telefono || "Sin telefono")}</div>
+                        <div class="detail-section">
+                            <div class="detail-label">Etapa</div>
+                            <div class="detail-value">${escapeHtml(conversacion.estado || "NUEVO")}</div>
+                            <div class="pipeline">
+                                <span class="pipeline-step active"></span>
+                                <span class="pipeline-step ${pasos >= 2 ? "active" : ""}"></span>
+                                <span class="pipeline-step ${pasos >= 3 ? "active" : ""}"></span>
+                            </div>
+                        </div>
+                        <div class="detail-section">
+                            <div class="detail-label">Conversacion</div>
+                            <div class="detail-value">#${conversacion.id}</div>
+                        </div>
+                        <div class="detail-section">
+                            <div class="detail-label">Ultima actividad</div>
+                            <div class="detail-value">${formatearFecha(conversacion.ultimoMensaje)}</div>
+                        </div>`;
+        }
+
+        async function actualizarCRM() {
+            if (actualizacionEnCurso) return;
+            actualizacionEnCurso = true;
+            try {
+                const id = conversacionSeleccionada ? conversacionSeleccionada.id : null;
+                await cargarConversaciones();
+                if (id) await seleccionarConversacion(id);
+                estado.textContent = "API conectada";
+            } catch (error) {
+                console.error(error);
+                estado.textContent = "Error de conexion";
+            } finally {
+                actualizacionEnCurso = false;
+            }
+        }
+
+        async function enviarMensaje() {
+            if (!conversacionSeleccionada) return;
+
+            if (fileInput.files.length) {
+                await enviarArchivo();
+                return;
+            }
+
+            const texto = input.value.trim();
+            if (!texto) return;
+            boton.disabled = true;
+            try {
+                const response = await api("/api/whatsapp/test/enviar", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        conversacionId: conversacionSeleccionada.id,
+                        mensaje: texto,
+                        usuarioId: null,
+                        tipo: "text",
+                        whatsappId: `TEST-${Date.now()}`
+                    })
+                });
+                if (!response.ok) throw new Error("No se pudo enviar el mensaje");
+                input.value = "";
+                await seleccionarConversacion(conversacionSeleccionada.id);
+            } catch (error) {
+                console.error(error);
+                alert("No se pudo enviar el mensaje.");
+            } finally {
+                boton.disabled = false;
+            }
+        }
+
+        function actualizarPreviewArchivo() {
+            const archivo = fileInput.files[0];
+            if (!archivo) {
+                attachmentPreview.classList.remove("visible");
+                attachmentThumb.innerHTML = "&#128206;";
+                attachmentName.textContent = "Sin archivo";
+                attachmentSize.textContent = "0 KB";
+                fileName.textContent = "";
+                return;
+            }
+
+            const esImagen = archivo.type.startsWith("image/") || /\.(jpe?g|png|webp)$/i.test(archivo.name);
+            const tamaño = archivo.size > 1024 * 1024 ? `${(archivo.size / (1024 * 1024)).toFixed(1)} MB` : `${Math.max(1, Math.round(archivo.size / 1024))} KB`;
+
+            attachmentName.textContent = archivo.name;
+            attachmentSize.textContent = tamaño;
+            fileName.textContent = archivo.name;
+            attachmentPreview.classList.add("visible");
+
+            if (esImagen) {
+                const lector = new FileReader();
+                lector.onload = () => {
+                    attachmentThumb.innerHTML = `<img src="${lector.result}" alt="${escapeHtml(archivo.name)}">`;
+                };
+                lector.readAsDataURL(archivo);
+            } else {
+                attachmentThumb.innerHTML = "&#128206;";
+            }
+        }
+
+        function limpiarPreviewArchivo() {
+            fileInput.value = "";
+            attachmentPreview.classList.remove("visible");
+            attachmentThumb.innerHTML = "&#128206;";
+            attachmentName.textContent = "Sin archivo";
+            attachmentSize.textContent = "0 KB";
+            fileName.textContent = "";
+        }
+
+        async function enviarArchivo() {
+            if (!conversacionSeleccionada) {
+                alert("Selecciona una conversación antes de enviar un archivo.");
+                return;
+            }
+
+            if (!fileInput.files.length) {
+                alert("No has seleccionado ningún archivo.");
+                return;
+            }
+
+            const archivo = fileInput.files[0];
+            const datos = new FormData();
+            datos.append("conversacionId", conversacionSeleccionada.id);
+            datos.append("archivo", archivo);
+            datos.append("usuarioId", "");
+
+            attachButton.disabled = true;
+            fileName.textContent = `Subiendo: ${archivo.name}...`;
+            attachmentName.textContent = `Subiendo: ${archivo.name}...`;
+            try {
+                const response = await api("/api/whatsapp/test/enviar-archivo", {
+                    method: "POST",
+                    body: datos
+                });
+                if (!response.ok) {
+                    const detalle = await response.text();
+                    throw new Error(detalle || `Error HTTP ${response.status}`);
+                }
+                limpiarPreviewArchivo();
+                await seleccionarConversacion(conversacionSeleccionada.id);
+            } catch (error) {
+                console.error(error);
+                fileName.textContent = "Error al enviar archivo";
+                attachmentName.textContent = "Error al enviar archivo";
+                alert(`No se pudo enviar el archivo: ${error.message}`);
+            } finally {
+                attachButton.disabled = false;
+            }
+        }
+
+        function formatearFecha(fecha) {
+            if (!fecha) return "";
+            return new Date(fecha).toLocaleString("es-PE", {
+                day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement("div");
+            div.textContent = text == null ? "" : text;
+            return div.innerHTML;
+        }
+
+        function escapeAttribute(text) {
+            return escapeHtml(text).replace(/"/g, "&quot;");
+        }
+
+        async function abrirModulo(modulo) {
+            document.querySelectorAll(".nav-item").forEach(item => {
+                item.classList.toggle("active", item.dataset.module === modulo);
+            });
+
+            const vista = document.getElementById("moduleView");
+            const sidebar = document.querySelector(".sidebar");
+            const chat = document.querySelector(".chat");
+            const details = document.getElementById("details");
+
+            if (modulo === "inbox") {
+                vista.classList.add("hidden");
+                sidebar.classList.remove("hidden");
+                chat.classList.remove("hidden");
+                details.classList.remove("hidden");
+                return;
+            }
+
+            /*
+             * Los módulos NO se superponen a la bandeja:
+             * ocultamos el conjunto Inbox mientras se consulta Contactos,
+             * Pipeline o Reportes.
+             */
+            sidebar.classList.add("hidden");
+            chat.classList.add("hidden");
+            details.classList.add("hidden");
+            vista.classList.remove("hidden");
+            vista.innerHTML = '<div class="empty">Cargando modulo...</div>';
+
+            try {
+                if (modulo === "contactos") await cargarModuloContactos(vista);
+                if (modulo === "pipeline") await cargarModuloPipeline(vista);
+                if (modulo === "reportes") await cargarModuloReportes(vista);
+                if (modulo === "usuarios") await cargarModuloUsuarios(vista);
+            } catch (error) {
+                console.error(error);
+                vista.innerHTML = '<div class="error">No se pudo cargar el modulo.</div>';
+            }
+        }
+
+        async function cargarModuloContactos(vista) {
+            const response = await api("/api/crm/contactos");
+            if (!response.ok) throw new Error("Contactos no disponibles");
+            const contactos = await response.json();
+            vista.innerHTML = `
+                        <div class="module-heading"><div><h1>Contactos</h1><p>Clientes registrados desde WhatsApp.</p></div></div>
+                        <table class="module-table"><thead><tr><th>Nombre</th><th>Telefono</th><th>Email</th><th>Conversaciones</th></tr></thead>
+                        <tbody>${contactos.map(contacto => `<tr>
+                            <td><strong>${escapeHtml(contacto.nombre)}</strong></td>
+                            <td>${escapeHtml(contacto.telefono)}</td>
+                            <td>${escapeHtml(contacto.email || "-")}</td>
+                            <td>${contacto.conversaciones}</td>
+                        </tr>`).join("") || '<tr><td colspan="4">No hay contactos.</td></tr>'}</tbody></table>`;
+        }
+
+        async function cargarModuloPipeline(vista) {
+            const response = await api("/api/crm/pipeline");
+            if (!response.ok) throw new Error("Pipeline no disponible");
+            const conversacionesPipeline = await response.json();
+            const usuariosResponse = await api("/api/crm/usuarios");
+            if (!usuariosResponse.ok) throw new Error("Usuarios no disponibles");
+            const usuarios = await usuariosResponse.json();
+            const etapas = ["NUEVO", "ABIERTO", "CERRADO", "PERDIDO"];
+            vista.innerHTML = `
+                        <div class="module-heading"><div><h1>Pipeline</h1><p>Gestiona la etapa de cada conversación.</p></div></div>
+                        <div class="stage-columns">${etapas.map(etapa => `
+                            <div class="stage-column"><div class="stage-title"><span>${etapa}</span><span>${conversacionesPipeline.filter(item => item.estado === etapa).length}</span></div>
+                            ${conversacionesPipeline.filter(item => item.estado === etapa).map(item => `<div class="deal-card" data-conversation-id="${item.id}">
+                                <strong>${escapeHtml(item.cliente.nombre)}</strong><small>${escapeHtml(item.cliente.telefono)}</small>
+                                ${(rolActual === "Administrador" || rolActual === "Supervisor") ? `<select class="assignee-select" data-id="${item.id}">
+                                    <option value="">Sin asignar</option>
+                                    ${usuarios.map(usuario => `<option value="${usuario.id}" ${usuario.nombre === item.asesor ? "selected" : ""}>${escapeHtml(usuario.nombre)} · ${escapeHtml(usuario.rol)}</option>`).join("")}
+                                </select>` : `<small>Asesor: ${escapeHtml(item.asesor || "Sin asignar")}</small>`}
+                                <select class="stage-select" data-id="${item.id}">
+                                    ${etapas.map(opcion => `<option value="${opcion}" ${opcion === item.estado ? "selected" : ""}>${opcion}</option>`).join("")}
+                                </select>
+                            </div>`).join("") || '<div class="empty">Sin conversaciones</div>'}
+                            </div>`).join("")}</div>`;
+
+            vista.querySelectorAll(".stage-select").forEach(select => {
+                select.addEventListener("change", () => cambiarEstado(select.dataset.id, select.value));
+            });
+            vista.querySelectorAll(".assignee-select").forEach(select => {
+                select.addEventListener("change", () => asignarConversacion(select.dataset.id, select.value));
+            });
+        }
+
+        async function asignarConversacion(id, usuarioId) {
+            const response = await api(`/api/crm/conversaciones/${id}/asignar`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ usuarioId: usuarioId ? Number(usuarioId) : null })
+            });
+            if (!response.ok) throw new Error("No se pudo asignar la conversación");
+            await cargarModuloPipeline(document.getElementById("moduleView"));
+        }
+
+        async function cambiarEstado(id, estadoNuevo) {
+            const response = await api(`/api/crm/conversaciones/${id}/estado`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ estado: estadoNuevo })
+            });
+            if (!response.ok) throw new Error("No se pudo cambiar el estado");
+            await cargarModuloPipeline(document.getElementById("moduleView"));
+        }
+
+        async function cargarModuloReportes(vista) {
+            const response = await api("/api/crm/reportes/resumen");
+            if (!response.ok) throw new Error("Reportes no disponibles");
+            const reporte = await response.json();
+            vista.innerHTML = `
+                        <div class="module-heading"><div><h1>Reportes</h1><p>Resumen operativo del CRM.</p></div></div>
+                        <div class="module-grid">
+                            <div class="metric-card"><span class="metric-label">Clientes</span><strong class="metric-value">${reporte.clientes}</strong></div>
+                            <div class="metric-card"><span class="metric-label">Conversaciones</span><strong class="metric-value">${reporte.conversaciones}</strong></div>
+                            <div class="metric-card"><span class="metric-label">Mensajes recibidos</span><strong class="metric-value">${reporte.entrantes}</strong></div>
+                            <div class="metric-card"><span class="metric-label">Mensajes enviados</span><strong class="metric-value">${reporte.salientes}</strong></div>
+                        </div>`;
+        }
+
+        async function cargarModuloUsuarios(vista) {
+            if (rolActual !== "Administrador") {
+                vista.innerHTML = '<div class="error">Solo un administrador puede gestionar usuarios.</div>';
+                return;
+            }
+
+            const response = await api("/api/crm/usuarios");
+            if (!response.ok) throw new Error("Usuarios no disponibles");
+            const usuarios = await response.json();
+            vista.innerHTML = `
+                <div class="module-heading"><div><h1>Usuarios</h1><p>Crea asesores y supervisores para repartir la atención.</p></div></div>
+                <form id="newUserForm" class="user-form">
+                    <input name="usuario" placeholder="Usuario de acceso" required>
+                    <input name="nombre" placeholder="Nombre completo" required>
+                    <input name="password" type="password" placeholder="Contraseña (mínimo 8 caracteres)" minlength="8" required>
+                    <select name="rol"><option value="Asesor">Asesor</option><option value="Supervisor">Supervisor</option></select>
+                    <button type="submit">Agregar usuario</button>
+                </form>
+                <table class="module-table"><thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th></tr></thead>
+                <tbody>${usuarios.map(usuario => `<tr><td>${escapeHtml(usuario.usuario)}</td><td>${escapeHtml(usuario.nombre)}</td><td>${escapeHtml(usuario.rol)}</td></tr>`).join("") || '<tr><td colspan="3">No hay usuarios.</td></tr>'}</tbody></table>`;
+
+            vista.querySelector("#newUserForm").addEventListener("submit", async event => {
+                event.preventDefault();
+                const datos = Object.fromEntries(new FormData(event.currentTarget));
+                const crearResponse = await api("/api/crm/usuarios", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(datos)
+                });
+                if (!crearResponse.ok) {
+                    alert(await crearResponse.text());
+                    return;
+                }
+                await cargarModuloUsuarios(vista);
+            });
+        }
+
+        document.getElementById("searchInput").addEventListener("input", mostrarConversaciones);
+        document.querySelectorAll(".nav-item").forEach(item => {
+            item.addEventListener("click", () => abrirModulo(item.dataset.module));
+        });
+        document.querySelectorAll(".filter-button").forEach(button => {
+            button.addEventListener("click", () => {
+                filtroActivo = button.dataset.filter;
+                document.querySelectorAll(".filter-button").forEach(item => item.classList.remove("active"));
+                button.classList.add("active");
+                mostrarConversaciones();
+            });
+        });
+        document.getElementById("sendButton").addEventListener("click", enviarMensaje);
+        attachButton.addEventListener("click", () => fileInput.click());
+        removeAttachment.addEventListener("click", () => {
+            limpiarPreviewArchivo();
+        });
+        fileInput.addEventListener("change", () => {
+            actualizarPreviewArchivo();
+        });
+        document.getElementById("messageInput").addEventListener("keydown", event => {
+            if (event.key === "Enter") enviarMensaje();
+        });
+
+        iniciarAplicacion();
+    </script>
+</body>
+</html>
