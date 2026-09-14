@@ -1,5 +1,6 @@
 ﻿using CRM.Data.Data;
 using CRM.Data.Models;
+using CRM.Data.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -14,11 +15,13 @@ public class CrmManagementController : ControllerBase
 {
     private readonly CrmDbContext _context;
     private readonly IPasswordHasher<CrmUsuario> _hasher;
+    private readonly WhatsAppService _whatsappService;
 
-    public CrmManagementController(CrmDbContext context, IPasswordHasher<CrmUsuario> hasher)
+    public CrmManagementController(CrmDbContext context, IPasswordHasher<CrmUsuario> hasher, WhatsAppService whatsappService)
     {
         _context = context;
         _hasher = hasher;
+        _whatsappService = whatsappService;
     }
 
     [HttpGet("contactos")]
@@ -208,6 +211,25 @@ public class CrmManagementController : ControllerBase
         conversacion.nUsuarioAsignado = dto.UsuarioId;
         await _context.SaveChangesAsync();
         return Ok(new { success = true, id, usuarioId = dto.UsuarioId });
+    }
+
+    // =========================================================
+    // ASIGNAR PENDIENTES (BACKFILL)
+    // =========================================================
+    //
+    // Reparte de una sola vez todas las conversaciones NUEVO/
+    // ABIERTO que quedaron "Sin asignar" (por ejemplo, las que ya
+    // existían antes de activar el reparto automático). De ahí en
+    // adelante, cada mensaje nuevo de un cliente se asigna solo.
+    //
+    // =========================================================
+
+    [HttpPost("conversaciones/asignar-pendientes")]
+    [Authorize(Roles = "Administrador,Supervisor")]
+    public async Task<IActionResult> AsignarPendientes()
+    {
+        var cantidad = await _whatsappService.AsignarConversacionesPendientesAsync();
+        return Ok(new { success = true, asignadas = cantidad });
     }
 
     [HttpPut("contactos/{id:long}")]

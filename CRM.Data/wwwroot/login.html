@@ -1,71 +1,567 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Acceso CRM HPD</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM HPD - Acceso</title>
     <style>
-        :root { font-family: Georgia, 'Times New Roman', serif; color: #18322b; background: #e9f2ed; }
-        * { box-sizing: border-box; }
-        body { min-height: 100vh; margin: 0; display: grid; place-items: center; background: radial-gradient(circle at top right, #bde3d2, transparent 38%), #e9f2ed; }
-        main { width: min(420px, calc(100% - 32px)); padding: 34px; background: #fffdf8; border: 1px solid #c9ddd2; box-shadow: 0 20px 50px rgba(30, 71, 56, .14); }
-        h1 { margin: 0 0 8px; font-size: 30px; }
-        p { color: #61766d; margin: 0 0 26px; }
-        label { display: block; margin: 16px 0 7px; font: 700 12px Arial, sans-serif; text-transform: uppercase; letter-spacing: .08em; }
-        input { width: 100%; padding: 13px; border: 1px solid #c9ddd2; background: #f7fbf8; font-size: 16px; }
-        .password-row { display: flex; align-items: center; gap: 8px; margin-top: 9px; font: 13px Arial, sans-serif; color: #61766d; }
-        .password-row input { width: auto; }
-        .password-row label { margin: 0; font: inherit; text-transform: none; letter-spacing: 0; }
-        button { width: 100%; margin-top: 22px; padding: 13px; border: 0; background: #176b52; color: white; font-weight: 700; cursor: pointer; }
-        #error { min-height: 20px; margin-top: 16px; color: #a63c35; font: 14px Arial, sans-serif; }
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --green: #00a4df;
+            --green-dark: #007fae;
+            --green-soft: #dff9fd;
+            --ink: #142a35;
+            --muted: #71828b;
+            --line: #e5edf1;
+            --panel: #ffffff;
+            --soft: #f5f9fb;
+            --canvas: #eef8f9;
+            --hpd-lime: #c7df72;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: var(--panel);
+            color: var(--ink);
+        }
+
+        .login-container {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            overflow: hidden;
+        }
+
+        /* ===== Panel Izquierdo - Formulario ===== */
+        .login-form-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 40px;
+            background: var(--panel);
+        }
+
+        .login-form-content {
+            width: 100%;
+            max-width: 360px;
+        }
+
+        .login-branding {
+            margin-bottom: 48px;
+        }
+
+        .login-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+        }
+
+        .logo-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .logo-text {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--ink);
+            letter-spacing: -0.3px;
+        }
+
+        .login-title {
+            margin: 0 0 8px 0;
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--ink);
+            line-height: 1.2;
+        }
+
+        .login-subtitle {
+            margin: 0;
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .login-form {
+            margin-top: 32px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--line);
+            background: var(--soft);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--ink);
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--green);
+            background: var(--panel);
+            box-shadow: 0 0 0 3px rgba(0, 164, 223, 0.08);
+        }
+
+        .form-options {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            font-size: 13px;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: var(--green);
+        }
+
+        .checkbox-container label {
+            margin: 0;
+            font-size: 13px;
+            font-weight: 500;
+            text-transform: none;
+            letter-spacing: normal;
+            cursor: pointer;
+            color: var(--ink);
+        }
+
+        .forgot-link {
+            color: var(--green);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .forgot-link:hover {
+            color: var(--green-dark);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--green);
+            color: white;
+            border: 0;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0, 164, 223, 0.2);
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            background: var(--green-dark);
+            box-shadow: 0 6px 16px rgba(0, 164, 223, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .submit-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            min-height: 20px;
+            margin-bottom: 16px;
+            padding: 12px;
+            border-radius: 6px;
+            background: #fee2e2;
+            color: #991b1b;
+            font-size: 12px;
+            display: none;
+            border-left: 4px solid #dc2626;
+        }
+
+        .error-message:not(:empty) {
+            display: block;
+        }
+
+        /* ===== Panel Derecho - Imagen + Elementos Decorativos ===== */
+        .login-image-panel {
+            background: linear-gradient(135deg, #003d5c 0%, var(--green-dark) 50%, var(--green) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 60px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .image-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 1;
+            z-index: 1;
+        }
+
+        .image-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(0, 46, 69, 0.88) 0%, rgba(0, 125, 171, 0.75) 100%);
+            z-index: 2;
+        }
+
+        .image-content {
+            position: relative;
+            z-index: 3;
+            color: white;
+        }
+
+        .image-header {
+            margin-bottom: 48px;
+            font-size: 14px;
+            font-weight: 600;
+            opacity: 0.95;
+        }
+
+        .image-main h2 {
+            margin: 0 0 12px 0;
+            font-size: 26px;
+            font-weight: 800;
+            line-height: 1.3;
+        }
+
+        .image-main p {
+            margin: 0 0 24px 0;
+            font-size: 14px;
+            line-height: 1.6;
+            opacity: 0.92;
+        }
+
+        .features-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .feature-check {
+            flex-shrink: 0;
+            width: 18px;
+            height: 18px;
+            background: var(--hpd-lime);
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: var(--ink);
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .image-footer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--hpd-lime);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Elementos Decorativos Abstractos */
+        .decorative-shapes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .shape {
+            position: absolute;
+            opacity: 0.15;
+        }
+
+        .shape-1 {
+            width: 280px;
+            height: 280px;
+            background: var(--hpd-lime);
+            border-radius: 8px;
+            top: 10%;
+            right: 5%;
+            transform: rotate(15deg);
+        }
+
+        .shape-2 {
+            width: 320px;
+            height: 200px;
+            background: var(--green-soft);
+            border-radius: 12px;
+            top: 40%;
+            right: -60px;
+            transform: rotate(-25deg);
+        }
+
+        .shape-3 {
+            width: 200px;
+            height: 200px;
+            background: var(--hpd-lime);
+            border-radius: 6px;
+            bottom: 20%;
+            left: 5%;
+            transform: rotate(35deg);
+        }
+
+        .shape-4 {
+            width: 240px;
+            height: 150px;
+            background: var(--green-soft);
+            border-radius: 10px;
+            bottom: 5%;
+            right: 15%;
+            transform: rotate(-15deg);
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 768px) {
+            .login-container {
+                grid-template-columns: 1fr;
+            }
+
+            .login-image-panel {
+                display: none;
+            }
+
+            .login-form-panel {
+                padding: 40px 24px;
+            }
+
+            .login-title {
+                font-size: 24px;
+            }
+
+            .submit-btn {
+                font-size: 13px;
+                padding: 11px;
+            }
+        }
     </style>
 </head>
 <body>
-    <main>
-        <h1>CRM HPD</h1>
-        <p>Ingresa para gestionar conversaciones y clientes.</p>
-        <form id="loginForm">
-            <label for="username">Usuario</label>
-            <input id="username" autocomplete="username" required>
-            <label for="password">Contraseña</label>
-            <input id="password" type="password" autocomplete="current-password" required>
-            <div class="password-row">
-                <input id="showPassword" type="checkbox">
-                <label for="showPassword">Mostrar contraseña</label>
+    <div class="login-container">
+        <!-- Panel Formulario -->
+        <div class="login-form-panel">
+            <div class="login-form-content">
+                <div class="login-branding">
+                    <div class="login-logo">
+                        <div class="logo-icon">
+                            <img src="iconodelog.png" alt="HPD">
+                        </div>
+                        <div class="logo-text">HPD</div>
+                    </div>
+                    <h1 class="login-title">Bienvenido</h1>
+                    <p class="login-subtitle">Ingresa a tu centro de atención de conversaciones</p>
+                </div>
+
+                <div class="error-message" id="errorMessage" role="alert"></div>
+
+                <form class="login-form" id="loginForm">
+                    <div class="form-group">
+                        <label for="username">Usuario</label>
+                        <input 
+                            type="text" 
+                            id="username" 
+                            name="username"
+                            placeholder="Ingresa tu usuario"
+                            autocomplete="username"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Contraseña</label>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password"
+                            placeholder="••••••••"
+                            autocomplete="current-password"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-options">
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="showPassword">
+                            <label for="showPassword">Mostrar contraseña</label>
+                        </div>
+                        <a href="#" class="forgot-link">¿Olvidaste?</a>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Iniciar sesión</button>
+                </form>
             </div>
-            <button type="submit">Iniciar sesión</button>
-        </form>
-        <div id="error" role="alert"></div>
-    </main>
+        </div>
+
+        <!-- Panel Imagen -->
+        <div class="login-image-panel">
+            <div class="image-bg" style="background-image: url('sliderprueb copy.png');"></div>
+            <div class="decorative-shapes">
+                <div class="shape shape-1"></div>
+                <div class="shape shape-2"></div>
+                <div class="shape shape-3"></div>
+                <div class="shape shape-4"></div>
+            </div>
+            <div class="image-overlay"></div>
+            <div class="image-content">
+                <div class="image-header">Centro de Atención</div>
+
+                <div class="image-main">
+                    <h2>Gestiona todas tus conversaciones</h2>
+                    <p>Centraliza tus clientes y conversaciones de WhatsApp en una plataforma inteligente y profesional.</p>
+
+                    <div class="features-list">
+                        <div class="feature-item">
+                            <div class="feature-check">✓</div>
+                            <span>Bandeja unificada de conversaciones</span>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-check">✓</div>
+                            <span>Pipeline y seguimiento de clientes</span>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-check">✓</div>
+                            <span>Reportes y análisis en tiempo real</span>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-check">✓</div>
+                            <span>Integración directa con WhatsApp Cloud</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="image-footer">
+                <div class="status-dot"></div>
+                <span>Sistema disponible y operativo</span>
+            </div>
+        </div>
+    </div>
+
     <script>
-        document.getElementById('loginForm').addEventListener('submit', async event => {
-            event.preventDefault();
-            const error = document.getElementById('error');
-            error.textContent = '';
-            const response = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify({
-                    usuario: document.getElementById('username').value,
-                    password: document.getElementById('password').value,
-                    recordarme: true
-                })
-            });
-            if (response.ok) {
-                window.location.href = '/';
-                return;
-            }
-            if (response.status === 404) {
-                error.textContent = 'El servidor activo no tiene el login instalado. Reinicia el CRM con la versión nueva.';
-            } else if (response.status === 401) {
-                error.textContent = 'Usuario o contraseña incorrectos.';
-            } else {
-                error.textContent = `No se pudo iniciar sesión (HTTP ${response.status}).`;
-            }
+        const loginForm = document.getElementById('loginForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const showPasswordCheckbox = document.getElementById('showPassword');
+        const passwordInput = document.getElementById('password');
+
+        // Toggle password visibility
+        showPasswordCheckbox.addEventListener('change', (event) => {
+            passwordInput.type = event.target.checked ? 'text' : 'password';
         });
-        document.getElementById('showPassword').addEventListener('change', event => {
-            document.getElementById('password').type = event.target.checked ? 'text' : 'password';
+
+        // Handle form submission
+        loginForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            errorMessage.textContent = '';
+            const submitBtn = loginForm.querySelector('.submit-btn');
+            
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        usuario: document.getElementById('username').value,
+                        password: document.getElementById('password').value,
+                        recordarme: true
+                    })
+                });
+
+                if (response.ok) {
+                    window.location.href = '/';
+                    return;
+                }
+
+                if (response.status === 404) {
+                    errorMessage.textContent = 'El servidor activo no tiene el login instalado. Reinicia el CRM con la versión nueva.';
+                } else if (response.status === 401) {
+                    errorMessage.textContent = 'Usuario o contraseña incorrectos.';
+                } else {
+                    errorMessage.textContent = `No se pudo iniciar sesión (HTTP ${response.status}).`;
+                }
+            } catch (error) {
+                errorMessage.textContent = 'Error de conexión. Por favor, intenta de nuevo.';
+            } finally {
+                submitBtn.disabled = false;
+            }
         });
     </script>
 </body>
