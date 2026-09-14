@@ -143,6 +143,26 @@ public class CrmManagementController : ControllerBase
         });
     }
 
+    [HttpPut("usuarios/{id:int}/password")]
+    [Authorize(Roles = "Administrador")]
+    public async Task<IActionResult> CambiarPassword(int id, [FromBody] CambiarPasswordDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Password) || dto.Password.Length < 8)
+        {
+            return BadRequest("La contraseña debe tener al menos 8 caracteres.");
+        }
+
+        var usuario = await _context.Usuarios.FindAsync(id);
+        if (usuario == null)
+        {
+            return NotFound("Usuario no encontrado.");
+        }
+
+        usuario.cPasswordHash = _hasher.HashPassword(usuario, dto.Password);
+        await _context.SaveChangesAsync();
+        return Ok(new { success = true });
+    }
+
     [HttpPut("conversaciones/{id:long}/estado")]
     [Authorize(Roles = "Administrador,Supervisor,Asesor")]
     public async Task<IActionResult> CambiarEstado(long id, [FromBody] EstadoDto dto)
@@ -261,4 +281,9 @@ public sealed class CrearUsuarioDto
     public string? Nombre { get; set; }
     public string? Password { get; set; }
     public string? Rol { get; set; }
+}
+
+public sealed class CambiarPasswordDto
+{
+    public string? Password { get; set; }
 }

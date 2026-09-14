@@ -1,0 +1,269 @@
+<html><head><meta charset="utf-8"><title>Documentacion completa del proyecto CRM HPD</title><style>body{font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#222}h1{color:#1f4e79;font-size:24pt}pre{font-family:Calibri,Arial,sans-serif;white-space:pre-wrap;line-height:1.25}code{font-family:Consolas,monospace;background:#f2f2f2}</style></head><body><h1>Documentacion completa del proyecto CRM HPD</h1><p>Contenido integro de la documentacion tecnica.</p><pre># Documentacion del proyecto CRM HPD
+
+## 1. Proposito
+
+CRM HPD es una aplicacion web para gestionar clientes, conversaciones y mensajes de WhatsApp. Permite autenticar usuarios internos, consultar un pipeline de conversaciones, asignar asesores, actualizar contactos, recibir mensajes desde WhatsApp Cloud API y enviar mensajes o archivos.
+
+Esta documentacion describe el comportamiento implementado en el repositorio. Las decisiones de negocio que no aparecen en el codigo se marcan como pendientes de confirmar.
+
+## 2. Arquitectura
+
+- **Backend:** ASP.NET Core Web API.
+- **Target framework declarado:** .NET 10 (`net10.0`).
+- **Persistencia:** Entity Framework Core 8 con SQL Server.
+- **Frontend:** archivos estaticos `wwwroot/index.html` y `wwwroot/login.html`.
+- **Autenticacion:** cookies ASP.NET Core, con roles.
+- **Integracion de mensajeria:** WhatsApp Cloud API de Meta.
+- **Almacenamiento de archivos:** Cloudinary.
+- **Documentacion de API:** Swagger en Development.
+- **Exposicion local para Meta:** ngrok u otro tunel HTTPS.
+
+### Componentes principales
+
+| Componente | Responsabilidad |
+|---|---|
+| `Program.cs` | Inyeccion de dependencias, middleware, autenticacion, CORS, Swagger y arranque inicial del administrador |
+| `Data/CrmDbContext.cs` | Mapeo de entidades y relaciones con SQL Server |
+| `Models/` | Modelo de clientes, conversaciones, mensajes y usuarios |
+| `Controllers/AuthenticationController.cs` | Login, sesion actual y logout |
+| `Controllers/CrmManagementController.cs` | Contactos, pipeline, usuarios, asignaciones y reportes |
+| `Controllers/WhatsAppController.cs` | Webhook de Meta, pruebas y envio de mensajes |
+| `Controllers/WhatsAppAttachmentsController.cs` | Envio y recepcion de archivos |
+| `Services/WhatsAppService.cs` | Reglas de negocio para clientes, conversaciones y mensajes |
+| `Services/WhatsAppCloudApiService.cs` | Comunicacion HTTP con Graph API de Meta |
+| `Services/CloudinaryStorageService.cs` | Subida de archivos a Cloudinary |
+
+## 3. Flujo general de mensajes
+
+### Mensaje entrante
+
+1. Meta llama `POST /api/whatsapp/webhook`.
+2. El CRM valida la firma si `WhatsApp:AppSecret` esta configurado.
+3. Se extrae telefono, nombre, tipo, contenido e identificador de WhatsApp.
+4. Se ignoran mensajes cuyo `c_whatsapp_id` ya exista.
+5. Se busca o crea el cliente por telefono.
+6. Se reutiliza una conversacion `NUEVO` o `ABIERTO`; si no existe, se crea.
+7. Se guarda el mensaje con direccion `E` (entrante).
+8. Se responde HTTP 200 a Meta cuando el procesamiento termina correctamente.
+
+### Mensaje saliente
+
+1. Un usuario autenticado solicita el envio desde el CRM.
+2. El mensaje se registra con direccion `S` (saliente).
+3. Si `WhatsApp:SendMessagesToMeta` es `true` y hay credenciales, se envia a Graph API.
+4. El identificador devuelto por Meta se guarda en `c_whatsapp_id` cuando esta disponible.
+5. Si el envio real esta desactivado, el proyecto conserva el modo de prueba local.
+
+## 4. Modelo de datos
+
+### Diagrama de relaciones
+
+```mermaid
+erDiagram
+    crm_cliente ||--o{ crm_conversacion : tiene
+    crm_usuario ||--o{ crm_conversacion : asigna
+    crm_conversacion ||--o{ crm_mensaje : contiene
+
+    crm_cliente {
+        bigint n_cliente PK
+        string c_nombre
+        string c_telefono
+        string c_email
+        string c_documento
+        datetime d_fecha_registro
+        char c_estado
+    }
+    crm_usuario {
+        int n_usuario PK
+        string c_usuario
+        string c_nombre
+        char c_estado
+        string c_password_hash
+        string c_rol
+    }
+    crm_conversacion {
+        bigint n_conversacion PK
+        bigint n_cliente FK
+        int n_usuario_asignado FK
+        string c_estado
+        datetime d_fecha_inicio
+        datetime d_ultimo_mensaje
+        datetime d_ultimo_mensaje_cliente
+    }
+    crm_mensaje {
+        bigint n_mensaje PK
+        bigint n_conversacion FK
+        string c_whatsapp_id
+        char c_direccion
+        string c_tipo
+        string c_mensaje
+        string c_estado
+        datetime d_fecha
+    }
+```
+
+### `crm_cliente`
+
+| Columna | Tipo inferido | Requerida en codigo | Descripcion |
+|---|---|---:|---|
+| `n_cliente` | `bigint` | Si | Clave primaria |
+| `c_nombre` | texto | Si | Nombre del cliente |
+| `c_telefono` | texto | Si | Telefono usado para localizar al cliente |
+| `c_email` | texto nullable | No | Correo electronico |
+| `c_documento` | texto nullable | No | Documento de identificacion |
+| `d_fecha_registro` | fecha/hora | Si | Fecha de alta |
+| `c_estado` | `char` | Si | Estado; por defecto `A` |
+
+### `crm_usuario`
+
+| Columna | Tipo inferido | Requerida en codigo | Descripcion |
+|---|---|---:|---|
+| `n_usuario` | `int` | Si | Clave primaria |
+| `c_usuario` | texto | Si | Nombre de acceso |
+| `c_nombre` | texto | Si | Nombre visible |
+| `c_estado` | `char` | Si | Usuario activo cuando vale `A` |
+| `c_password_hash` | texto nullable | No | Hash generado por `PasswordHasher` |
+| `c_rol` | texto | Si | `Administrador`, `Supervisor` o `Asesor` |
+
+### `crm_conversacion`
+
+| Columna | Tipo inferido | Requerida en codigo | Descripcion |
+|---|---|---:|---|
+| `n_conversacion` | `bigint` | Si | Clave primaria |
+| `n_cliente` | `bigint` | Si | FK hacia `crm_cliente` |
+| `n_usuario_asignado` | `int` nullable | No | FK hacia `crm_usuario` |
+| `c_estado` | texto | Si | `NUEVO`, `ABIERTO`, `CERRADO` o `PERDIDO` |
+| `d_fecha_inicio` | fecha/hora | Si | Inicio de la conversacion |
+| `d_ultimo_mensaje` | fecha/hora nullable | No | Fecha del ultimo mensaje |
+| `d_ultimo_mensaje_cliente` | fecha/hora nullable | No | Fecha del ultimo mensaje entrante |
+
+### `crm_mensaje`
+
+| Columna | Tipo inferido | Requerida en codigo | Descripcion |
+|---|---|---:|---|
+| `n_mensaje` | `bigint` | Si | Clave primaria |
+| `n_conversacion` | `bigint` | Si | FK hacia `crm_conversacion` |
+| `c_whatsapp_id` | texto nullable | No | ID de Meta; se usa para evitar duplicados |
+| `c_direccion` | `char` | Si | `E` entrante o `S` saliente |
+| `c_tipo` | texto nullable | No | Texto, imagen, documento u otro tipo |
+| `c_mensaje` | texto | Si | Texto o JSON descriptivo del archivo |
+| `c_estado` | texto nullable | No | Estado de procesamiento o envio |
+| `d_fecha` | fecha/hora | Si | Fecha del mensaje |
+
+> Los tipos, longitudes, indices, valores por defecto y comportamiento `ON DELETE` son inferidos desde las clases C# y `CrmDbContext`. No hay migraciones ni script SQL en el repositorio, por lo que deben validarse contra la base de datos real.
+
+## 5. API
+
+Todas las rutas usan el prefijo indicado. Las rutas protegidas requieren la cookie de sesion.
+
+### Autenticacion
+
+| Metodo | Ruta | Acceso | Funcion |
+|---|---|---|---|
+| POST | `/api/auth/login` | Publico | Inicia sesion y crea cookie |
+| GET | `/api/auth/me` | Autenticado | Devuelve usuario y rol actual |
+| POST | `/api/auth/logout` | Autenticado | Cierra sesion |
+
+### Gestion CRM
+
+| Metodo | Ruta | Roles | Funcion |
+|---|---|---|---|
+| GET | `/api/crm/contactos` | Todos | Lista y busca contactos |
+| GET | `/api/crm/pipeline` | Todos | Lista conversaciones y asignaciones |
+| GET | `/api/crm/usuarios` | Todos | Lista usuarios activos |
+| POST | `/api/crm/usuarios` | Administrador | Crea usuarios Supervisor o Asesor |
+| PUT | `/api/crm/conversaciones/{id}/estado` | Todos | Cambia estado |
+| PUT | `/api/crm/conversaciones/{id}/asignar` | Administrador, Supervisor | Asigna asesor |
+| PUT | `/api/crm/contactos/{id}` | Administrador, Supervisor | Actualiza datos del contacto |
+| GET | `/api/crm/reportes/resumen` | Administrador, Supervisor | Devuelve totales y estados |
+
+### WhatsApp y archivos
+
+| Metodo | Ruta | Acceso | Funcion |
+|---|---|---|---|
+| GET | `/api/whatsapp/webhook` | Publico | Verificacion inicial de Meta |
+| POST | `/api/whatsapp/webhook` | Publico | Recibe eventos de Meta |
+| POST | `/api/whatsapp/test/mensaje` | Autenticado | Crea o envia un mensaje de prueba |
+| GET | `/api/whatsapp/test/historial` | Autenticado | Consulta historial por telefono |
+| GET | `/api/whatsapp/test/conversacion/{id}` | Autenticado | Consulta una conversacion |
+| GET | `/api/whatsapp/test/todas` | Autenticado | Consulta conversaciones de prueba |
+| POST | `/api/whatsapp/test/enviar` | Autenticado | Envia texto |
+| POST | `/api/whatsapp/test/enviar-archivo` | Autenticado | Sube y envia archivos |
+| POST | `/api/whatsapp/test/mensaje-archivo` | Publico | Recibe archivo de prueba del cliente |
+
+El limite de archivos es 15 MB. Se permiten PDF, Word, Excel, JPG, JPEG, PNG y WEBP.
+
+## 6. Roles y permisos
+
+| Operacion | Administrador | Supervisor | Asesor |
+|---|---:|---:|---:|
+| Consultar contactos | Si | Si | Si |
+| Consultar pipeline | Si | Si | Si |
+| Consultar usuarios | Si | Si | Si |
+| Crear usuarios | Si | No | No |
+| Cambiar estado | Si | Si | Si |
+| Asignar conversaciones | Si | Si | No |
+| Editar contactos | Si | Si | No |
+| Consultar reportes | Si | Si | No |
+
+## 7. Configuracion
+
+La plantilla esta en `CRM.Data/appsettings.example.json`. Los secretos no deben guardarse en el repositorio; se recomienda User Secrets o variables de entorno.
+
+| Seccion | Claves principales | Uso |
+|---|---|---|
+| `ConnectionStrings` | `DefaultConnection` | Conexion a SQL Server |
+| `Cors` | `AllowedOrigins` | Origenes permitidos para el frontend |
+| `Authentication` | `BootstrapUsername`, `BootstrapPassword` | Crea el primer administrador si no hay usuarios |
+| `WhatsApp` | `WebhookVerifyToken`, `AppSecret`, `AccessToken`, `PhoneNumberId`, `BusinessAccountId`, `ApiVersion`, `SendMessagesToMeta` | Meta WhatsApp Cloud API |
+| `Cloudinary` | `CloudName`, `ApiKey`, `ApiSecret`, `UploadPreset`, `Folder` | Almacenamiento de archivos |
+
+### Arranque local
+
+```powershell
+dotnet run --project .\CRM.Data\CRM.Data.csproj --urls http://localhost:5005
+```
+
+El webhook local requiere un tunel HTTPS, por ejemplo:
+
+```powershell
+ngrok http 5005
+```
+
+La URL configurada en Meta debe terminar en:
+
+```text
+/api/whatsapp/webhook
+```
+
+## 8. Seguridad
+
+- Las contrasenas se almacenan como hash, no como texto plano.
+- La sesion usa cookie `crm_hpd_session` con expiracion de 8 horas.
+- La firma `X-Hub-Signature-256` de Meta se valida cuando existe `WhatsApp:AppSecret`.
+- Las rutas de webhook son publicas porque Meta debe poder invocarlas.
+- El CORS debe limitarse al dominio real del frontend.
+- `Authentication:BootstrapPassword`, tokens, secretos y cadenas de conexion deben salir de `appsettings.json` y del control de versiones.
+
+## 9. Pendientes de confirmar
+
+Para convertir esta documentacion tecnica en documentacion funcional y operativa completa faltan estos datos:
+
+1. Script SQL, backup o acceso de solo lectura a la base real para confirmar tipos, longitudes, indices, constraints y nombres exactos.
+2. Estados validos definitivos y significado de cada estado del cliente, conversacion y mensaje.
+3. Reglas de asignacion: si un asesor puede ver todas las conversaciones o solo las asignadas.
+4. Catalogo definitivo de roles y permisos.
+5. Dominio definitivo del frontend y URL de produccion del backend.
+6. Datos de despliegue: proveedor, variables de entorno, servicio de Windows o contenedor y estrategia de backups.
+7. Ejemplos reales de payloads de Meta para texto, imagen, audio, video, documento y estados de entrega.
+8. Reglas de retencion, privacidad y eliminacion de conversaciones y archivos.
+9. Lista de usuarios responsables de operar Meta, Cloudinary, servidor y base de datos.
+
+## 10. Observaciones tecnicas
+
+- El proyecto declara `net10.0`, pero usa paquetes de Entity Framework Core 8; conviene confirmar si esto es intencional y actualizar paquetes de forma coordinada.
+- No se encontraron migraciones de Entity Framework ni scripts SQL versionados.
+- El arranque crea automaticamente el primer administrador solo cuando la tabla de usuarios esta vacia y existen las credenciales bootstrap.
+- La aplicacion sirve el frontend estatico desde `wwwroot` y expone Swagger solo en Development.
+- La documentacion actual de Meta y Cloudinary complementa este archivo: `META_SETUP.md`, `AUTHENTICATION_SETUP.md` y `CLOUDINARY_SETUP.md`.
+</pre></body></html>
