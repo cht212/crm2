@@ -1,0 +1,156 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
+using CRM.Data.Data;
+using CRM.Data.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace CRM.Data.Controllers;
+
+// =========================================================
+// TAREAS (recordatorios / seguimientos)
+// =========================================================
+//
+// No existía ninguna forma de programar un seguimiento
+// ("llamar el jueves", "enviar cotización mañana"). Este
+// controlador cubre ese vacío: tareas ligadas opcionalmente
+// a un cliente, conversación u oportunidad, asignables a un
+// asesor y con fecha de vencimiento.
+//
+// =========================================================
+
+[ApiController]
+[Route("api/tareas")]
+[Authorize(Roles = "Administrador,Supervisor,Asesor")]
+public class TareasController : ControllerBase
+{
+    private readonly CrmDbContext _context;
+
+    public TareasController(CrmDbContext context)
+    {
+        _context = context;
+    }
+
+    private int? UsuarioActualId =>
+        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : null;
+
+    // Por defecto solo trae PENDIENTE, y marca como VENCIDA (en la
+    // respuesta, sin persistir) las que ya pasaron su fecha límite.
+    [HttpGet]
+    public async Task<IActionResult> Listar(
+        [FromQuery] int? usuarioId = null,
+        [FromQuery] long? clienteId = null,
+        [FromQuery] long? conversacionId = null,
+        [FromQuery] string? estado = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50)
+    {
+        page = page < 1 ? 1 : page;
+        pageSize = pageSize is < 1 or > 200 ? 50 : pageSize;
+
+        var query = _context.Tareas.AsNoTracking().AsQueryable();
+        if (usuarioId.HasValue) query = query.Where(t => t.nAsignadoA == usuarioId.Value);
+        if (clienteId.HasValue) query = query.Where(t => t.nCliente == clienteId.Value);
+        if (conversacionId.HasValue) query = query.Where(t => t.nConversacion == conversacionId.Value);
+        if (!string.IsNullOrWhiteSpace(estado))
+        {
+            query = query.Where(t => t.cEstado == estado.Trim().ToUpperInvariant());
+        }
+
+        var total = await query.CountAsync();
+        var ahora = DateTime.Now;
+
+        var items = await query
+            .Include(t => t.Cliente)
+            .Include(t => t.AsignadoA)
+            .OrderBy(t => t.dFechaVencimiento)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(t => new
+            {
+                id = t.nTarea,
+                titulo = t.cTitulo,
+                descripcion = t.cDescripcion,
+                vence = t.dFechaVencimiento,
+                estado = t.cEstado == "PENDIENTE" && t.dFechaVencimiento < ahora ? "VENCIDA" : t.cEstado,
+                conversacionId = t.nConversacion,
+                oportunidadId = t.nOportunidad,
+                cliente = t.Cliente == null ? null : new { id = t.Cliente.nCliente, nombre = t.Cliente.cNombre },
+                asignadoA = t.AsignadoA == null ? null : t.AsignadoA.cNombre,
+                asignadoAId = t.nAsignadoA
+            })
+            .ToListAsync();
+
+        return Ok(new { total, page, pageSize, items });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Crear([FromBody] CrearTareaDto dto)
+    {
+        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+
+        var tarea = new Tarea
+        {
+            nCliente = dto.ClienteId,
+            nConversacion = dto.ConversacionId,
+            nOportunidad = dto.OportunidadId,
+            cTitulo = dto.Titulo!.Trim(),
+            cDescripcion = dto.Descripcion?.Trim(),
+            dFechaVencimiento = dto.FechaVencimiento,
+            nAsignadoA = dto.AsignadoAId,
+            nCreadoPor = UsuarioActualId,
+            cEstado = "PENDIENTE",
+            dFechaCreacion = DateTime.Now
+        };
+
+        _context.Tareas.Add(tarea);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { success = true, id = tarea.nTarea });
+    }
+
+    [HttpPut("{id:long}/completar")]
+    public async Task<IActionResult> Completar(long id)
+    {
+        var tarea = await _context.Tareas.FindAsync(id);
+        if (tarea == null) return NotFound("Tarea no encontrada.");
+
+        tarea.cEstado = "COMPLETADA";
+        tarea.dFechaCompletada = DateTime.Now;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { success = true, id });
+    }
+
+    [HttpDelete("{id:long}")]
+    public async Task<IActionResult> Cancelar(long id)
+    {
+        var tarea = await _context.Tareas.FindAsync(id);
+        if (tarea == null) return NotFound("Tarea no encontrada.");
+
+        tarea.cEstado = "CANCELADA";
+        await _context.SaveChangesAsync();
+
+        return Ok(new { success = true, id });
+    }
+}
+
+public sealed class CrearTareaDto
+{
+    public long? ClienteId { get; set; }
+    public long? ConversacionId { get; set; }
+    public long? OportunidadId { get; set; }
+
+    [Required(ErrorMessage = "El título es obligatorio.")]
+    [StringLength(200)]
+    public string? Titulo { get; set; }
+
+    [StringLength(2000)]
+    public string? Descripcion { get; set; }
+
+    [Required(ErrorMessage = "La fecha de vencimiento es obligatoria.")]
+    public DateTime FechaVencimiento { get; set; }
+
+    public int? AsignadoAId { get; set; }
+}

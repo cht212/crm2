@@ -7,6 +7,8 @@ namespace CRM.Data.Models
         public long nMensaje { get; set; }
         public long nConversacion { get; set; }
         public string? cWhatsappId { get; set; }
+        public string cCanal { get; set; } = CanalSocial.WhatsApp;
+        public string? cExternalId { get; set; }
         public char cDireccion { get; set; } // 'E' = Entrante, 'S' = Saliente
         public string? cTipo { get; set; }
         public string cMensaje { get; set; } = string.Empty;

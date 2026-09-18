@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+﻿﻿using System.Text.Json;
 using CRM.Data.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace CRM.Data.Controllers;
 
 [ApiController]
-[Route("api/whatsapp/test")]
+[Route("api/whatsapp/conversaciones")]
 [Authorize]
 public class WhatsAppAttachmentsController : ControllerBase
 {
@@ -28,22 +28,19 @@ public class WhatsAppAttachmentsController : ControllerBase
     private const long TamanoMaximo = 15 * 1024 * 1024;
     private readonly WhatsAppService _whatsappService;
     private readonly CloudinaryStorageService _storage;
-    private readonly ILogger<WhatsAppAttachmentsController> _logger;
 
     public WhatsAppAttachmentsController(
         WhatsAppService whatsappService,
-        CloudinaryStorageService storage,
-        ILogger<WhatsAppAttachmentsController> logger)
+        CloudinaryStorageService storage)
     {
         _whatsappService = whatsappService;
         _storage = storage;
-        _logger = logger;
     }
 
-    [HttpPost("enviar-archivo")]
+    [HttpPost("{conversacionId:long}/archivos")]
     [RequestSizeLimit(TamanoMaximo)]
     public async Task<IActionResult> EnviarArchivo(
-        [FromForm] long conversacionId,
+        long conversacionId,
         [FromForm] IFormFile archivo,
         [FromForm] string? usuarioId,
         CancellationToken cancellationToken)
@@ -90,68 +87,12 @@ public class WhatsAppAttachmentsController : ControllerBase
             contenido,
             usuarioIdParsed,
             DeterminarTipo(extension),
-            $"TEST-FILE-{Guid.NewGuid():N}");
+            null);
 
         return Ok(new
         {
             success = true,
             mensajeId,
-            url = urlPublica
-        });
-    }
-
-    [HttpPost("mensaje-archivo")]
-    [AllowAnonymous]
-    [RequestSizeLimit(TamanoMaximo)]
-    public async Task<IActionResult> RecibirArchivoCliente(
-        [FromForm] string telefono,
-        [FromForm] string? nombre,
-        [FromForm] IFormFile archivo,
-        CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrWhiteSpace(telefono))
-        {
-            return BadRequest("El teléfono es obligatorio.");
-        }
-
-        if (archivo == null || archivo.Length == 0)
-        {
-            return BadRequest("El archivo es obligatorio.");
-        }
-
-        if (archivo.Length > TamanoMaximo)
-        {
-            return BadRequest("El archivo supera el límite de 15 MB.");
-        }
-
-        var extension = Path.GetExtension(archivo.FileName);
-        if (!ExtensionesPermitidas.Contains(extension))
-        {
-            return BadRequest("Tipo de archivo no permitido.");
-        }
-
-        var resultado = await _storage.UploadAsync(archivo, "crm-hpd", cancellationToken);
-        var urlPublica = resultado.SecureUrl;
-        var contenido = JsonSerializer.Serialize(new
-        {
-            nombre = Path.GetFileName(archivo.FileName),
-            url = urlPublica,
-            mimeType = archivo.ContentType,
-            tamano = archivo.Length,
-            publicId = resultado.PublicId
-        });
-
-        var conversacionId = await _whatsappService.ProcesarMensajeEntranteAsync(
-            telefono,
-            nombre,
-            contenido,
-            DeterminarTipo(extension),
-            $"TEST-FILE-{Guid.NewGuid():N}");
-
-        return Ok(new
-        {
-            success = true,
-            conversacionId,
             url = urlPublica
         });
     }

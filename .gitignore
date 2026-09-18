@@ -6,8 +6,7 @@
 # Local configuration and secrets
 **/appsettings.json
 **/appsettings.*.json
-!**/appsettings.example.json
-!appsettings.cloudinary.example.json
+**/App_Data/*.json
 
 # Local development files
 *.user
@@ -21,3 +20,7 @@ Thumbs.db
 
 # Temporary validation output
 _codex_build_check/
+
+# Commercial/reference templates
+Plantilla.zip
+Plantilla/

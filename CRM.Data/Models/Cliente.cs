@@ -15,6 +15,10 @@ namespace CRM.Data.Models
 
         public string? cDocumento { get; set; }
 
+        public string? cFotoPerfilUrl { get; set; }
+
+        public string cCanalOrigen { get; set; } = CanalSocial.WhatsApp;
+
         public DateTime dFechaRegistro { get; set; } = DateTime.Now;
 
         public char cEstado { get; set; } = 'A';

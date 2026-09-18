@@ -1,0 +1,398 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R 19 0 R 21 0 R] /Count 8 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Length 3167 >>
+stream
+BT /F2 20.00 Tf 1 0 0 1 51.02 784.87 Tm (Manual tecnico operativo del CRM HPD) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 746.87 Tm (Fecha: 18 de septiembre de 2026) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 720.37 Tm (1. Proposito del sistema) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 691.37 Tm (El CRM HPD centraliza la atencion de clientes, principalmente por WhatsApp, y deja preparada la base) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 677.87 Tm (para Facebook, Instagram y TikTok segun las reglas reales de cada plataforma.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 655.37 Tm (El objetivo no es solo ver mensajes. El sistema convierte cada contacto en una ficha de trabajo:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 641.87 Tm (conversacion, datos del cliente, notas, tareas, ventas, etiquetas, asesor responsable, historial y) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 628.37 Tm (reportes.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 601.87 Tm (2. Arquitectura general) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 572.87 Tm (El sistema esta formado por:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 550.37 Tm (- Frontend web en wwwroot: interfaz del CRM.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 534.87 Tm (- Backend ASP.NET Core: APIs, reglas de negocio, autenticacion e integraciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 519.37 Tm (- SQL Server LocalDB: base de datos del CRM.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 503.87 Tm (- App_Data: configuraciones editables desde la interfaz.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 488.37 Tm (- ngrok: tunel HTTPS temporal para desarrollo local.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 472.87 Tm (- Cloudinary: publicacion de archivos con URL HTTPS.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 457.37 Tm (- Meta APIs: WhatsApp, Facebook e Instagram.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 436.87 Tm (Webhooks principales:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 414.37 Tm (- WhatsApp: /api/whatsapp/webhook) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 398.87 Tm (- Facebook/Instagram: /api/integraciones/meta/webhook) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 383.37 Tm (- TikTok: /api/integraciones/tiktok/webhook) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 358.87 Tm (3. Roles y experiencia esperada) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 325.87 Tm (Administrador) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 301.37 Tm (Debe ver todo porque configura, audita y supervisa el sistema completo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 278.87 Tm (Modulos visibles:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 256.37 Tm (- Dashboard) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 240.87 Tm (- Comunicaciones) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 225.37 Tm (- Contactos) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 209.87 Tm (- Tareas) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 194.37 Tm (- Pipeline) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 178.87 Tm (- Ventas) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 163.37 Tm (- Reportes) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 147.87 Tm (- Comentarios) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 132.37 Tm (- Actividad) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 116.87 Tm (- Fallos) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 101.37 Tm (- Bot) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 85.87 Tm (- Conexiones) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 70.37 Tm (- Usuarios) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 3095 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 51.02 790.87 Tm (Uso principal:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 768.37 Tm (- Configurar canales.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 752.87 Tm (- Crear usuarios.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 737.37 Tm (- Revisar reportes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 721.87 Tm (- Auditar actividad.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 706.37 Tm (- Ver errores de integracion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 690.87 Tm (- Ajustar bot y conexiones.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 666.37 Tm (Supervisor) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 641.87 Tm (Debe tener control operativo, pero no necesariamente administrar usuarios o secretos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 619.37 Tm (Modulos visibles:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 596.87 Tm (- Dashboard) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 581.37 Tm (- Comunicaciones) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 565.87 Tm (- Contactos) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 550.37 Tm (- Tareas) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 534.87 Tm (- Pipeline) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 519.37 Tm (- Ventas) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 503.87 Tm (- Reportes) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 488.37 Tm (- Comentarios) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 472.87 Tm (- Actividad) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 457.37 Tm (- Fallos) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 436.87 Tm (Uso principal:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 414.37 Tm (- Revisar carga de asesores.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 398.87 Tm (- Asignar conversaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 383.37 Tm (- Supervisar tareas vencidas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 367.87 Tm (- Controlar ventas y seguimiento.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 352.37 Tm (- Revisar fallos operativos.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 327.87 Tm (Asesor) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 303.37 Tm (Debe ver una interfaz simple. Su trabajo diario es atender, registrar seguimiento y cerrar ventas. No) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 289.87 Tm (necesita conexiones, bot, usuarios, fallos tecnicos ni reportes ejecutivos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 267.37 Tm (Modulos visibles:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 244.87 Tm (- Comunicaciones) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 229.37 Tm (- Contactos) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 213.87 Tm (- Tareas) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 198.37 Tm (- Ventas) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 177.87 Tm (Uso principal:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 155.37 Tm (- Responder chats.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 139.87 Tm (- Actualizar datos del cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 124.37 Tm (- Crear notas y tareas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 108.87 Tm (- Registrar oportunidades/ventas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 93.37 Tm (- Dar seguimiento a pendientes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 72.87 Tm (Estado actual del ajuste: el frontend ya oculta modulos avanzados para el rol Asesor y lo inicia) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 59.37 Tm (directamente en Comunicaciones.) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 8 0 R >>
+endobj
+10 0 obj
+<< /Length 2892 >>
+stream
+BT /F2 14.00 Tf 1 0 0 1 51.02 786.87 Tm (4. Modulos del CRM) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 753.87 Tm (Dashboard) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 729.37 Tm (Pantalla ejecutiva para administradores y supervisores. Muestra salud operativa, canales, tareas,) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 715.87 Tm (ventas, carga de asesores y alertas importantes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 693.37 Tm (No debe ser la pantalla principal del asesor porque puede saturarlo con informacion que no necesita.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 666.87 Tm (Comunicaciones) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 642.37 Tm (Es la bandeja de atencion. Muestra conversaciones por canal y permite:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 619.87 Tm (- Ver chats.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 604.37 Tm (- Filtrar por canal.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 588.87 Tm (- Buscar cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 573.37 Tm (- Ver mensajes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 557.87 Tm (- Enviar respuestas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 542.37 Tm (- Usar plantillas rapidas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 526.87 Tm (- Adjuntar archivos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 511.37 Tm (- Abrir la ficha del cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 490.87 Tm (Para el asesor, esta es la pantalla principal.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 464.37 Tm (Ficha 360 del cliente) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 439.87 Tm (Panel lateral dentro de la conversacion. Centraliza:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 417.37 Tm (- Datos del cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 401.87 Tm (- Etiquetas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 386.37 Tm (- Notas internas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 370.87 Tm (- Tareas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 355.37 Tm (- Ventas/oportunidades.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 339.87 Tm (- Bot por conversacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 324.37 Tm (- Actividad.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 303.87 Tm (Sirve para que el asesor no tenga que saltar entre muchas pantallas.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 277.37 Tm (Contactos) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 252.87 Tm (Directorio de clientes. Permite buscar por:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 230.37 Tm (- Cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 214.87 Tm (- Telefono.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 199.37 Tm (- Canal.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 183.87 Tm (- Asesor.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 168.37 Tm (- Etiqueta.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 147.87 Tm (Tambien permite abrir o crear conversaciones desde un contacto.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 121.37 Tm (Tareas) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 96.87 Tm (Seguimiento operativo. Se usa para llamadas, cotizaciones, recordatorios y pendientes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 74.37 Tm (Estados:) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 10 0 R >>
+endobj
+12 0 obj
+<< /Length 2889 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Pendiente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- Completada.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 759.87 Tm (- Vencida.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 744.37 Tm (- Cancelada.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 723.87 Tm (Para el asesor debe funcionar como lista diaria de pendientes.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 697.37 Tm (Pipeline) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 672.87 Tm (Actualmente es un pipeline de atencion, no un embudo comercial puro. Ordena conversaciones por estado:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 650.37 Tm (- Nuevo) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 634.87 Tm (- Abierto) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 619.37 Tm (- En atencion) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 603.87 Tm (- Esperando cliente) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 588.37 Tm (- Cotizacion enviada) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 572.87 Tm (- Cerrado) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 557.37 Tm (- Perdido) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 541.87 Tm (- No respondio) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 521.37 Tm (Recomendacion: mantenerlo para supervisor/admin. Para asesor puede ser demasiado pesado si su) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 507.87 Tm (trabajo principal es responder y vender.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 481.37 Tm (Ventas) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 456.87 Tm (Modulo comercial de oportunidades. Es mas adecuado para asesores que el pipeline cuando se habla de) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 443.37 Tm (ventas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 420.87 Tm (Etapas:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 398.37 Tm (- Nueva) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 382.87 Tm (- Calificada) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 367.37 Tm (- Propuesta) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 351.87 Tm (- Negociacion) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 336.37 Tm (- Ganada) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 320.87 Tm (- Perdida) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 300.37 Tm (Uso esperado:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 277.87 Tm (- Registrar oportunidades.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 262.37 Tm (- Poner monto.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 246.87 Tm (- Cambiar etapa.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 231.37 Tm (- Marcar ganada/perdida.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 215.87 Tm (- Revisar cierre estimado.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 191.37 Tm (Reportes) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 166.87 Tm (Vista de supervision y administracion. Resume:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 144.37 Tm (- Clientes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 128.87 Tm (- Conversaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 113.37 Tm (- Mensajes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 97.87 Tm (- Tareas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 82.37 Tm (- Oportunidades.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 66.87 Tm (- Monto abierto.) Tj ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 12 0 R >>
+endobj
+14 0 obj
+<< /Length 2714 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Monto ganado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- Carga por asesor.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 759.87 Tm (- Canales.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 739.37 Tm (No es necesario para asesor.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 712.87 Tm (Comentarios) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 688.37 Tm (Bandeja separada para comentarios de Facebook/Instagram cuando la API y webhooks correspondientes) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 674.87 Tm (esten disponibles.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 648.37 Tm (Actividad) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 623.87 Tm (Auditoria del sistema. Permite saber que cambio, quien lo hizo y cuando.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 601.37 Tm (Debe ser visible para admin/supervisor, no para asesor.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 574.87 Tm (Fallos) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 550.37 Tm (Historial tecnico de problemas de integracion, webhook o envio.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 527.87 Tm (Debe ser visible para admin/supervisor. Sirve para diagnosticar errores sin abrir Visual Studio.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 501.37 Tm (Bot) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 476.87 Tm (Configura respuestas automaticas por canal. Actualmente el uso real esta centrado en WhatsApp.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 454.37 Tm (Uso:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 431.87 Tm (- Activar/desactivar bot.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 416.37 Tm (- Editar mensaje principal.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 400.87 Tm (- Configurar plantillas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 385.37 Tm (- Definir opciones que derivan a asesor.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 360.87 Tm (Conexiones) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 336.37 Tm (Modulo tecnico para credenciales y webhooks.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 313.87 Tm (Contiene:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 291.37 Tm (- WhatsApp.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 275.87 Tm (- Instagram.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 260.37 Tm (- Facebook.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 244.87 Tm (- TikTok.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 224.37 Tm (Debe ser solo para admin, o supervisor tecnico si se decide.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 197.87 Tm (Usuarios) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 173.37 Tm (Modulo del administrador. Permite crear asesores y supervisores.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 146.87 Tm (5. WhatsApp) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 117.87 Tm (WhatsApp es el canal operativo principal.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 95.37 Tm (Flujo entrante:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 72.87 Tm (1. Cliente escribe a WhatsApp.) Tj ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 14 0 R >>
+endobj
+16 0 obj
+<< /Length 3350 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 51.02 790.87 Tm (2. Meta envia webhook a ngrok.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 773.37 Tm (3. ngrok reenvia al backend local.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 755.87 Tm (4. WhatsAppController procesa el evento.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 738.37 Tm (5. Se crea o actualiza cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 720.87 Tm (6. Se crea o actualiza conversacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 703.37 Tm (7. Se guarda mensaje.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 685.87 Tm (8. La conversacion aparece en el CRM.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 663.37 Tm (Flujo saliente:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 640.87 Tm (1. Asesor escribe desde el CRM.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 623.37 Tm (2. El CRM guarda el mensaje.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 605.87 Tm (3. Se envia a WhatsApp Cloud API.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 588.37 Tm (4. Se actualiza estado del mensaje.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 565.87 Tm (WhatsApp esta listo para uso real si:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 543.37 Tm (- El token es valido.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 527.87 Tm (- Phone Number ID es correcto.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 512.37 Tm (- Business Account ID es correcto.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 496.87 Tm (- El webhook esta verificado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 481.37 Tm (- ngrok/Cloudflare apunta al puerto correcto.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 465.87 Tm (- Cloudinary esta configurado para archivos.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 441.37 Tm (6. Instagram) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 412.37 Tm (Estado real actual:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 389.87 Tm (- Token IGAA validado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 374.37 Tm (- Cuenta seohpd validada como BUSINESS.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 358.87 Tm (- Professional User ID validado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 343.37 Tm (- El CRM consulta el endpoint correcto.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 327.87 Tm (- Meta devuelve data: [] en conversaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 312.37 Tm (- El asistente oficial de Meta no muestra destinatarios externos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 296.87 Tm (- Meta muestra aviso de que apps no publicadas solo reciben webhooks de prueba desde panel.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 276.37 Tm (Conclusion tecnica:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 253.87 Tm (En modo desarrollador no se estan recibiendo DMs reales de Instagram ni webhooks reales de mensajes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 240.37 Tm (Esto no es un fallo del CRM.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 217.87 Tm (Uso posible en desarrollo:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 195.37 Tm (- Validar token.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 179.87 Tm (- Consultar /me.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 164.37 Tm (- Probar endpoints.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 148.87 Tm (- Simular webhooks con Postman.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 133.37 Tm (- Usar pruebas del panel de Meta si aparecen disponibles.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 112.87 Tm (Uso real:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 90.37 Tm (- Requiere app publicada y permisos/capability de mensajes aprobados por Meta si aplica.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 65.87 Tm (7. Facebook) Tj ET
+endstream
+endobj
+17 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 16 0 R >>
+endobj
+18 0 obj
+<< /Length 3090 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 51.02 790.87 Tm (El CRM esta preparado para Facebook/Messenger mediante:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 768.37 Tm (- Page ID.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 752.87 Tm (- Page Access Token.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 737.37 Tm (- Webhook Meta.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 721.87 Tm (- Parser de mensajes sociales.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 701.37 Tm (Para hacerlo real se debe:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 678.87 Tm (- Suscribir pagina al webhook.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 663.37 Tm (- Activar eventos de mensajes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 647.87 Tm (- Validar permisos de pagina.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 632.37 Tm (- Probar evento real en ngrok.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 607.87 Tm (8. TikTok) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 578.87 Tm (TikTok esta preparado como canal futuro para leads/campanas. No debe prometerse como inbox de DMs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 565.37 Tm (normales salvo que exista acceso oficial a TikTok Business Messaging o partner aprobado.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 538.87 Tm (9. Seguridad) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 509.87 Tm (Puntos actuales:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 487.37 Tm (- Login con cookies.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 471.87 Tm (- Roles.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 456.37 Tm (- Password hash.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 440.87 Tm (- Endpoints protegidos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 425.37 Tm (- Auditoria.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 404.87 Tm (Riesgos a corregir antes de produccion:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 382.37 Tm (- No dejar secretos reales en appsettings.json.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 366.87 Tm (- No compartir capturas con tokens.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 351.37 Tm (- Regenerar App Secret y tokens expuestos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 335.87 Tm (- Mover claves a variables de entorno o secret manager.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 320.37 Tm (- Reemplazar ngrok por dominio/tunel estable.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 295.87 Tm (10. Evaluacion para uso real) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 262.87 Tm (Esta bien para demo funcional) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 238.37 Tm (Si el objetivo es demostrar el flujo CRM con WhatsApp, el sistema esta en buen estado:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 215.87 Tm (- Atiende mensajes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 200.37 Tm (- Registra clientes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 184.87 Tm (- Permite responder.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 169.37 Tm (- Tiene ficha 360.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 153.87 Tm (- Tiene tareas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 138.37 Tm (- Tiene ventas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 122.87 Tm (- Tiene reportes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 107.37 Tm (- Tiene roles.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 91.87 Tm (- Tiene configuracion de conexiones.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 67.37 Tm (Falta para produccion real) Tj ET
+endstream
+endobj
+19 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 18 0 R >>
+endobj
+20 0 obj
+<< /Length 1563 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 51.02 790.87 Tm (Antes de usarlo como sistema productivo permanente falta:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 768.37 Tm (- Secretos fuera de appsettings.json.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 752.87 Tm (- Dominio/tunel estable.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 737.37 Tm (- Backups de base de datos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 721.87 Tm (- Politica de logs.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 706.37 Tm (- Manejo formal de errores.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 690.87 Tm (- Pruebas automatizadas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 675.37 Tm (- Revision de permisos por modulo tambien en backend.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 659.87 Tm (- Publicacion/aprobacion de Instagram si se requiere DMs reales.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 644.37 Tm (- Politica de renovacion de tokens.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 619.87 Tm (11. Recomendacion de producto) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 590.87 Tm (Para que se sienta como CRM profesional:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 568.37 Tm (- Administrador: vista completa.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 552.87 Tm (- Supervisor: vista de control y seguimiento.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 537.37 Tm (- Asesor: vista simple centrada en conversaciones, contactos, tareas y ventas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 516.87 Tm (La venta debe vivir principalmente en Ventas, no en Pipeline. El pipeline debe quedar como herramienta de) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 503.37 Tm (supervision de estados de atencion.) Tj ET
+endstream
+endobj
+21 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 20 0 R >>
+endobj
+xref
+0 22
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000169 00000 n 
+0000000266 00000 n 
+0000000368 00000 n 
+0000000463 00000 n 
+0000003682 00000 n 
+0000003834 00000 n 
+0000006981 00000 n 
+0000007133 00000 n 
+0000010078 00000 n 
+0000010232 00000 n 
+0000013174 00000 n 
+0000013328 00000 n 
+0000016095 00000 n 
+0000016249 00000 n 
+0000019652 00000 n 
+0000019806 00000 n 
+0000022949 00000 n 
+0000023103 00000 n 
+0000024719 00000 n 
+trailer
+<< /Size 22 /Root 1 0 R >>
+startxref
+24873
+%%EOF

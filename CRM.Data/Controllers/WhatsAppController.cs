@@ -1,7 +1,8 @@
-using CRM.Data.Services;
+﻿using CRM.Data.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Cryptography;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 
@@ -15,29 +16,35 @@ namespace CRM.Data.Controllers
         private readonly WhatsAppService _whatsappService;
         private readonly WhatsAppCloudApiService _whatsAppCloudApiService;
         private readonly CloudinaryStorageService _storage;
+        private readonly IWebHostEnvironment _environment;
         private readonly IConfiguration _configuration;
+        private readonly SocialIntegrationService _socialIntegrations;
         private readonly ILogger<WhatsAppController> _logger;
 
         public WhatsAppController(
             WhatsAppService whatsappService,
             WhatsAppCloudApiService whatsAppCloudApiService,
             CloudinaryStorageService storage,
+            IWebHostEnvironment environment,
             IConfiguration configuration,
+            SocialIntegrationService socialIntegrations,
             ILogger<WhatsAppController> logger)
         {
             _whatsappService = whatsappService;
             _whatsAppCloudApiService = whatsAppCloudApiService;
             _storage = storage;
+            _environment = environment;
             _configuration = configuration;
+            _socialIntegrations = socialIntegrations;
             _logger = logger;
         }
 
 
         // =========================================================
-        // VERIFICACIÓN DEL WEBHOOK DE META
+        // VERIFICACIÃ“N DEL WEBHOOK DE META
         // =========================================================
         //
-        // Meta llamará a este endpoint cuando configuremos
+        // Meta llamarÃ¡ a este endpoint cuando configuremos
         // el webhook.
         //
         // URL:
@@ -53,10 +60,11 @@ namespace CRM.Data.Controllers
             [FromQuery(Name = "hub.challenge")] string? challenge)
         {
             _logger.LogInformation(
-                "Solicitud de verificación de webhook recibida."
+                "Solicitud de verificaciÃ³n de webhook recibida."
             );
 
             string? tokenConfigurado =
+                _socialIntegrations.GetConfiguredValue("WhatsApp:WebhookVerifyToken") ??
                 _configuration["WhatsApp:WebhookVerifyToken"];
 
             if (
@@ -73,7 +81,7 @@ namespace CRM.Data.Controllers
             }
 
             _logger.LogWarning(
-                "Falló la verificación del webhook de WhatsApp."
+                "FallÃ³ la verificaciÃ³n del webhook de WhatsApp."
             );
 
             return Forbid();
@@ -84,7 +92,7 @@ namespace CRM.Data.Controllers
         // WEBHOOK DE META
         // =========================================================
         //
-        // Meta enviará aquí los mensajes recibidos.
+        // Meta enviarÃ¡ aquÃ­ los mensajes recibidos.
         //
         // POST /api/whatsapp/webhook
         //
@@ -114,7 +122,7 @@ namespace CRM.Data.Controllers
 
 
                 // -------------------------------------------------
-                // Validar estructura básica
+                // Validar estructura bÃ¡sica
                 // -------------------------------------------------
 
                 if (!payload.TryGetProperty("entry", out JsonElement entry))
@@ -160,6 +168,22 @@ namespace CRM.Data.Controllers
 
 
                         // -------------------------------------------------
+                        // statuses (acuses de recibo: enviado/entregado/
+                        // leÃ­do/fallido de nuestros mensajes salientes)
+                        // -------------------------------------------------
+
+                        if (value.TryGetProperty(
+                                "statuses",
+                                out JsonElement statuses))
+                        {
+                            foreach (JsonElement statusItem in statuses.EnumerateArray())
+                            {
+                                await ProcesarEstadoMensajeMeta(statusItem);
+                            }
+                        }
+
+
+                        // -------------------------------------------------
                         // messages
                         // -------------------------------------------------
 
@@ -167,7 +191,7 @@ namespace CRM.Data.Controllers
                                 "messages",
                                 out JsonElement messages))
                         {
-                            // Puede ser una notificación que no contiene
+                            // Puede ser una notificaciÃ³n que no contiene
                             // un mensaje de cliente.
                             continue;
                         }
@@ -241,7 +265,7 @@ namespace CRM.Data.Controllers
                 );
 
                 // En caso de error interno devolvemos 500.
-                // Así podemos detectar el problema durante desarrollo.
+                // AsÃ­ podemos detectar el problema durante desarrollo.
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
                     new
@@ -279,7 +303,7 @@ namespace CRM.Data.Controllers
 
 
                 // -------------------------------------------------
-                // TELÉFONO DEL CLIENTE
+                // TELÃ‰FONO DEL CLIENTE
                 // -------------------------------------------------
 
                 string? telefono = null;
@@ -295,7 +319,7 @@ namespace CRM.Data.Controllers
                 if (string.IsNullOrWhiteSpace(telefono))
                 {
                     _logger.LogWarning(
-                        "Mensaje recibido sin número de teléfono."
+                        "Mensaje recibido sin nÃºmero de telÃ©fono."
                     );
 
                     return;
@@ -348,26 +372,33 @@ namespace CRM.Data.Controllers
                     }
                     else
                     {
-                        var mediaFile = await _whatsAppCloudApiService.DownloadMediaAsync(mediaId);
-                        var fileName = ObtenerNombreArchivo(message, tipo, mediaFile.ContentType, mediaId);
-                        await using var stream = new MemoryStream(mediaFile.Content);
-                        var formFile = new FormFile(stream, 0, mediaFile.Content.Length, "archivo", fileName)
+                        try
                         {
-                            Headers = new HeaderDictionary(),
-                            ContentType = mediaFile.ContentType
-                        };
-                        var upload = await _storage.UploadAsync(formFile, "crm-hpd");
-                        texto = JsonSerializer.Serialize(new
+                            var mediaFile = await _whatsAppCloudApiService.DownloadMediaAsync(mediaId);
+                            var fileName = ObtenerNombreArchivo(message, tipo, mediaFile.ContentType, mediaId);
+                            var upload = await GuardarArchivoEntranteAsync(mediaFile, fileName);
+                            texto = JsonSerializer.Serialize(new
+                            {
+                                nombre = fileName,
+                                url = upload.SecureUrl,
+                                mimeType = mediaFile.ContentType,
+                                tamano = mediaFile.Content.Length,
+                                publicId = upload.PublicId
+                            });
+                            tipoGuardado = tipo.Equals("image", StringComparison.OrdinalIgnoreCase)
+                                ? "image"
+                                : "document";
+                        }
+                        catch (Exception ex)
                         {
-                            nombre = fileName,
-                            url = upload.SecureUrl,
-                            mimeType = mediaFile.ContentType,
-                            tamano = mediaFile.Content.Length,
-                            publicId = upload.PublicId
-                        });
-                        tipoGuardado = tipo.Equals("image", StringComparison.OrdinalIgnoreCase)
-                            ? "image"
-                            : "document";
+                            _logger.LogError(
+                                ex,
+                                "No se pudo procesar el archivo entrante de WhatsApp. Tipo: {Tipo}, MediaId: {MediaId}",
+                                tipo,
+                                mediaId);
+                            texto = $"[No se pudo descargar el archivo de WhatsApp. Tipo: {tipo}]";
+                            tipoGuardado = "text";
+                        }
                     }
                 }
                 else
@@ -393,8 +424,8 @@ namespace CRM.Data.Controllers
 
                 _logger.LogInformation(
                     "Mensaje de WhatsApp procesado. " +
-                    "Conversación: {ConversacionId}, " +
-                    "Teléfono: {Telefono}",
+                    "ConversaciÃ³n: {ConversacionId}, " +
+                    "TelÃ©fono: {Telefono}",
                     conversacionId,
                     telefono
                 );
@@ -410,12 +441,67 @@ namespace CRM.Data.Controllers
             }
         }
 
+        // =========================================================
+        // PROCESAR ACUSE DE ESTADO (statuses) DE META
+        // =========================================================
+        //
+        // Meta manda aquÃ­ sent / delivered / read / failed para cada
+        // mensaje saliente que enviamos, identificado por su
+        // whatsappId (message.id). Actualizamos el campo c_estado
+        // del mensaje correspondiente para pintar los checks en el
+        // chat (âœ“ enviado, âœ“âœ“ entregado, âœ“âœ“ azul leÃ­do, âœ— fallido).
+        //
+        // =========================================================
+
+        private async Task ProcesarEstadoMensajeMeta(JsonElement statusItem)
+        {
+            try
+            {
+                string? whatsappId = statusItem.TryGetProperty("id", out var idProp)
+                    ? idProp.GetString()
+                    : null;
+
+                string? estadoMeta = statusItem.TryGetProperty("status", out var statusProp)
+                    ? statusProp.GetString()
+                    : null;
+
+                if (string.IsNullOrWhiteSpace(whatsappId) || string.IsNullOrWhiteSpace(estadoMeta))
+                {
+                    return;
+                }
+
+                string? detalleError = null;
+
+                if (estadoMeta.Equals("failed", StringComparison.OrdinalIgnoreCase) &&
+                    statusItem.TryGetProperty("errors", out var errors))
+                {
+                    var primerError = errors.EnumerateArray().FirstOrDefault();
+                    if (primerError.ValueKind != JsonValueKind.Undefined &&
+                        primerError.TryGetProperty("title", out var titulo))
+                    {
+                        detalleError = titulo.GetString();
+                    }
+                }
+
+                await _whatsappService.ActualizarEstadoMensajeAsync(
+                    whatsappId,
+                    estadoMeta,
+                    detalleError);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Error procesando acuse de estado (statuses) de WhatsApp.");
+            }
+        }
+
         private bool ValidarFirmaWebhook(string rawBody)
         {
             var appSecret = _configuration["WhatsApp:AppSecret"];
             if (string.IsNullOrWhiteSpace(appSecret))
             {
-                _logger.LogWarning("WhatsApp:AppSecret no está configurado; se omite la validación de firma para pruebas locales.");
+                _logger.LogWarning("WhatsApp:AppSecret no estÃ¡ configurado; se omite la validaciÃ³n de firma para pruebas locales.");
                 return true;
             }
 
@@ -452,209 +538,128 @@ namespace CRM.Data.Controllers
             return $"whatsapp-{mediaId}{extension}";
         }
 
-
-        // =========================================================
-        // PRUEBA MANUAL
-        // =========================================================
-        //
-        // Este endpoint nos permite probar el CRM sin depender
-        // todavía de Meta.
-        //
-        // POST /api/whatsapp/test/mensaje
-        //
-        // =========================================================
-
-        [HttpPost("test/mensaje")]
-        [AllowAnonymous]
-        public async Task<IActionResult> MensajePrueba(
-            [FromBody] MensajePruebaDto dto)
+        private async Task<CloudinaryUploadResult> GuardarArchivoEntranteAsync(
+            WhatsAppMediaDownload mediaFile,
+            string fileName)
         {
-            if (string.IsNullOrWhiteSpace(dto.Telefono))
+            await using var stream = new MemoryStream(mediaFile.Content);
+            var formFile = new FormFile(stream, 0, mediaFile.Content.Length, "archivo", fileName)
             {
-                return BadRequest(
-                    "El teléfono es obligatorio."
-                );
+                Headers = new HeaderDictionary(),
+                ContentType = mediaFile.ContentType
+            };
+
+            try
+            {
+                return await _storage.UploadAsync(formFile, "crm-hpd");
             }
-
-            if (string.IsNullOrWhiteSpace(dto.Mensaje))
+            catch (Exception ex)
             {
-                return BadRequest(
-                    "El mensaje es obligatorio."
-                );
+                _logger.LogWarning(
+                    ex,
+                    "Cloudinary no pudo guardar el archivo entrante. Se usará almacenamiento local temporal. Archivo: {FileName}",
+                    fileName);
+
+                var safeFileName = $"{Path.GetFileNameWithoutExtension(fileName)}-{Guid.NewGuid():N}{Path.GetExtension(fileName)}";
+                var relativeFolder = Path.Combine("uploads", "whatsapp", DateTime.UtcNow.ToString("yyyyMMdd"));
+                var absoluteFolder = Path.Combine(_environment.WebRootPath, relativeFolder);
+                Directory.CreateDirectory(absoluteFolder);
+
+                var absolutePath = Path.Combine(absoluteFolder, safeFileName);
+                await System.IO.File.WriteAllBytesAsync(absolutePath, mediaFile.Content);
+
+                var relativeUrl = "/" + Path.Combine(relativeFolder, safeFileName).Replace('\\', '/');
+                return new CloudinaryUploadResult(
+                    relativeUrl,
+                    $"local/{safeFileName}",
+                    mediaFile.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase) ? "image" : "raw");
             }
-
-
-            long conversacionId =
-                await _whatsappService
-                .ProcesarMensajeEntranteAsync(
-                    dto.Telefono,
-                    dto.Nombre,
-                    dto.Mensaje,
-                    dto.Tipo ?? "text",
-                    dto.WhatsappId
-                );
-
-
-            return Ok(new
-            {
-                success = true,
-                conversacionId
-            });
         }
 
 
         // =========================================================
-        // HISTORIAL
-        // =========================================================
 
-        [HttpGet("test/historial")]
-        [AllowAnonymous]
-        public async Task<IActionResult> Historial(
-            [FromQuery] string telefono)
+        [HttpGet("conversaciones/{conversacionId:long}")]
+        public async Task<IActionResult> Conversacion(long conversacionId)
         {
-            if (string.IsNullOrWhiteSpace(telefono))
-            {
-                return BadRequest(
-                    "El teléfono es obligatorio."
-                );
-            }
-
-
-            var historial =
-                await _whatsappService
-                .ObtenerHistorialPorTelefonoAsync(
-                    telefono
-                );
-
-
-            return Ok(historial);
-        }
-
-
-        // =========================================================
-        // CONVERSACIÓN
-        // =========================================================
-
-        [HttpGet("test/conversacion/{conversacionId:long}")]
-        public async Task<IActionResult> Conversacion(
-            long conversacionId)
-        {
-            var resultado =
-                await _whatsappService
-                .ObtenerConversacionAsync(
-                    conversacionId
-                );
-
-
+            var resultado = await _whatsappService.ObtenerConversacionAsync(conversacionId);
             if (resultado == null)
             {
-                return NotFound(
-                    new
-                    {
-                        message = "Conversación no encontrada."
-                    }
-                );
+                return NotFound(new { message = "Conversacion no encontrada." });
             }
-
 
             return Ok(resultado);
         }
 
-
-        // =========================================================
-        // TODAS LAS CONVERSACIONES
-        // =========================================================
-
-        [HttpGet("test/todas")]
+        [HttpGet("conversaciones")]
         public async Task<IActionResult> Todas()
         {
-            var conversaciones =
-                await _whatsappService
-                .ObtenerTodasConversacionesAsync();
-
-
+            var conversaciones = await _whatsappService.ObtenerTodasConversacionesAsync();
             return Ok(conversaciones);
         }
 
-
-        // =========================================================
-        // RESPUESTA DEL ASESOR
-        // =========================================================
-        //
-        // El envío a Meta se activa con WhatsApp:SendMessagesToMeta=true.
-        // =========================================================
-
-        [HttpPost("test/enviar")]
-        public async Task<IActionResult> EnviarMensaje(
-            [FromBody] EnviarMensajeDto dto)
+        [HttpPost("conversaciones/{conversacionId:long}/escribiendo")]
+        public async Task<IActionResult> MostrarEscribiendo(long conversacionId)
         {
-            if (dto.ConversacionId <= 0)
+            var enviado = await _whatsappService.MostrarEscribiendoAsync(conversacionId);
+            return Ok(new { success = enviado });
+        }
+
+        [HttpPost("conversaciones/{conversacionId:long}/mensajes")]
+        public async Task<IActionResult> EnviarMensaje(long conversacionId, [FromBody] EnviarMensajeDto dto)
+        {
+            if (conversacionId <= 0)
             {
-                return BadRequest(
-                    "La conversación es obligatoria."
-                );
+                return BadRequest("La conversacion es obligatoria.");
             }
 
             if (string.IsNullOrWhiteSpace(dto.Mensaje))
             {
-                return BadRequest(
-                    "El mensaje es obligatorio."
-                );
+                return BadRequest("El mensaje es obligatorio.");
             }
 
+            var mensajeId = await _whatsappService.ProcesarMensajeSalienteAsync(
+                conversacionId,
+                dto.Mensaje,
+                dto.UsuarioId,
+                dto.Tipo ?? "text",
+                null);
 
-            long mensajeId =
-                await _whatsappService
-                .ProcesarMensajeSalienteAsync(
-                    dto.ConversacionId,
-                    dto.Mensaje,
-                    dto.UsuarioId,
-                    dto.Tipo ?? "text",
-                    dto.WhatsappId
-                );
+            return Ok(new { success = true, mensajeId });
+        }
 
-
-            return Ok(new
+        [HttpPut("conversaciones/{conversacionId:long}/bot")]
+        public async Task<IActionResult> CambiarEstadoBot(long conversacionId, [FromBody] CambiarBotDto dto)
+        {
+            if (conversacionId <= 0)
             {
-                success = true,
-                mensajeId
-            });
+                return BadRequest("La conversacion es obligatoria.");
+            }
+
+            var usuarioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id)
+                ? id
+                : (int?)null;
+
+            await _whatsappService.CambiarEstadoBotConversacionAsync(
+                conversacionId,
+                dto.Estado ?? "PAUSADO",
+                usuarioId);
+
+            return Ok(new { success = true, estado = dto.Estado });
         }
     }
 
-
-    // =========================================================
-    // DTO MENSAJE DE PRUEBA
-    // =========================================================
-
-    public class MensajePruebaDto
-    {
-        public string Telefono { get; set; } = "";
-
-        public string? Nombre { get; set; }
-
-        public string Mensaje { get; set; } = "";
-
-        public string? Tipo { get; set; }
-
-        public string? WhatsappId { get; set; }
-    }
-
-
-    // =========================================================
-    // DTO MENSAJE SALIENTE
-    // =========================================================
-
     public class EnviarMensajeDto
     {
-        public long ConversacionId { get; set; }
-
         public string Mensaje { get; set; } = "";
 
         public long? UsuarioId { get; set; }
 
         public string? Tipo { get; set; }
+    }
 
-        public string? WhatsappId { get; set; }
+    public class CambiarBotDto
+    {
+        public string? Estado { get; set; }
     }
 }
