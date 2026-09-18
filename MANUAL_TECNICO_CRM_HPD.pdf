@@ -4,7 +4,7 @@
 << /Type /Catalog /Pages 2 0 R >>
 endobj
 2 0 obj
-<< /Type /Pages /Kids [7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R 19 0 R 21 0 R 23 0 R 25 0 R 27 0 R 29 0 R 31 0 R] /Count 13 >>
+<< /Type /Pages /Kids [7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R 19 0 R 21 0 R 23 0 R 25 0 R 27 0 R 29 0 R 31 0 R 33 0 R 35 0 R 37 0 R] /Count 16 >>
 endobj
 3 0 obj
 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
@@ -61,7 +61,7 @@ endobj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 6 0 R >>
 endobj
 8 0 obj
-<< /Length 3331 >>
+<< /Length 3421 >>
 stream
 BT /F2 11.50 Tf 1 0 0 1 51.02 790.87 Tm (Asesor) Tj ET
 BT /F1 10.50 Tf 1 0 0 1 51.02 766.37 Tm (El asesor tiene una vista simple. Su trabajo principal es atender clientes y dar seguimiento.) Tj ET
@@ -97,548 +97,681 @@ BT /F1 10.50 Tf 1 0 0 1 61.02 205.87 Tm (- Oportunidades abiertas.) Tj ET
 BT /F1 10.50 Tf 1 0 0 1 61.02 190.37 Tm (- Monto comercial abierto.) Tj ET
 BT /F1 10.50 Tf 1 0 0 1 61.02 174.87 Tm (- Rendimiento por canal.) Tj ET
 BT /F1 10.50 Tf 1 0 0 1 61.02 159.37 Tm (- Carga de asesores.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 138.87 Tm (Uso recomendado:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 116.37 Tm (- Administrador: revision general del negocio.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 100.87 Tm (- Supervisor: seguimiento diario del equipo.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 85.37 Tm (- Asesor: no es su pantalla principal.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 143.87 Tm (- Estado de analiticas reales por canal.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 128.37 Tm (- Resultado tecnico por metrica de Meta.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 107.87 Tm (Uso recomendado:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 85.37 Tm (- Administrador: revision general del negocio.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 69.87 Tm (- Supervisor: seguimiento diario del equipo.) Tj ET
 endstream
 endobj
 9 0 obj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 8 0 R >>
 endobj
 10 0 obj
-<< /Length 3523 >>
+<< /Length 3964 >>
 stream
-BT /F2 14.00 Tf 1 0 0 1 51.02 790.87 Tm (6. Comunicaciones) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 761.87 Tm (Comunicaciones es el inbox del CRM.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 739.37 Tm (Sirve para:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 716.87 Tm (- Ver conversaciones.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 701.37 Tm (- Abrir un chat.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 685.87 Tm (- Leer historial.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 670.37 Tm (- Responder al cliente.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 654.87 Tm (- Ver si la conversacion requiere atencion.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 639.37 Tm (- Ver el canal: WhatsApp, Facebook, Instagram u otro canal preparado.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 623.87 Tm (- Pausar bot cuando interviene un asesor.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 608.37 Tm (- Adjuntar archivos permitidos.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 592.87 Tm (- Actualizar perfil si aplica para Meta.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 572.37 Tm (Estados comunes:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 549.87 Tm (- NUEVO: conversacion nueva.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 534.37 Tm (- ABIERTO: conversacion activa.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 518.87 Tm (- EN_ATENCION: un asesor la esta atendiendo.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 503.37 Tm (- ESPERANDO_CLIENTE: se espera respuesta del cliente.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 487.87 Tm (- COTIZACION_ENVIADA: se envio propuesta.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 472.37 Tm (- CERRADO: atencion terminada.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 456.87 Tm (- PERDIDO: oportunidad o caso perdido.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 441.37 Tm (- NO_RESPONDIO: el cliente no respondio.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 420.87 Tm (Para asesores:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 398.37 Tm (- Solo deben aparecer conversaciones permitidas o asignadas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 382.87 Tm (- Las conversaciones nuevas disponibles pueden tomarse para empezar la atencion.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 367.37 Tm (- Si responden una conversacion, queda pausado el bot para evitar respuestas automaticas fuera de) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 353.87 Tm (contexto.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 338.37 Tm (- Puede usar plantillas rapidas para acelerar mensajes frecuentes como saludo, catalogo, solicitud de) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 324.87 Tm (datos, seguimiento o cierre.) Tj ET
-BT /F2 14.00 Tf 1 0 0 1 51.02 300.37 Tm (7. Contactos) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 271.37 Tm (Contactos contiene la lista de clientes.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 248.87 Tm (Sirve para:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 226.37 Tm (- Buscar clientes.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 210.87 Tm (- Ver datos basicos.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 195.37 Tm (- Ver telefono, documento, email y canal de origen.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 179.87 Tm (- Abrir la ficha del cliente.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 164.37 Tm (- Ver etiquetas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 148.87 Tm (- Ver ultima conversacion.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 133.37 Tm (- Crear un contacto manual.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 112.87 Tm (Uso recomendado:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 90.37 Tm (- Revisar si un cliente ya existe antes de crear uno nuevo.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 74.87 Tm (- Mantener datos limpios.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 59.37 Tm (- No duplicar clientes con el mismo telefono.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Asesor: no es su pantalla principal.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 766.37 Tm (Que significan las metricas del Dashboard) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 741.87 Tm (El Dashboard mezcla dos tipos de datos:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 719.37 Tm (- Datos internos del CRM: contactos, conversaciones, mensajes, tareas, oportunidades, ventas y) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 705.87 Tm (carga de asesores.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 690.37 Tm (- Datos externos de plataformas: estadisticas que vienen desde APIs como Meta Graph API para) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 676.87 Tm (Facebook e Instagram.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 656.37 Tm (Los datos internos aparecen cuando el CRM registra actividad propia. Por ejemplo, si entra un mensaje,) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 642.87 Tm (se crea una conversacion, se asigna un asesor o se crea una oportunidad.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 620.37 Tm (Los datos externos dependen de que la plataforma entregue estadisticas por API. Si Meta no entrega) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 606.87 Tm (datos, el CRM no los inventa.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 580.37 Tm (Analiticas reales) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 555.87 Tm (La seccion "Analiticas reales" indica si cada canal esta listo para traer estadisticas externas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 533.37 Tm (Estados:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 510.87 Tm (- OPERATIVO: el canal esta funcionando para el tipo de dato mostrado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 495.37 Tm (- SIN_DATOS: la API respondio correctamente, pero devolvio cero en el rango consultado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 479.87 Tm (- NO_CONFIGURADO: falta una clave, token, pagina o identificador.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 464.37 Tm (- ERROR: la API rechazo la consulta por permiso, token, pagina o metrica.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 448.87 Tm (- PENDIENTE: el canal esta preparado, pero aun no tiene servicio real de analiticas conectado.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 424.37 Tm (Resultado por metrica de Meta) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 399.87 Tm (La seccion "Resultado por metrica de Meta" sirve para comprobar el dato real sin adivinar.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 377.37 Tm (Puede mostrar:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 354.87 Tm (- CON_DATOS: Meta devolvio un valor mayor que cero.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 339.37 Tm (- CERO: Meta acepto la metrica, pero devolvio 0 para el rango consultado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 323.87 Tm (- ERROR: Meta rechazo esa metrica especifica.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 308.37 Tm (- NO_CONFIGURADO: falta configurar token o ID para probarla.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 287.87 Tm (Facebook prueba metricas como vistas, alcance, interacciones y seguidores. Instagram prueba alcance,) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 274.37 Tm (visitas al perfil y clicks al sitio web.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 251.87 Tm (Si Facebook aparece como SIN_DATOS, no necesariamente esta mal configurado. Significa que Meta acepto) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 238.37 Tm (la consulta, pero no devolvio valores para ese periodo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 215.87 Tm (Si Instagram aparece como NO_CONFIGURADO, normalmente falta el token de insights de Page/Instagram) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 202.37 Tm (profesional. El token de Instagram Login usado para DMs no reemplaza ese token.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 175.87 Tm (6. Comunicaciones) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 146.87 Tm (Comunicaciones es el inbox del CRM.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 124.37 Tm (Sirve para:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 101.87 Tm (- Ver conversaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 86.37 Tm (- Abrir un chat.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 70.87 Tm (- Leer historial.) Tj ET
 endstream
 endobj
 11 0 obj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 10 0 R >>
 endobj
 12 0 obj
-<< /Length 3022 >>
+<< /Length 3588 >>
 stream
-BT /F1 10.50 Tf 1 0 0 1 51.02 790.87 Tm (Para asesores:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 768.37 Tm (- El backend limita los contactos visibles segun sus conversaciones asignadas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 752.87 Tm (- Si un asesor crea un contacto nuevo, el sistema crea una conversacion inicial asignada a el.) Tj ET
-BT /F2 14.00 Tf 1 0 0 1 51.02 728.37 Tm (8. Ficha del cliente) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 699.37 Tm (La ficha del cliente resume la informacion importante de un cliente en un solo lugar.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 676.87 Tm (Puede incluir:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 654.37 Tm (- Datos principales.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 638.87 Tm (- Conversaciones.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 623.37 Tm (- Notas internas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 607.87 Tm (- Tareas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 592.37 Tm (- Oportunidades.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 576.87 Tm (- Etiquetas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 561.37 Tm (- Actividad relacionada.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 540.87 Tm (Sirve para que el asesor entienda rapidamente el contexto antes de responder o vender, sin tener que) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 527.37 Tm (buscar informacion en varias pantallas.) Tj ET
-BT /F2 14.00 Tf 1 0 0 1 51.02 500.87 Tm (9. Notas internas) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 471.87 Tm (Las notas internas son comentarios privados del equipo.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 449.37 Tm (Sirven para:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 426.87 Tm (- Registrar contexto.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 411.37 Tm (- Dejar indicaciones para otro asesor.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 395.87 Tm (- Registrar acuerdos no visibles para el cliente.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 380.37 Tm (- Anotar detalles de seguimiento.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 359.87 Tm (Importante:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 337.37 Tm (- No son mensajes enviados al cliente.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 321.87 Tm (- No deben usarse para guardar claves, tokens o informacion sensible innecesaria.) Tj ET
-BT /F2 14.00 Tf 1 0 0 1 51.02 297.37 Tm (10. Tareas) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 268.37 Tm (Tareas permite programar seguimientos.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 245.87 Tm (Ejemplos:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 223.37 Tm (- Llamar manana.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 207.87 Tm (- Enviar cotizacion.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 192.37 Tm (- Confirmar pago.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 176.87 Tm (- Revisar stock.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 161.37 Tm (- Dar seguimiento a una oportunidad.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 140.87 Tm (Campos principales:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 118.37 Tm (- Titulo.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 102.87 Tm (- Descripcion.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 87.37 Tm (- Fecha de vencimiento.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 71.87 Tm (- Cliente relacionado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Responder al cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- Ver si la conversacion requiere atencion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 759.87 Tm (- Ver el canal: WhatsApp, Facebook, Instagram u otro canal preparado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 744.37 Tm (- Pausar bot cuando interviene un asesor.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 728.87 Tm (- Adjuntar archivos permitidos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 713.37 Tm (- Actualizar perfil si aplica para Meta.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 692.87 Tm (Estados comunes:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 670.37 Tm (- NUEVO: conversacion nueva.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 654.87 Tm (- ABIERTO: conversacion activa.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 639.37 Tm (- EN_ATENCION: un asesor la esta atendiendo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 623.87 Tm (- ESPERANDO_CLIENTE: se espera respuesta del cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 608.37 Tm (- COTIZACION_ENVIADA: se envio propuesta.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 592.87 Tm (- CERRADO: atencion terminada.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 577.37 Tm (- PERDIDO: oportunidad o caso perdido.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 561.87 Tm (- NO_RESPONDIO: el cliente no respondio.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 541.37 Tm (Para asesores:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 518.87 Tm (- Solo deben aparecer conversaciones permitidas o asignadas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 503.37 Tm (- Las conversaciones nuevas disponibles pueden tomarse para empezar la atencion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 487.87 Tm (- Si responden una conversacion, queda pausado el bot para evitar respuestas automaticas fuera de) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 474.37 Tm (contexto.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 458.87 Tm (- Puede usar plantillas rapidas para acelerar mensajes frecuentes como saludo, catalogo, solicitud de) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 445.37 Tm (datos, seguimiento o cierre.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 420.87 Tm (Plantillas rapidas dentro de Comunicaciones) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 396.37 Tm (Cuando una conversacion esta abierta, el CRM muestra una fila compacta de botones con respuestas) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 382.87 Tm (frecuentes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 360.37 Tm (Uso:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 337.87 Tm (- El asesor hace clic en una plantilla.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 322.37 Tm (- El texto se coloca en el campo de mensaje.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 306.87 Tm (- El asesor revisa o ajusta el texto.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 291.37 Tm (- Luego envia manualmente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 270.87 Tm (Importante:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 248.37 Tm (- La plantilla no se envia sola.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 232.87 Tm (- No reemplaza el criterio del asesor.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 217.37 Tm (- Sirve para ahorrar tiempo y mantener respuestas consistentes.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 192.87 Tm (7. Contactos) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 163.87 Tm (Contactos contiene la lista de clientes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 141.37 Tm (Sirve para:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 118.87 Tm (- Buscar clientes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 103.37 Tm (- Ver datos basicos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 87.87 Tm (- Ver telefono, documento, email y canal de origen.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 72.37 Tm (- Abrir la ficha del cliente.) Tj ET
 endstream
 endobj
 13 0 obj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 12 0 R >>
 endobj
 14 0 obj
-<< /Length 3059 >>
+<< /Length 3096 >>
 stream
-BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Conversacion relacionada.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- Oportunidad relacionada.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 759.87 Tm (- Asesor asignado.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 744.37 Tm (- Estado.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 723.87 Tm (Estados:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 701.37 Tm (- PENDIENTE.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 685.87 Tm (- VENCIDA, cuando ya paso su fecha.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 670.37 Tm (- COMPLETADA.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 654.87 Tm (- CANCELADA.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 634.37 Tm (Para asesores:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 611.87 Tm (- Debe funcionar como lista diaria de pendientes.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 596.37 Tm (- El backend limita las tareas a las que le pertenecen o estan vinculadas a sus) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 582.87 Tm (clientes/conversaciones.) Tj ET
-BT /F2 14.00 Tf 1 0 0 1 51.02 558.37 Tm (11. Ventas) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 529.37 Tm (Ventas maneja oportunidades comerciales.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 506.87 Tm (Sirve para:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 484.37 Tm (- Crear oportunidades.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 468.87 Tm (- Registrar monto.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 453.37 Tm (- Asignar etapa.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 437.87 Tm (- Estimar cierre.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 422.37 Tm (- Marcar oportunidades ganadas o perdidas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 401.87 Tm (Etapas:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 379.37 Tm (- NUEVA.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 363.87 Tm (- CALIFICADA.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 348.37 Tm (- PROPUESTA.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 332.87 Tm (- NEGOCIACION.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 317.37 Tm (- GANADA.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 301.87 Tm (- PERDIDA.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 281.37 Tm (Uso recomendado:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 258.87 Tm (- Usar Ventas para oportunidades reales.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 243.37 Tm (- No confundir Pipeline con Ventas: Pipeline muestra estados de atencion; Ventas muestra) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 229.87 Tm (oportunidades comerciales.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 209.37 Tm (Para asesores:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 186.87 Tm (- Pueden trabajar oportunidades relacionadas con sus clientes o conversaciones.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 171.37 Tm (- Deben registrar una oportunidad cuando exista una posibilidad real de venta, no por cada mensaje) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 157.87 Tm (recibido.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 142.37 Tm (- Deben cerrar como GANADA o PERDIDA para que los reportes sean utiles.) Tj ET
-BT /F2 14.00 Tf 1 0 0 1 51.02 117.87 Tm (12. Pipeline) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 88.87 Tm (Pipeline muestra el estado de las conversaciones y la atencion.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 66.37 Tm (Sirve para:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Ver etiquetas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- Ver ultima conversacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 759.87 Tm (- Crear un contacto manual.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 739.37 Tm (Uso recomendado:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 716.87 Tm (- Revisar si un cliente ya existe antes de crear uno nuevo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 701.37 Tm (- Mantener datos limpios.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 685.87 Tm (- No duplicar clientes con el mismo telefono.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 665.37 Tm (Para asesores:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 642.87 Tm (- El backend limita los contactos visibles segun sus conversaciones asignadas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 627.37 Tm (- Si un asesor crea un contacto nuevo, el sistema crea una conversacion inicial asignada a el.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 602.87 Tm (8. Ficha del cliente) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 573.87 Tm (La ficha del cliente resume la informacion importante de un cliente en un solo lugar.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 551.37 Tm (Puede incluir:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 528.87 Tm (- Datos principales.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 513.37 Tm (- Conversaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 497.87 Tm (- Notas internas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 482.37 Tm (- Tareas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 466.87 Tm (- Oportunidades.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 451.37 Tm (- Etiquetas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 435.87 Tm (- Actividad relacionada.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 415.37 Tm (Sirve para que el asesor entienda rapidamente el contexto antes de responder o vender, sin tener que) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 401.87 Tm (buscar informacion en varias pantallas.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 375.37 Tm (9. Notas internas) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 346.37 Tm (Las notas internas son comentarios privados del equipo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 323.87 Tm (Sirven para:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 301.37 Tm (- Registrar contexto.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 285.87 Tm (- Dejar indicaciones para otro asesor.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 270.37 Tm (- Registrar acuerdos no visibles para el cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 254.87 Tm (- Anotar detalles de seguimiento.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 234.37 Tm (Importante:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 211.87 Tm (- No son mensajes enviados al cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 196.37 Tm (- No deben usarse para guardar claves, tokens o informacion sensible innecesaria.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 171.87 Tm (10. Tareas) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 142.87 Tm (Tareas permite programar seguimientos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 120.37 Tm (Ejemplos:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 97.87 Tm (- Llamar manana.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 82.37 Tm (- Enviar cotizacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 66.87 Tm (- Confirmar pago.) Tj ET
 endstream
 endobj
 15 0 obj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 14 0 R >>
 endobj
 16 0 obj
-<< /Length 3204 >>
+<< /Length 2983 >>
 stream
-BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Ver casos nuevos.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- Ver conversaciones en atencion.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 759.87 Tm (- Identificar casos cerrados o perdidos.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 744.37 Tm (- Mover tarjetas entre etapas con drag and drop.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 728.87 Tm (- Supervisar asignaciones.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 713.37 Tm (- Revisar la carga de trabajo.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 692.87 Tm (Uso recomendado:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 670.37 Tm (- Supervisor y administrador lo usan para control operativo completo.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 654.87 Tm (- El asesor puede usar Pipeline como tablero filtrado de sus casos y conversaciones nuevas sin) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 641.37 Tm (asignar, no como vista global de toda la empresa.) Tj ET
-BT /F2 14.00 Tf 1 0 0 1 51.02 616.87 Tm (13. Reportes) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 587.87 Tm (Reportes muestra informacion agregada del CRM.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 565.37 Tm (Permite responder:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 542.87 Tm (- Cuantos clientes existen.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 527.37 Tm (- Cuantas conversaciones entraron.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 511.87 Tm (- Cuantos mensajes se enviaron o recibieron.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 496.37 Tm (- Cuantas tareas estan pendientes.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 480.87 Tm (- Cuantas oportunidades estan abiertas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 465.37 Tm (- Cuanto monto comercial hay.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 449.87 Tm (- Que asesor tiene mas carga.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 434.37 Tm (- Que canal genera mas actividad.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 413.87 Tm (Uso recomendado:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 391.37 Tm (- Administrador: revision estrategica.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 375.87 Tm (- Supervisor: seguimiento del equipo.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 360.37 Tm (- Asesor: normalmente no requiere reportes generales.) Tj ET
-BT /F2 14.00 Tf 1 0 0 1 51.02 335.87 Tm (14. Comentarios) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 306.87 Tm (Comentarios esta preparado para centralizar interacciones tipo comentario de redes sociales.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 284.37 Tm (Sirve para:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 261.87 Tm (- Ver comentarios entrantes.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 246.37 Tm (- Identificar de que canal vienen.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 230.87 Tm (- Relacionarlos con cliente/conversacion.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 210.37 Tm (Estado actual:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 187.87 Tm (- Preparado para Facebook/Instagram segun permisos y webhooks reales de Meta.) Tj ET
-BT /F2 14.00 Tf 1 0 0 1 51.02 163.37 Tm (15. Actividad) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 134.37 Tm (Actividad muestra acciones realizadas dentro del sistema.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 111.87 Tm (Ejemplos:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 89.37 Tm (- Creacion de cliente.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 73.87 Tm (- Cambio de estado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Revisar stock.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- Dar seguimiento a una oportunidad.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 754.87 Tm (Campos principales:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 732.37 Tm (- Titulo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 716.87 Tm (- Descripcion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 701.37 Tm (- Fecha de vencimiento.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 685.87 Tm (- Cliente relacionado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 670.37 Tm (- Conversacion relacionada.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 654.87 Tm (- Oportunidad relacionada.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 639.37 Tm (- Asesor asignado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 623.87 Tm (- Estado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 603.37 Tm (Estados:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 580.87 Tm (- PENDIENTE.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 565.37 Tm (- VENCIDA, cuando ya paso su fecha.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 549.87 Tm (- COMPLETADA.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 534.37 Tm (- CANCELADA.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 513.87 Tm (Para asesores:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 491.37 Tm (- Debe funcionar como lista diaria de pendientes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 475.87 Tm (- El backend limita las tareas a las que le pertenecen o estan vinculadas a sus) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 462.37 Tm (clientes/conversaciones.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 437.87 Tm (11. Ventas) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 408.87 Tm (Ventas maneja oportunidades comerciales.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 386.37 Tm (Sirve para:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 363.87 Tm (- Crear oportunidades.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 348.37 Tm (- Registrar monto.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 332.87 Tm (- Asignar etapa.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 317.37 Tm (- Estimar cierre.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 301.87 Tm (- Marcar oportunidades ganadas o perdidas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 281.37 Tm (Etapas:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 258.87 Tm (- NUEVA.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 243.37 Tm (- CALIFICADA.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 227.87 Tm (- PROPUESTA.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 212.37 Tm (- NEGOCIACION.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 196.87 Tm (- GANADA.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 181.37 Tm (- PERDIDA.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 160.87 Tm (Uso recomendado:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 138.37 Tm (- Usar Ventas para oportunidades reales.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 122.87 Tm (- No confundir Pipeline con Ventas: Pipeline muestra estados de atencion; Ventas muestra) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 109.37 Tm (oportunidades comerciales.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 88.87 Tm (Para asesores:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 66.37 Tm (- Pueden trabajar oportunidades relacionadas con sus clientes o conversaciones.) Tj ET
 endstream
 endobj
 17 0 obj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 16 0 R >>
 endobj
 18 0 obj
-<< /Length 2997 >>
+<< /Length 3397 >>
 stream
-BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Reasignacion de conversacion.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- Creacion de oportunidad.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 759.87 Tm (- Eventos de integracion.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 739.37 Tm (Uso recomendado:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 716.87 Tm (- Administrador y supervisor.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 701.37 Tm (- Sirve para auditoria y trazabilidad.) Tj ET
-BT /F2 14.00 Tf 1 0 0 1 51.02 676.87 Tm (16. Fallos) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 647.87 Tm (Fallos muestra problemas detectados en integraciones o mensajes.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 625.37 Tm (Puede mostrar:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 602.87 Tm (- Mensajes no enviados.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 587.37 Tm (- Errores de API.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 571.87 Tm (- Eventos de webhook fallidos.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 556.37 Tm (- Respuestas locales cuando el envio real no esta activo.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 535.87 Tm (Uso recomendado:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 513.37 Tm (- Administrador y supervisor.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 497.87 Tm (- No es una vista normal de asesor.) Tj ET
-BT /F2 14.00 Tf 1 0 0 1 51.02 473.37 Tm (17. Plantillas rapidas) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 444.37 Tm (Las plantillas rapidas son respuestas manuales para asesores.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 421.87 Tm (Sirven para:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 399.37 Tm (- Responder mas rapido.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 383.87 Tm (- Mantener mensajes consistentes.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 368.37 Tm (- Evitar escribir lo mismo muchas veces.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 352.87 Tm (- Usar textos frecuentes sin que el bot los envie automaticamente.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 332.37 Tm (Ejemplos:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 309.87 Tm (- Saludo.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 294.37 Tm (- Envio de catalogo.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 278.87 Tm (- Solicitud de datos para cotizar.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 263.37 Tm (- Seguimiento.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 247.87 Tm (- Cierre.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 227.37 Tm (Importante:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 204.87 Tm (- Las plantillas rapidas no reemplazan al asesor.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 189.37 Tm (- El asesor elige la plantilla, la revisa y luego envia el mensaje.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 173.87 Tm (- Se administran desde Bot y derivaciones, pero son distintas a las plantillas del bot.) Tj ET
-BT /F2 14.00 Tf 1 0 0 1 51.02 149.37 Tm (18. Bot) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 120.37 Tm (Bot permite configurar respuestas automaticas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 97.87 Tm (Sirve para:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 75.37 Tm (- Definir mensaje de bienvenida.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 59.87 Tm (- Crear opciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Deben registrar una oportunidad cuando exista una posibilidad real de venta, no por cada mensaje) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 777.37 Tm (recibido.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 761.87 Tm (- Deben cerrar como GANADA o PERDIDA para que los reportes sean utiles.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 737.37 Tm (12. Pipeline) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 708.37 Tm (Pipeline muestra el estado de las conversaciones y la atencion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 685.87 Tm (Sirve para:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 663.37 Tm (- Ver casos nuevos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 647.87 Tm (- Ver conversaciones en atencion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 632.37 Tm (- Identificar casos cerrados o perdidos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 616.87 Tm (- Mover tarjetas entre etapas con drag and drop.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 601.37 Tm (- Supervisar asignaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 585.87 Tm (- Revisar la carga de trabajo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 565.37 Tm (Uso recomendado:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 542.87 Tm (- Supervisor y administrador lo usan para control operativo completo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 527.37 Tm (- El asesor puede usar Pipeline como tablero filtrado de sus casos y conversaciones nuevas sin) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 513.87 Tm (asignar, no como vista global de toda la empresa.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 489.37 Tm (13. Reportes) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 460.37 Tm (Reportes muestra informacion agregada del CRM.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 437.87 Tm (Permite responder:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 415.37 Tm (- Cuantos clientes existen.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 399.87 Tm (- Cuantas conversaciones entraron.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 384.37 Tm (- Cuantos mensajes se enviaron o recibieron.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 368.87 Tm (- Cuantas tareas estan pendientes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 353.37 Tm (- Cuantas oportunidades estan abiertas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 337.87 Tm (- Cuanto monto comercial hay.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 322.37 Tm (- Que asesor tiene mas carga.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 306.87 Tm (- Que canal genera mas actividad.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 286.37 Tm (Uso recomendado:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 263.87 Tm (- Administrador: revision estrategica.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 248.37 Tm (- Supervisor: seguimiento del equipo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 232.87 Tm (- Asesor: normalmente no requiere reportes generales.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 208.37 Tm (14. Comentarios) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 179.37 Tm (Comentarios esta preparado para centralizar interacciones tipo comentario de redes sociales.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 156.87 Tm (Sirve para:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 134.37 Tm (- Ver comentarios entrantes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 118.87 Tm (- Identificar de que canal vienen.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 103.37 Tm (- Relacionarlos con cliente/conversacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 82.87 Tm (Estado actual:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 60.37 Tm (- Preparado para Facebook/Instagram segun permisos y webhooks reales de Meta.) Tj ET
 endstream
 endobj
 19 0 obj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 18 0 R >>
 endobj
 20 0 obj
-<< /Length 3049 >>
+<< /Length 3010 >>
 stream
-BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Definir respuestas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- Derivar a asesor.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 759.87 Tm (- Limitar respuestas automaticas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 739.37 Tm (Regla importante:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 716.87 Tm (- Cuando un asesor responde, el bot se pausa en esa conversacion.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 701.37 Tm (- Esto evita que el cliente reciba respuestas automaticas despues de que una persona ya tomo el) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 687.87 Tm (caso.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 672.37 Tm (- Las plantillas del bot son para automatizacion. Las plantillas rapidas son para respuestas manuales) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 658.87 Tm (del asesor.) Tj ET
-BT /F2 14.00 Tf 1 0 0 1 51.02 634.37 Tm (19. Flujo recomendado para asesores) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 605.37 Tm (El flujo ideal para un asesor debe ser simple y repetible.) Tj ET
-BT /F2 11.50 Tf 1 0 0 1 51.02 578.87 Tm (Paso 1: revisar conversaciones) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 554.37 Tm (El asesor entra a Comunicaciones y revisa:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 531.87 Tm (- Chats asignados.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 516.37 Tm (- Chats nuevos disponibles para tomar.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 500.87 Tm (- Ultimo mensaje del cliente.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 485.37 Tm (- Estado de la conversacion.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 469.87 Tm (- Canal de origen.) Tj ET
-BT /F2 11.50 Tf 1 0 0 1 51.02 445.37 Tm (Paso 2: abrir la ficha del cliente) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 420.87 Tm (Antes de responder, debe revisar:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 398.37 Tm (- Nombre.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 382.87 Tm (- Telefono.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 367.37 Tm (- Canal.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 351.87 Tm (- Etiquetas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 336.37 Tm (- Historial.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 320.87 Tm (- Notas internas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 305.37 Tm (- Tareas pendientes.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 289.87 Tm (- Oportunidades abiertas.) Tj ET
-BT /F2 11.50 Tf 1 0 0 1 51.02 265.37 Tm (Paso 3: responder con contexto) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 240.87 Tm (Puede responder:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 218.37 Tm (- Escribiendo manualmente.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 202.87 Tm (- Usando plantillas rapidas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 187.37 Tm (- Adjuntando archivo.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 171.87 Tm (- Enviando informacion comercial.) Tj ET
-BT /F2 11.50 Tf 1 0 0 1 51.02 147.37 Tm (Paso 4: registrar seguimiento) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 122.87 Tm (Si el cliente no compra de inmediato, el asesor debe crear una tarea.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 100.37 Tm (Ejemplos:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 77.87 Tm (- Llamar manana.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 62.37 Tm (- Enviar cotizacion.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 786.87 Tm (15. Actividad) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 757.87 Tm (Actividad muestra acciones realizadas dentro del sistema.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 735.37 Tm (Ejemplos:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 712.87 Tm (- Creacion de cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 697.37 Tm (- Cambio de estado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 681.87 Tm (- Reasignacion de conversacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 666.37 Tm (- Creacion de oportunidad.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 650.87 Tm (- Eventos de integracion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 630.37 Tm (Uso recomendado:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 607.87 Tm (- Administrador y supervisor.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 592.37 Tm (- Sirve para auditoria y trazabilidad.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 567.87 Tm (16. Fallos) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 538.87 Tm (Fallos muestra problemas detectados en integraciones o mensajes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 516.37 Tm (Puede mostrar:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 493.87 Tm (- Mensajes no enviados.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 478.37 Tm (- Errores de API.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 462.87 Tm (- Eventos de webhook fallidos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 447.37 Tm (- Respuestas locales cuando el envio real no esta activo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 426.87 Tm (Uso recomendado:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 404.37 Tm (- Administrador y supervisor.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 388.87 Tm (- No es una vista normal de asesor.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 364.37 Tm (17. Plantillas rapidas) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 335.37 Tm (Las plantillas rapidas son respuestas manuales para asesores.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 312.87 Tm (Sirven para:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 290.37 Tm (- Responder mas rapido.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 274.87 Tm (- Mantener mensajes consistentes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 259.37 Tm (- Evitar escribir lo mismo muchas veces.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 243.87 Tm (- Usar textos frecuentes sin que el bot los envie automaticamente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 223.37 Tm (Ejemplos:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 200.87 Tm (- Saludo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 185.37 Tm (- Envio de catalogo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 169.87 Tm (- Solicitud de datos para cotizar.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 154.37 Tm (- Seguimiento.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 138.87 Tm (- Cierre.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 118.37 Tm (Importante:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 95.87 Tm (- Las plantillas rapidas no reemplazan al asesor.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 80.37 Tm (- El asesor elige la plantilla, la revisa y luego envia el mensaje.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 64.87 Tm (- Se administran desde el modulo Bot, pero son distintas a las plantillas del bot automatico.) Tj ET
 endstream
 endobj
 21 0 obj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 20 0 R >>
 endobj
 22 0 obj
-<< /Length 2739 >>
+<< /Length 3554 >>
 stream
-BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Confirmar pago.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- Hacer seguimiento en 48 horas.) Tj ET
-BT /F2 11.50 Tf 1 0 0 1 51.02 750.87 Tm (Paso 5: registrar venta) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 726.37 Tm (Si hay interes comercial real, debe crear o actualizar una oportunidad en Ventas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 703.87 Tm (Debe registrar:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 681.37 Tm (- Cliente.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 665.87 Tm (- Monto estimado.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 650.37 Tm (- Etapa.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 634.87 Tm (- Probabilidad.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 619.37 Tm (- Fecha estimada de cierre.) Tj ET
-BT /F2 11.50 Tf 1 0 0 1 51.02 594.87 Tm (Paso 6: cerrar correctamente) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 570.37 Tm (Cuando termina la atencion:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 547.87 Tm (- Cambiar estado de conversacion.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 532.37 Tm (- Marcar tarea como completada si aplica.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 516.87 Tm (- Marcar oportunidad como GANADA o PERDIDA si corresponde.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 501.37 Tm (- Dejar nota interna si queda contexto importante.) Tj ET
-BT /F2 14.00 Tf 1 0 0 1 51.02 476.87 Tm (20. Modulos que debe ver cada rol) Tj ET
-BT /F2 11.50 Tf 1 0 0 1 51.02 443.87 Tm (Asesor) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 419.37 Tm (Debe ver solo:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 396.87 Tm (- Comunicaciones.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 381.37 Tm (- Contactos.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 365.87 Tm (- Tareas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 350.37 Tm (- Pipeline.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 334.87 Tm (- Ventas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 314.37 Tm (No debe ver:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 291.87 Tm (- Conexiones.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 276.37 Tm (- Usuarios.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 260.87 Tm (- Fallos tecnicos.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 245.37 Tm (- Actividad global.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 229.87 Tm (- Configuracion global del bot.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 214.37 Tm (- Reportes globales.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 198.87 Tm (- Conversaciones de otros asesores.) Tj ET
-BT /F2 11.50 Tf 1 0 0 1 51.02 174.37 Tm (Supervisor) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 149.87 Tm (Debe ver:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 127.37 Tm (- Dashboard.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 111.87 Tm (- Comunicaciones.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 96.37 Tm (- Contactos.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 80.87 Tm (- Pipeline.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 65.37 Tm (- Tareas.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 786.87 Tm (Como agregar o editar plantillas rapidas) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 762.37 Tm (Solo administrador o supervisor debe administrar estas respuestas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 739.87 Tm (Pasos:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 717.37 Tm (1. Entrar al CRM como Administrador o Supervisor.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 699.87 Tm (2. Abrir el modulo Bot.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 682.37 Tm (3. Buscar la seccion "Plantillas rapidas" o "Respuestas manuales para asesores".) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 664.87 Tm (4. Editar el titulo, categoria y texto del mensaje.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 647.37 Tm (5. Activar o desactivar la plantilla segun corresponda.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 629.87 Tm (6. Usar "Agregar respuesta rapida" si se necesita una nueva.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 612.37 Tm (7. Presionar "Guardar respuestas rapidas".) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 589.87 Tm (Campos:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 567.37 Tm (- Titulo: nombre corto que vera el asesor en Comunicaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 551.87 Tm (- Categoria: ayuda a ordenar el tipo de respuesta.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 536.37 Tm (- Mensaje: texto que se insertara en el campo de respuesta.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 520.87 Tm (- Activa: permite mostrar u ocultar la plantilla sin borrarla.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 500.37 Tm (Buenas practicas:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 477.87 Tm (- Usar titulos cortos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 462.37 Tm (- Evitar textos demasiado largos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 446.87 Tm (- No incluir claves, tokens, datos bancarios sensibles o informacion privada innecesaria.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 431.37 Tm (- Revisar ortografia y tono antes de guardar.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 415.87 Tm (- Mantener plantillas para casos repetidos: saludo, catalogo, cotizacion, seguimiento y cierre.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 391.37 Tm (18. Bot) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 362.37 Tm (Bot permite configurar respuestas automaticas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 339.87 Tm (Sirve para:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 317.37 Tm (- Definir mensaje de bienvenida.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 301.87 Tm (- Crear opciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 286.37 Tm (- Definir respuestas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 270.87 Tm (- Derivar a asesor.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 255.37 Tm (- Limitar respuestas automaticas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 234.87 Tm (Regla importante:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 212.37 Tm (- Cuando un asesor responde, el bot se pausa en esa conversacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 196.87 Tm (- Esto evita que el cliente reciba respuestas automaticas despues de que una persona ya tomo el) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 183.37 Tm (caso.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 167.87 Tm (- Las plantillas del bot son para automatizacion. Las plantillas rapidas son para respuestas manuales) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 154.37 Tm (del asesor.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 129.87 Tm (Diferencia entre plantillas del bot y plantillas rapidas) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 105.37 Tm (Plantillas del bot:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 82.87 Tm (- Las usa el bot automatico.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 67.37 Tm (- Se activan segun opciones que responde el cliente.) Tj ET
 endstream
 endobj
 23 0 obj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 22 0 R >>
 endobj
 24 0 obj
-<< /Length 2620 >>
+<< /Length 2889 >>
 stream
-BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Ventas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- Reportes.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 759.87 Tm (- Actividad.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 744.37 Tm (- Fallos.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 728.87 Tm (- Bot.) Tj ET
-BT /F2 11.50 Tf 1 0 0 1 51.02 704.37 Tm (Administrador) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 679.87 Tm (Debe ver todo:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 657.37 Tm (- Dashboard.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 641.87 Tm (- Comunicaciones.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 626.37 Tm (- Contactos.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 610.87 Tm (- Tareas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 595.37 Tm (- Pipeline.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 579.87 Tm (- Ventas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 564.37 Tm (- Reportes.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 548.87 Tm (- Comentarios.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 533.37 Tm (- Actividad.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 517.87 Tm (- Fallos.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 502.37 Tm (- Bot.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 486.87 Tm (- Conexiones.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 471.37 Tm (- Usuarios.) Tj ET
-BT /F2 14.00 Tf 1 0 0 1 51.02 446.87 Tm (21. Conexiones) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 417.87 Tm (Conexiones permite configurar integraciones externas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 395.37 Tm (Canales:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 372.87 Tm (- WhatsApp.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 357.37 Tm (- Instagram.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 341.87 Tm (- Facebook.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 326.37 Tm (- TikTok.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 305.87 Tm (Sirve para:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 283.37 Tm (- Configurar tokens.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 267.87 Tm (- Copiar webhooks.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 252.37 Tm (- Validar datos.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 236.87 Tm (- Sincronizar o diagnosticar integraciones.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 216.37 Tm (Uso recomendado:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 193.87 Tm (- Solo administrador o personal tecnico.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 178.37 Tm (- No debe manipularse durante atencion normal.) Tj ET
-BT /F2 14.00 Tf 1 0 0 1 51.02 153.87 Tm (22. Usuarios) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 124.87 Tm (Usuarios permite administrar cuentas internas del CRM.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 102.37 Tm (Sirve para:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 79.87 Tm (- Crear asesores.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 64.37 Tm (- Crear supervisores.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Pueden derivar a asesor.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- Funcionan antes de que una persona tome el caso.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 754.87 Tm (Plantillas rapidas:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 732.37 Tm (- Las usa manualmente el asesor.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 716.87 Tm (- Solo insertan texto en el campo de mensaje.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 701.37 Tm (- No se envian automaticamente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 685.87 Tm (- Ayudan durante la atencion humana.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 661.37 Tm (19. Flujo recomendado para asesores) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 632.37 Tm (El flujo ideal para un asesor debe ser simple y repetible.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 605.87 Tm (Paso 1: revisar conversaciones) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 581.37 Tm (El asesor entra a Comunicaciones y revisa:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 558.87 Tm (- Chats asignados.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 543.37 Tm (- Chats nuevos disponibles para tomar.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 527.87 Tm (- Ultimo mensaje del cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 512.37 Tm (- Estado de la conversacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 496.87 Tm (- Canal de origen.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 472.37 Tm (Paso 2: abrir la ficha del cliente) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 447.87 Tm (Antes de responder, debe revisar:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 425.37 Tm (- Nombre.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 409.87 Tm (- Telefono.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 394.37 Tm (- Canal.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 378.87 Tm (- Etiquetas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 363.37 Tm (- Historial.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 347.87 Tm (- Notas internas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 332.37 Tm (- Tareas pendientes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 316.87 Tm (- Oportunidades abiertas.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 292.37 Tm (Paso 3: responder con contexto) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 267.87 Tm (Puede responder:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 245.37 Tm (- Escribiendo manualmente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 229.87 Tm (- Usando plantillas rapidas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 214.37 Tm (- Adjuntando archivo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 198.87 Tm (- Enviando informacion comercial.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 174.37 Tm (Paso 4: registrar seguimiento) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 149.87 Tm (Si el cliente no compra de inmediato, el asesor debe crear una tarea.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 127.37 Tm (Ejemplos:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 104.87 Tm (- Llamar manana.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 89.37 Tm (- Enviar cotizacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 73.87 Tm (- Confirmar pago.) Tj ET
 endstream
 endobj
 25 0 obj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 24 0 R >>
 endobj
 26 0 obj
-<< /Length 2878 >>
+<< /Length 2731 >>
 stream
-BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Cambiar contrasenas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- Mantener usuarios activos.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 754.87 Tm (Uso recomendado:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 732.37 Tm (- Solo administrador.) Tj ET
-BT /F2 14.00 Tf 1 0 0 1 51.02 707.87 Tm (23. Canales) Tj ET
-BT /F2 11.50 Tf 1 0 0 1 51.02 674.87 Tm (WhatsApp) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 650.37 Tm (Es el canal principal operativo.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 627.87 Tm (Flujo:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 605.37 Tm (- Cliente escribe por WhatsApp.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 589.87 Tm (- Meta envia webhook.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 574.37 Tm (- CRM crea o actualiza cliente.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 558.87 Tm (- CRM crea o actualiza conversacion.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 543.37 Tm (- Mensaje aparece en Comunicaciones.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 527.87 Tm (- Asesor responde.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 512.37 Tm (- CRM registra el mensaje y lo envia por WhatsApp Cloud API si el envio real esta activo.) Tj ET
-BT /F2 11.50 Tf 1 0 0 1 51.02 487.87 Tm (Instagram) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 463.37 Tm (Estado actual:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 440.87 Tm (- Cuenta profesional validada.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 425.37 Tm (- Token de Instagram Login validado.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 409.87 Tm (- El CRM consulta Graph API correctamente.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 394.37 Tm (- En modo desarrollador Meta no entrega DMs reales externos ni webhooks reales de mensajes como) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 380.87 Tm (produccion.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 360.37 Tm (Para recibir DMs reales se requiere publicacion/capability/aprobacion de Meta.) Tj ET
-BT /F2 11.50 Tf 1 0 0 1 51.02 333.87 Tm (Facebook) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 309.37 Tm (Preparado para Messenger y Page Webhooks.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 286.87 Tm (Requiere:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 264.37 Tm (- Pagina vinculada.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 248.87 Tm (- Page Access Token.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 233.37 Tm (- Permisos correctos.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 217.87 Tm (- Webhook suscrito.) Tj ET
-BT /F2 11.50 Tf 1 0 0 1 51.02 193.37 Tm (TikTok) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 168.87 Tm (Preparado como canal futuro de leads/campanas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 146.37 Tm (No se debe prometer como inbox de DMs normales sin acceso oficial, partner o producto aprobado.) Tj ET
-BT /F2 14.00 Tf 1 0 0 1 51.02 119.87 Tm (24. Seguridad visible para el usuario) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 90.87 Tm (El usuario debe entender estas reglas:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 68.37 Tm (- No compartir usuario ni contrasena.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Hacer seguimiento en 48 horas.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 766.37 Tm (Paso 5: registrar venta) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 741.87 Tm (Si hay interes comercial real, debe crear o actualizar una oportunidad en Ventas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 719.37 Tm (Debe registrar:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 696.87 Tm (- Cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 681.37 Tm (- Monto estimado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 665.87 Tm (- Etapa.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 650.37 Tm (- Probabilidad.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 634.87 Tm (- Fecha estimada de cierre.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 610.37 Tm (Paso 6: cerrar correctamente) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 585.87 Tm (Cuando termina la atencion:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 563.37 Tm (- Cambiar estado de conversacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 547.87 Tm (- Marcar tarea como completada si aplica.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 532.37 Tm (- Marcar oportunidad como GANADA o PERDIDA si corresponde.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 516.87 Tm (- Dejar nota interna si queda contexto importante.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 492.37 Tm (20. Modulos que debe ver cada rol) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 459.37 Tm (Asesor) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 434.87 Tm (Debe ver solo:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 412.37 Tm (- Comunicaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 396.87 Tm (- Contactos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 381.37 Tm (- Tareas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 365.87 Tm (- Pipeline.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 350.37 Tm (- Ventas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 329.87 Tm (No debe ver:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 307.37 Tm (- Conexiones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 291.87 Tm (- Usuarios.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 276.37 Tm (- Fallos tecnicos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 260.87 Tm (- Actividad global.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 245.37 Tm (- Configuracion global del bot.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 229.87 Tm (- Reportes globales.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 214.37 Tm (- Conversaciones de otros asesores.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 189.87 Tm (Supervisor) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 165.37 Tm (Debe ver:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 142.87 Tm (- Dashboard.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 127.37 Tm (- Comunicaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 111.87 Tm (- Contactos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 96.37 Tm (- Pipeline.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 80.87 Tm (- Tareas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 65.37 Tm (- Ventas.) Tj ET
 endstream
 endobj
 27 0 obj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 26 0 R >>
 endobj
 28 0 obj
-<< /Length 3168 >>
+<< /Length 3100 >>
 stream
-BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- No enviar tokens por capturas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- No guardar claves en notas internas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 759.87 Tm (- Cerrar sesion en equipos compartidos.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 744.37 Tm (- Reportar errores o mensajes sospechosos.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 728.87 Tm (- El asesor solo debe trabajar sus clientes/conversaciones.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 708.37 Tm (Controles ya aplicados:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 685.87 Tm (- Login obligatorio.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 670.37 Tm (- Roles.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 654.87 Tm (- Vista simplificada por rol.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 639.37 Tm (- Restriccion backend por asignacion para asesores.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 623.87 Tm (- Bot restringido a roles superiores.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 608.37 Tm (- Endpoints protegidos.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 592.87 Tm (- Rate limiting.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 577.37 Tm (- Cookies endurecidas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 561.87 Tm (- Protecciones contra solicitudes externas indebidas.) Tj ET
-BT /F2 14.00 Tf 1 0 0 1 51.02 537.37 Tm (25. Recomendacion de uso diario) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 508.37 Tm (Para asesores:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 485.87 Tm (1. Entrar al CRM.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 468.37 Tm (2. Ir a Comunicaciones.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 450.87 Tm (3. Revisar conversaciones pendientes.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 433.37 Tm (4. Responder al cliente.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 415.87 Tm (5. Actualizar datos del contacto si hace falta.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 398.37 Tm (6. Crear nota interna cuando haya contexto importante.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 380.87 Tm (7. Crear tarea si hay seguimiento.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 363.37 Tm (8. Crear oportunidad si hay venta real.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 345.87 Tm (9. Cerrar o cambiar estado cuando corresponda.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 323.37 Tm (Para supervisores:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 300.87 Tm (1. Revisar Dashboard.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 283.37 Tm (2. Revisar Pipeline.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 265.87 Tm (3. Validar conversaciones sin asignar.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 248.37 Tm (4. Revisar tareas vencidas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 230.87 Tm (5. Revisar ventas abiertas.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 213.37 Tm (6. Revisar reportes y fallos.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 190.87 Tm (Para administradores:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 168.37 Tm (1. Revisar usuarios.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 150.87 Tm (2. Revisar conexiones.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 133.37 Tm (3. Revisar fallos.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 115.87 Tm (4. Revisar actividad.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 98.37 Tm (5. Mantener configuraciones y permisos.) Tj ET
-BT /F2 14.00 Tf 1 0 0 1 51.02 71.87 Tm (26. Que hacer si algo no aparece) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Reportes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- Actividad.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 759.87 Tm (- Fallos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 744.37 Tm (- Bot.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 719.87 Tm (Administrador) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 695.37 Tm (Debe ver todo:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 672.87 Tm (- Dashboard.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 657.37 Tm (- Comunicaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 641.87 Tm (- Contactos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 626.37 Tm (- Tareas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 610.87 Tm (- Pipeline.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 595.37 Tm (- Ventas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 579.87 Tm (- Reportes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 564.37 Tm (- Comentarios.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 548.87 Tm (- Actividad.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 533.37 Tm (- Fallos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 517.87 Tm (- Bot.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 502.37 Tm (- Conexiones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 486.87 Tm (- Usuarios.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 462.37 Tm (21. Conexiones) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 433.37 Tm (Conexiones permite configurar integraciones externas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 410.87 Tm (Canales:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 388.37 Tm (- WhatsApp.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 372.87 Tm (- Instagram.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 357.37 Tm (- Facebook.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 341.87 Tm (- TikTok.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 321.37 Tm (Sirve para:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 298.87 Tm (- Configurar tokens.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 283.37 Tm (- Copiar webhooks.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 267.87 Tm (- Validar datos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 252.37 Tm (- Sincronizar o diagnosticar integraciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 236.87 Tm (- Revisar que los identificadores usados correspondan a la misma pagina/cuenta.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 216.37 Tm (Uso recomendado:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 193.87 Tm (- Solo administrador o personal tecnico.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 178.37 Tm (- No debe manipularse durante atencion normal.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 157.87 Tm (Relaciones importantes:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 135.37 Tm (- WhatsApp usa Phone Number ID, Business Account ID, token y webhook.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 119.87 Tm (- Facebook Insights requiere Page ID y Page Access Token con permiso de estadisticas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 104.37 Tm (- Instagram DMs puede usar Instagram Login, pero Instagram Insights requiere datos de la cuenta) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 90.87 Tm (profesional y token compatible con insights.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 75.37 Tm (- TikTok esta preparado como integracion futura; sus analiticas reales dependen de TikTok) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 61.87 Tm (Business/Marketing API.) Tj ET
 endstream
 endobj
 29 0 obj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 28 0 R >>
 endobj
 30 0 obj
-<< /Length 1649 >>
+<< /Length 2853 >>
 stream
-BT /F1 10.50 Tf 1 0 0 1 51.02 790.87 Tm (Si no aparece una conversacion:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 768.37 Tm (- Revisar si esta asignada al usuario correcto.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 752.87 Tm (- Revisar si el canal esta configurado.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 737.37 Tm (- Revisar Fallos si eres supervisor/admin.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 721.87 Tm (- Revisar si el webhook publico esta activo.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 701.37 Tm (Si no aparece Instagram:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 678.87 Tm (- Recordar que en modo desarrollador Meta limita DMs reales.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 663.37 Tm (- Probar con datos simulados o esperar aprobacion/publicacion.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 642.87 Tm (Si no se envia un mensaje:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 620.37 Tm (- Revisar estado del canal.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 604.87 Tm (- Revisar token.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 589.37 Tm (- Revisar Fallos.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 573.87 Tm (- Revisar si el envio real esta activo.) Tj ET
-BT /F2 14.00 Tf 1 0 0 1 51.02 549.37 Tm (27. Cierre) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 520.37 Tm (El CRM ya esta preparado para operar como centro de atencion y seguimiento comercial. El uso correcto) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 51.02 506.87 Tm (depende de separar bien responsabilidades:) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 484.37 Tm (- Asesor atiende y vende.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 468.87 Tm (- Supervisor controla operacion.) Tj ET
-BT /F1 10.50 Tf 1 0 0 1 61.02 453.37 Tm (- Administrador configura y audita.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 786.87 Tm (22. Usuarios) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 757.87 Tm (Usuarios permite administrar cuentas internas del CRM.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 735.37 Tm (Sirve para:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 712.87 Tm (- Crear asesores.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 697.37 Tm (- Crear supervisores.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 681.87 Tm (- Cambiar contrasenas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 666.37 Tm (- Mantener usuarios activos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 645.87 Tm (Uso recomendado:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 623.37 Tm (- Solo administrador.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 598.87 Tm (23. Canales) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 565.87 Tm (WhatsApp) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 541.37 Tm (Es el canal principal operativo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 518.87 Tm (Flujo:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 496.37 Tm (- Cliente escribe por WhatsApp.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 480.87 Tm (- Meta envia webhook.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 465.37 Tm (- CRM crea o actualiza cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 449.87 Tm (- CRM crea o actualiza conversacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 434.37 Tm (- Mensaje aparece en Comunicaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 418.87 Tm (- Asesor responde.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 403.37 Tm (- CRM registra el mensaje y lo envia por WhatsApp Cloud API si el envio real esta activo.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 378.87 Tm (Instagram) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 354.37 Tm (Estado actual:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 331.87 Tm (- Cuenta profesional validada.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 316.37 Tm (- Token de Instagram Login validado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 300.87 Tm (- El CRM consulta Graph API correctamente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 285.37 Tm (- En modo desarrollador Meta no entrega DMs reales externos ni webhooks reales de mensajes como) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 271.87 Tm (produccion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 251.37 Tm (Para recibir DMs reales se requiere publicacion/capability/aprobacion de Meta.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 224.87 Tm (Facebook) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 200.37 Tm (Preparado para Messenger y Page Webhooks.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 177.87 Tm (Requiere:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 155.37 Tm (- Pagina vinculada.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 139.87 Tm (- Page Access Token.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 124.37 Tm (- Permisos correctos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 108.87 Tm (- Webhook suscrito.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 88.37 Tm (Para estadisticas reales de Facebook:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 65.87 Tm (- El CRM consulta Meta Graph API.) Tj ET
 endstream
 endobj
 31 0 obj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 30 0 R >>
 endobj
+32 0 obj
+<< /Length 3367 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Si sale SIN_DATOS, Meta acepto la consulta pero devolvio 0.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- Si sale ERROR, revisar token, permisos o metrica.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 759.87 Tm (- Si sale NO_CONFIGURADO, falta Page ID o Page Access Token.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 735.37 Tm (TikTok) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 710.87 Tm (Preparado como canal futuro de leads/campanas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 688.37 Tm (No se debe prometer como inbox de DMs normales sin acceso oficial, partner o producto aprobado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 665.87 Tm (Para estadisticas reales de TikTok se requiere una integracion aprobada con TikTok) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 652.37 Tm (Business/Marketing API o un proveedor autorizado.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 625.87 Tm (24. Seguridad visible para el usuario) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 596.87 Tm (El usuario debe entender estas reglas:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 574.37 Tm (- No compartir usuario ni contrasena.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 558.87 Tm (- No enviar tokens por capturas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 543.37 Tm (- No guardar claves en notas internas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 527.87 Tm (- Cerrar sesion en equipos compartidos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 512.37 Tm (- Reportar errores o mensajes sospechosos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 496.87 Tm (- El asesor solo debe trabajar sus clientes/conversaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 476.37 Tm (Controles ya aplicados:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 453.87 Tm (- Login obligatorio.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 438.37 Tm (- Roles.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 422.87 Tm (- Vista simplificada por rol.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 407.37 Tm (- Restriccion backend por asignacion para asesores.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 391.87 Tm (- Bot restringido a roles superiores.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 376.37 Tm (- Endpoints protegidos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 360.87 Tm (- Rate limiting.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 345.37 Tm (- Cookies endurecidas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 329.87 Tm (- Protecciones contra solicitudes externas indebidas.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 305.37 Tm (25. Recomendacion de uso diario) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 276.37 Tm (Para asesores:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 253.87 Tm (1. Entrar al CRM.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 236.37 Tm (2. Ir a Comunicaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 218.87 Tm (3. Revisar conversaciones pendientes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 201.37 Tm (4. Responder al cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 183.87 Tm (5. Actualizar datos del contacto si hace falta.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 166.37 Tm (6. Crear nota interna cuando haya contexto importante.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 148.87 Tm (7. Crear tarea si hay seguimiento.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 131.37 Tm (8. Crear oportunidad si hay venta real.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 113.87 Tm (9. Cerrar o cambiar estado cuando corresponda.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 91.37 Tm (Para supervisores:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 68.87 Tm (1. Revisar Dashboard.) Tj ET
+endstream
+endobj
+33 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 32 0 R >>
+endobj
+34 0 obj
+<< /Length 3493 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 51.02 790.87 Tm (2. Revisar Pipeline.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 773.37 Tm (3. Validar conversaciones sin asignar.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 755.87 Tm (4. Revisar tareas vencidas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 738.37 Tm (5. Revisar ventas abiertas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 720.87 Tm (6. Revisar reportes y fallos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 698.37 Tm (Para administradores:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 675.87 Tm (1. Revisar usuarios.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 658.37 Tm (2. Revisar conexiones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 640.87 Tm (3. Revisar fallos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 623.37 Tm (4. Revisar actividad.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 605.87 Tm (5. Mantener configuraciones y permisos.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 579.37 Tm (26. Que hacer si algo no aparece) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 550.37 Tm (Si no aparece una conversacion:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 527.87 Tm (- Revisar si esta asignada al usuario correcto.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 512.37 Tm (- Revisar si el canal esta configurado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 496.87 Tm (- Revisar Fallos si eres supervisor/admin.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 481.37 Tm (- Revisar si el webhook publico esta activo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 460.87 Tm (Si no aparece Instagram:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 438.37 Tm (- Recordar que en modo desarrollador Meta limita DMs reales.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 422.87 Tm (- Probar con datos simulados o esperar aprobacion/publicacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 402.37 Tm (Si no se envia un mensaje:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 379.87 Tm (- Revisar estado del canal.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 364.37 Tm (- Revisar token.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 348.87 Tm (- Revisar Fallos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 333.37 Tm (- Revisar si el envio real esta activo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 312.87 Tm (Si las estadisticas externas salen en cero:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 290.37 Tm (- Revisar en Dashboard la seccion "Resultado por metrica de Meta".) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 274.87 Tm (- Si dice CERO, la API respondio bien pero no hubo datos en ese rango.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 259.37 Tm (- Si dice ERROR, revisar el mensaje tecnico mostrado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 243.87 Tm (- Si dice NO_CONFIGURADO, completar los datos en Conexiones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 228.37 Tm (- Probar un rango de fechas mas amplio si aplica.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 207.87 Tm (Si no aparecen plantillas rapidas:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 185.37 Tm (- Revisar en Bot si existen plantillas rapidas activas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 169.87 Tm (- Confirmar que se presiono "Guardar respuestas rapidas".) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 154.37 Tm (- Abrir una conversacion en Comunicaciones; las plantillas solo aparecen dentro de un chat.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 138.87 Tm (- Si se editaron recientemente, recargar el modulo Comunicaciones.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 114.37 Tm (27. Cierre) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 85.37 Tm (El CRM ya esta preparado para operar como centro de atencion y seguimiento comercial. El uso correcto) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 71.87 Tm (depende de separar bien responsabilidades:) Tj ET
+endstream
+endobj
+35 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 34 0 R >>
+endobj
+36 0 obj
+<< /Length 238 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Asesor atiende y vende.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- Supervisor controla operacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 759.87 Tm (- Administrador configura y audita.) Tj ET
+endstream
+endobj
+37 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 36 0 R >>
+endobj
 xref
-0 32
+0 38
 0000000000 65535 f 
 0000000015 00000 n 
 0000000064 00000 n 
-0000000205 00000 n 
-0000000302 00000 n 
-0000000404 00000 n 
-0000000499 00000 n 
-0000003795 00000 n 
-0000003947 00000 n 
-0000007330 00000 n 
-0000007482 00000 n 
-0000011058 00000 n 
-0000011212 00000 n 
-0000014287 00000 n 
-0000014441 00000 n 
-0000017553 00000 n 
-0000017707 00000 n 
-0000020964 00000 n 
-0000021118 00000 n 
-0000024168 00000 n 
-0000024322 00000 n 
-0000027424 00000 n 
-0000027578 00000 n 
-0000030370 00000 n 
-0000030524 00000 n 
-0000033197 00000 n 
-0000033351 00000 n 
-0000036282 00000 n 
-0000036436 00000 n 
-0000039657 00000 n 
-0000039811 00000 n 
-0000041513 00000 n 
+0000000226 00000 n 
+0000000323 00000 n 
+0000000425 00000 n 
+0000000520 00000 n 
+0000003816 00000 n 
+0000003968 00000 n 
+0000007441 00000 n 
+0000007593 00000 n 
+0000011610 00000 n 
+0000011764 00000 n 
+0000015405 00000 n 
+0000015559 00000 n 
+0000018708 00000 n 
+0000018862 00000 n 
+0000021898 00000 n 
+0000022052 00000 n 
+0000025502 00000 n 
+0000025656 00000 n 
+0000028719 00000 n 
+0000028873 00000 n 
+0000032480 00000 n 
+0000032634 00000 n 
+0000035576 00000 n 
+0000035730 00000 n 
+0000038514 00000 n 
+0000038668 00000 n 
+0000041821 00000 n 
+0000041975 00000 n 
+0000044881 00000 n 
+0000045035 00000 n 
+0000048455 00000 n 
+0000048609 00000 n 
+0000052155 00000 n 
+0000052309 00000 n 
+0000052599 00000 n 
 trailer
-<< /Size 32 /Root 1 0 R >>
+<< /Size 38 /Root 1 0 R >>
 startxref
-41667
+52753
 %%EOF

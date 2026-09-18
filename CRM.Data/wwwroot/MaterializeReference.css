@@ -2932,6 +2932,95 @@ body {
     padding-left: 18px;
 }
 
+.analytics-detail {
+    display: grid;
+    gap: 12px;
+    margin-top: 4px;
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+}
+
+.analytics-test-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 10px;
+}
+
+.analytics-test {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 12px;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--materialize-danger);
+    border-radius: 10px;
+    background: #fff;
+    padding: 12px;
+}
+
+.analytics-test.ok {
+    border-left-color: var(--green);
+}
+
+.analytics-test.warning {
+    border-left-color: var(--materialize-warning);
+}
+
+.analytics-test strong,
+.analytics-test b {
+    color: var(--ink);
+}
+
+.analytics-test span,
+.analytics-test small,
+.analytics-test p {
+    color: var(--muted);
+    overflow-wrap: anywhere;
+}
+
+.analytics-test span,
+.analytics-test small {
+    display: block;
+    margin-top: 3px;
+}
+
+.analytics-test b {
+    display: inline-block;
+    border-radius: 999px;
+    background: #f1f5f9;
+    padding: 4px 8px;
+    font-size: 11px;
+}
+
+.analytics-test.ok b {
+    background: #e9fbef;
+    color: #14783f;
+}
+
+.analytics-test.warning b {
+    background: #fff7df;
+    color: #9a6700;
+}
+
+.analytics-test.danger b {
+    background: #fff0f0;
+    color: #b42318;
+}
+
+.analytics-test em {
+    display: block;
+    margin-top: 8px;
+    color: var(--ink);
+    font-style: normal;
+    font-weight: 900;
+    text-align: right;
+}
+
+.analytics-test p {
+    grid-column: 1 / -1;
+    margin: 0;
+    line-height: 1.35;
+}
+
 .connections-summary {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -4588,11 +4677,8 @@ select:focus-visible {
 }
 
 .quick-replies {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: center;
-    gap: 12px;
-    padding: 12px 20px;
+    display: block;
+    padding: 8px 16px;
     border-top: 1px solid rgba(229, 237, 241, .86);
     border-bottom: 1px solid rgba(0, 164, 223, .08);
     background: #f4fbfd;
@@ -4619,7 +4705,7 @@ select:focus-visible {
 
 .quick-replies-list {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     overflow-x: auto;
     min-width: 0;
     padding-bottom: 2px;
@@ -4631,7 +4717,7 @@ select:focus-visible {
     border-radius: 999px;
     background: #fff;
     color: var(--green-dark);
-    padding: 9px 14px;
+    padding: 7px 11px;
     font-size: 12px;
     font-weight: 800;
     cursor: pointer;

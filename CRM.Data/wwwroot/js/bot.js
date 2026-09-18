@@ -193,7 +193,6 @@
                     <div>
                         <span class="panel-kicker">Plantillas rápidas</span>
                         <h2>Respuestas manuales para asesores</h2>
-                        <p>Estas plantillas aparecen en Comunicaciones para que el asesor inserte respuestas frecuentes. No las envía el bot automáticamente.</p>
                     </div>
                     <div id="quickTemplatesList" class="bot-template-list">
                         ${(plantillasRapidas.length ? plantillasRapidas : [

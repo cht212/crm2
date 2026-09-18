@@ -2,7 +2,7 @@
 // Mantiene variables y funciones globales para compatibilidad con la vista actual.
 
         async function cargarModuloDashboard(vista) {
-            const [response, metaResponse, fallosResponse] = await Promise.all([
+            const [response, metaResponse, diagnosticoMetaResponse, fallosResponse] = await Promise.all([
                 api("/api/crm/reportes/resumen"),
                 api("/api/integraciones/meta/estadisticas").catch(() => null),
                 api("/api/integraciones/meta/estadisticas/diagnostico").catch(() => null),
@@ -13,15 +13,9 @@
             if (metaResponse?.ok) {
                 reporte.meta = await metaResponse.json();
             }
-            if (fallosResponse?.ok) {
-                reporte.diagnosticoMeta = await fallosResponse.json();
+            if (diagnosticoMetaResponse?.ok) {
+                reporte.diagnosticoMeta = await diagnosticoMetaResponse.json();
             }
-            const fallosApiResponse = arguments.length > 3 ? null : null;
-            if (Array.isArray(arguments)) {
-                // No-op: compatibilidad con navegadores antiguos.
-            }
-            renderDashboard(vista, reporte);
-        }
             if (fallosResponse?.ok) {
                 reporte.fallos = await fallosResponse.json();
             }
@@ -169,6 +163,41 @@
             if (normalizado === "OPERATIVO") return "ok";
             if (normalizado === "SIN_DATOS") return "warning";
             return "danger";
+        }
+
+        function claseEstadoMetrica(estado) {
+            const normalizado = (estado || "").toUpperCase();
+            if (normalizado === "CON_DATOS") return "ok";
+            if (normalizado === "CERO") return "warning";
+            return "danger";
+        }
+
+        function renderDiagnosticoMetricas(reporte) {
+            const pruebas = reporte.diagnosticoMeta?.pruebas || reporte.diagnosticoMeta?.Pruebas || [];
+            if (!pruebas.length) {
+                return '<div class="empty">No se pudo ejecutar el diagnostico detallado de Meta.</div>';
+            }
+
+            return `
+                <div class="analytics-test-list">
+                    ${pruebas.map(prueba => {
+                        const estado = prueba.estado || prueba.Estado || "SIN_ESTADO";
+                        const valor = Number(prueba.valor ?? prueba.Valor ?? 0);
+                        return `
+                            <article class="analytics-test ${claseEstadoMetrica(estado)}">
+                                <div>
+                                    <strong>${escapeHtml(prueba.nombre || prueba.Nombre || "")}</strong>
+                                    <span>${escapeHtml(prueba.etiqueta || prueba.Etiqueta || prueba.metrica || prueba.Metrica || "")}</span>
+                                    <small>${escapeHtml(prueba.metrica || prueba.Metrica || "")}</small>
+                                </div>
+                                <div>
+                                    <b>${escapeHtml(estado)}</b>
+                                    <em>${formatearNumero(valor)}</em>
+                                </div>
+                                <p>${escapeHtml(prueba.mensaje || prueba.Mensaje || "")}</p>
+                            </article>`;
+                    }).join("")}
+                </div>`;
         }
 
         function calcularPorcentaje(parte, total) {
@@ -450,6 +479,13 @@
                                         ? `<ul>${item.faltantes.map(faltante => `<li>${escapeHtml(faltante)}</li>`).join("")}</ul>`
                                         : `<small>Sin faltantes detectados.</small>`}
                                 </article>`).join("")}
+                        </div>
+                        <div class="analytics-detail">
+                            <div>
+                                <span class="panel-kicker">Prueba tecnica</span>
+                                <h2>Resultado por metrica de Meta</h2>
+                            </div>
+                            ${renderDiagnosticoMetricas(reporte)}
                         </div>
                     </section>
                 </div>`;

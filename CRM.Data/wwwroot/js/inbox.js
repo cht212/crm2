@@ -306,10 +306,6 @@
             }
 
             quickReplies.innerHTML = `
-                <div class="quick-replies-label">
-                    <i data-lucide="sparkles"></i>
-                    <span>Plantillas rápidas</span>
-                </div>
                 <div class="quick-replies-list">
                     ${plantillas.slice(0, 10).map(template => `
                         <button type="button" class="quick-reply" data-quick-reply="${escapeAttribute(template.message)}" title="${escapeAttribute(template.message)}">
@@ -318,7 +314,6 @@
                     `).join("")}
                 </div>`;
             quickReplies.classList.remove("hidden");
-            if (window.lucide) window.lucide.createIcons();
             quickReplies.querySelectorAll("[data-quick-reply]").forEach(button => {
                 button.addEventListener("click", () => {
                     input.value = button.dataset.quickReply || "";

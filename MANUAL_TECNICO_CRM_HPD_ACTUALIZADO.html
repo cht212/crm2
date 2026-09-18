@@ -132,6 +132,8 @@
 <li>Monto comercial abierto.</li>
 <li>Rendimiento por canal.</li>
 <li>Carga de asesores.</li>
+<li>Estado de analiticas reales por canal.</li>
+<li>Resultado tecnico por metrica de Meta.</li>
 </ul>
 <p>Uso recomendado:</p>
 <ul>
@@ -139,6 +141,36 @@
 <li>Supervisor: seguimiento diario del equipo.</li>
 <li>Asesor: no es su pantalla principal.</li>
 </ul>
+<h3>Que significan las metricas del Dashboard</h3>
+<p>El Dashboard mezcla dos tipos de datos:</p>
+<ul>
+<li>Datos internos del CRM: contactos, conversaciones, mensajes, tareas, oportunidades, ventas y carga de asesores.</li>
+<li>Datos externos de plataformas: estadisticas que vienen desde APIs como Meta Graph API para Facebook e Instagram.</li>
+</ul>
+<p>Los datos internos aparecen cuando el CRM registra actividad propia. Por ejemplo, si entra un mensaje, se crea una conversacion, se asigna un asesor o se crea una oportunidad.</p>
+<p>Los datos externos dependen de que la plataforma entregue estadisticas por API. Si Meta no entrega datos, el CRM no los inventa.</p>
+<h3>Analiticas reales</h3>
+<p>La seccion "Analiticas reales" indica si cada canal esta listo para traer estadisticas externas.</p>
+<p>Estados:</p>
+<ul>
+<li>OPERATIVO: el canal esta funcionando para el tipo de dato mostrado.</li>
+<li>SIN_DATOS: la API respondio correctamente, pero devolvio cero en el rango consultado.</li>
+<li>NO_CONFIGURADO: falta una clave, token, pagina o identificador.</li>
+<li>ERROR: la API rechazo la consulta por permiso, token, pagina o metrica.</li>
+<li>PENDIENTE: el canal esta preparado, pero aun no tiene servicio real de analiticas conectado.</li>
+</ul>
+<h3>Resultado por metrica de Meta</h3>
+<p>La seccion "Resultado por metrica de Meta" sirve para comprobar el dato real sin adivinar.</p>
+<p>Puede mostrar:</p>
+<ul>
+<li>CON_DATOS: Meta devolvio un valor mayor que cero.</li>
+<li>CERO: Meta acepto la metrica, pero devolvio 0 para el rango consultado.</li>
+<li>ERROR: Meta rechazo esa metrica especifica.</li>
+<li>NO_CONFIGURADO: falta configurar token o ID para probarla.</li>
+</ul>
+<p>Facebook prueba metricas como vistas, alcance, interacciones y seguidores. Instagram prueba alcance, visitas al perfil y clicks al sitio web.</p>
+<p>Si Facebook aparece como SIN_DATOS, no necesariamente esta mal configurado. Significa que Meta acepto la consulta, pero no devolvio valores para ese periodo.</p>
+<p>Si Instagram aparece como NO_CONFIGURADO, normalmente falta el token de insights de Page/Instagram profesional. El token de Instagram Login usado para DMs no reemplaza ese token.</p>
 <h2>6. Comunicaciones</h2>
 <p>Comunicaciones es el inbox del CRM.</p>
 <p>Sirve para:</p>
@@ -170,6 +202,21 @@
 <li>Las conversaciones nuevas disponibles pueden tomarse para empezar la atencion.</li>
 <li>Si responden una conversacion, queda pausado el bot para evitar respuestas automaticas fuera de contexto.</li>
 <li>Puede usar plantillas rapidas para acelerar mensajes frecuentes como saludo, catalogo, solicitud de datos, seguimiento o cierre.</li>
+</ul>
+<h3>Plantillas rapidas dentro de Comunicaciones</h3>
+<p>Cuando una conversacion esta abierta, el CRM muestra una fila compacta de botones con respuestas frecuentes.</p>
+<p>Uso:</p>
+<ul>
+<li>El asesor hace clic en una plantilla.</li>
+<li>El texto se coloca en el campo de mensaje.</li>
+<li>El asesor revisa o ajusta el texto.</li>
+<li>Luego envia manualmente.</li>
+</ul>
+<p>Importante:</p>
+<ul>
+<li>La plantilla no se envia sola.</li>
+<li>No reemplaza el criterio del asesor.</li>
+<li>Sirve para ahorrar tiempo y mantener respuestas consistentes.</li>
 </ul>
 <h2>7. Contactos</h2>
 <p>Contactos contiene la lista de clientes.</p>
@@ -381,7 +428,32 @@
 <ul>
 <li>Las plantillas rapidas no reemplazan al asesor.</li>
 <li>El asesor elige la plantilla, la revisa y luego envia el mensaje.</li>
-<li>Se administran desde Bot y derivaciones, pero son distintas a las plantillas del bot.</li>
+<li>Se administran desde el modulo Bot, pero son distintas a las plantillas del bot automatico.</li>
+</ul>
+<h3>Como agregar o editar plantillas rapidas</h3>
+<p>Solo administrador o supervisor debe administrar estas respuestas.</p>
+<p>Pasos:</p>
+<p>1. Entrar al CRM como Administrador o Supervisor.</p>
+<p>2. Abrir el modulo Bot.</p>
+<p>3. Buscar la seccion "Plantillas rapidas" o "Respuestas manuales para asesores".</p>
+<p>4. Editar el titulo, categoria y texto del mensaje.</p>
+<p>5. Activar o desactivar la plantilla segun corresponda.</p>
+<p>6. Usar "Agregar respuesta rapida" si se necesita una nueva.</p>
+<p>7. Presionar "Guardar respuestas rapidas".</p>
+<p>Campos:</p>
+<ul>
+<li>Titulo: nombre corto que vera el asesor en Comunicaciones.</li>
+<li>Categoria: ayuda a ordenar el tipo de respuesta.</li>
+<li>Mensaje: texto que se insertara en el campo de respuesta.</li>
+<li>Activa: permite mostrar u ocultar la plantilla sin borrarla.</li>
+</ul>
+<p>Buenas practicas:</p>
+<ul>
+<li>Usar titulos cortos.</li>
+<li>Evitar textos demasiado largos.</li>
+<li>No incluir claves, tokens, datos bancarios sensibles o informacion privada innecesaria.</li>
+<li>Revisar ortografia y tono antes de guardar.</li>
+<li>Mantener plantillas para casos repetidos: saludo, catalogo, cotizacion, seguimiento y cierre.</li>
 </ul>
 <h2>18. Bot</h2>
 <p>Bot permite configurar respuestas automaticas.</p>
@@ -398,6 +470,21 @@
 <li>Cuando un asesor responde, el bot se pausa en esa conversacion.</li>
 <li>Esto evita que el cliente reciba respuestas automaticas despues de que una persona ya tomo el caso.</li>
 <li>Las plantillas del bot son para automatizacion. Las plantillas rapidas son para respuestas manuales del asesor.</li>
+</ul>
+<h3>Diferencia entre plantillas del bot y plantillas rapidas</h3>
+<p>Plantillas del bot:</p>
+<ul>
+<li>Las usa el bot automatico.</li>
+<li>Se activan segun opciones que responde el cliente.</li>
+<li>Pueden derivar a asesor.</li>
+<li>Funcionan antes de que una persona tome el caso.</li>
+</ul>
+<p>Plantillas rapidas:</p>
+<ul>
+<li>Las usa manualmente el asesor.</li>
+<li>Solo insertan texto en el campo de mensaje.</li>
+<li>No se envian automaticamente.</li>
+<li>Ayudan durante la atencion humana.</li>
 </ul>
 <h2>19. Flujo recomendado para asesores</h2>
 <p>El flujo ideal para un asesor debe ser simple y repetible.</p>
@@ -523,11 +610,19 @@
 <li>Copiar webhooks.</li>
 <li>Validar datos.</li>
 <li>Sincronizar o diagnosticar integraciones.</li>
+<li>Revisar que los identificadores usados correspondan a la misma pagina/cuenta.</li>
 </ul>
 <p>Uso recomendado:</p>
 <ul>
 <li>Solo administrador o personal tecnico.</li>
 <li>No debe manipularse durante atencion normal.</li>
+</ul>
+<p>Relaciones importantes:</p>
+<ul>
+<li>WhatsApp usa Phone Number ID, Business Account ID, token y webhook.</li>
+<li>Facebook Insights requiere Page ID y Page Access Token con permiso de estadisticas.</li>
+<li>Instagram DMs puede usar Instagram Login, pero Instagram Insights requiere datos de la cuenta profesional y token compatible con insights.</li>
+<li>TikTok esta preparado como integracion futura; sus analiticas reales dependen de TikTok Business/Marketing API.</li>
 </ul>
 <h2>22. Usuarios</h2>
 <p>Usuarios permite administrar cuentas internas del CRM.</p>
@@ -573,9 +668,17 @@
 <li>Permisos correctos.</li>
 <li>Webhook suscrito.</li>
 </ul>
+<p>Para estadisticas reales de Facebook:</p>
+<ul>
+<li>El CRM consulta Meta Graph API.</li>
+<li>Si sale SIN_DATOS, Meta acepto la consulta pero devolvio 0.</li>
+<li>Si sale ERROR, revisar token, permisos o metrica.</li>
+<li>Si sale NO_CONFIGURADO, falta Page ID o Page Access Token.</li>
+</ul>
 <h3>TikTok</h3>
 <p>Preparado como canal futuro de leads/campanas.</p>
 <p>No se debe prometer como inbox de DMs normales sin acceso oficial, partner o producto aprobado.</p>
+<p>Para estadisticas reales de TikTok se requiere una integracion aprobada con TikTok Business/Marketing API o un proveedor autorizado.</p>
 <h2>24. Seguridad visible para el usuario</h2>
 <p>El usuario debe entender estas reglas:</p>
 <ul>
@@ -641,6 +744,21 @@
 <li>Revisar token.</li>
 <li>Revisar Fallos.</li>
 <li>Revisar si el envio real esta activo.</li>
+</ul>
+<p>Si las estadisticas externas salen en cero:</p>
+<ul>
+<li>Revisar en Dashboard la seccion "Resultado por metrica de Meta".</li>
+<li>Si dice CERO, la API respondio bien pero no hubo datos en ese rango.</li>
+<li>Si dice ERROR, revisar el mensaje tecnico mostrado.</li>
+<li>Si dice NO_CONFIGURADO, completar los datos en Conexiones.</li>
+<li>Probar un rango de fechas mas amplio si aplica.</li>
+</ul>
+<p>Si no aparecen plantillas rapidas:</p>
+<ul>
+<li>Revisar en Bot si existen plantillas rapidas activas.</li>
+<li>Confirmar que se presiono "Guardar respuestas rapidas".</li>
+<li>Abrir una conversacion en Comunicaciones; las plantillas solo aparecen dentro de un chat.</li>
+<li>Si se editaron recientemente, recargar el modulo Comunicaciones.</li>
 </ul>
 <h2>27. Cierre</h2>
 <p>El CRM ya esta preparado para operar como centro de atencion y seguimiento comercial. El uso correcto depende de separar bien responsabilidades:</p>

@@ -93,12 +93,54 @@ Sirve para ver rapidamente:
 - Monto comercial abierto.
 - Rendimiento por canal.
 - Carga de asesores.
+- Estado de analiticas reales por canal.
+- Resultado tecnico por metrica de Meta.
 
 Uso recomendado:
 
 - Administrador: revision general del negocio.
 - Supervisor: seguimiento diario del equipo.
 - Asesor: no es su pantalla principal.
+
+### Que significan las metricas del Dashboard
+
+El Dashboard mezcla dos tipos de datos:
+
+- Datos internos del CRM: contactos, conversaciones, mensajes, tareas, oportunidades, ventas y carga de asesores.
+- Datos externos de plataformas: estadisticas que vienen desde APIs como Meta Graph API para Facebook e Instagram.
+
+Los datos internos aparecen cuando el CRM registra actividad propia. Por ejemplo, si entra un mensaje, se crea una conversacion, se asigna un asesor o se crea una oportunidad.
+
+Los datos externos dependen de que la plataforma entregue estadisticas por API. Si Meta no entrega datos, el CRM no los inventa.
+
+### Analiticas reales
+
+La seccion "Analiticas reales" indica si cada canal esta listo para traer estadisticas externas.
+
+Estados:
+
+- OPERATIVO: el canal esta funcionando para el tipo de dato mostrado.
+- SIN_DATOS: la API respondio correctamente, pero devolvio cero en el rango consultado.
+- NO_CONFIGURADO: falta una clave, token, pagina o identificador.
+- ERROR: la API rechazo la consulta por permiso, token, pagina o metrica.
+- PENDIENTE: el canal esta preparado, pero aun no tiene servicio real de analiticas conectado.
+
+### Resultado por metrica de Meta
+
+La seccion "Resultado por metrica de Meta" sirve para comprobar el dato real sin adivinar.
+
+Puede mostrar:
+
+- CON_DATOS: Meta devolvio un valor mayor que cero.
+- CERO: Meta acepto la metrica, pero devolvio 0 para el rango consultado.
+- ERROR: Meta rechazo esa metrica especifica.
+- NO_CONFIGURADO: falta configurar token o ID para probarla.
+
+Facebook prueba metricas como vistas, alcance, interacciones y seguidores. Instagram prueba alcance, visitas al perfil y clicks al sitio web.
+
+Si Facebook aparece como SIN_DATOS, no necesariamente esta mal configurado. Significa que Meta acepto la consulta, pero no devolvio valores para ese periodo.
+
+Si Instagram aparece como NO_CONFIGURADO, normalmente falta el token de insights de Page/Instagram profesional. El token de Instagram Login usado para DMs no reemplaza ese token.
 
 ## 6. Comunicaciones
 
@@ -133,6 +175,23 @@ Para asesores:
 - Las conversaciones nuevas disponibles pueden tomarse para empezar la atencion.
 - Si responden una conversacion, queda pausado el bot para evitar respuestas automaticas fuera de contexto.
 - Puede usar plantillas rapidas para acelerar mensajes frecuentes como saludo, catalogo, solicitud de datos, seguimiento o cierre.
+
+### Plantillas rapidas dentro de Comunicaciones
+
+Cuando una conversacion esta abierta, el CRM muestra una fila compacta de botones con respuestas frecuentes.
+
+Uso:
+
+- El asesor hace clic en una plantilla.
+- El texto se coloca en el campo de mensaje.
+- El asesor revisa o ajusta el texto.
+- Luego envia manualmente.
+
+Importante:
+
+- La plantilla no se envia sola.
+- No reemplaza el criterio del asesor.
+- Sirve para ahorrar tiempo y mantener respuestas consistentes.
 
 ## 7. Contactos
 
@@ -367,7 +426,36 @@ Importante:
 
 - Las plantillas rapidas no reemplazan al asesor.
 - El asesor elige la plantilla, la revisa y luego envia el mensaje.
-- Se administran desde Bot y derivaciones, pero son distintas a las plantillas del bot.
+- Se administran desde el modulo Bot, pero son distintas a las plantillas del bot automatico.
+
+### Como agregar o editar plantillas rapidas
+
+Solo administrador o supervisor debe administrar estas respuestas.
+
+Pasos:
+
+1. Entrar al CRM como Administrador o Supervisor.
+2. Abrir el modulo Bot.
+3. Buscar la seccion "Plantillas rapidas" o "Respuestas manuales para asesores".
+4. Editar el titulo, categoria y texto del mensaje.
+5. Activar o desactivar la plantilla segun corresponda.
+6. Usar "Agregar respuesta rapida" si se necesita una nueva.
+7. Presionar "Guardar respuestas rapidas".
+
+Campos:
+
+- Titulo: nombre corto que vera el asesor en Comunicaciones.
+- Categoria: ayuda a ordenar el tipo de respuesta.
+- Mensaje: texto que se insertara en el campo de respuesta.
+- Activa: permite mostrar u ocultar la plantilla sin borrarla.
+
+Buenas practicas:
+
+- Usar titulos cortos.
+- Evitar textos demasiado largos.
+- No incluir claves, tokens, datos bancarios sensibles o informacion privada innecesaria.
+- Revisar ortografia y tono antes de guardar.
+- Mantener plantillas para casos repetidos: saludo, catalogo, cotizacion, seguimiento y cierre.
 
 ## 18. Bot
 
@@ -386,6 +474,22 @@ Regla importante:
 - Cuando un asesor responde, el bot se pausa en esa conversacion.
 - Esto evita que el cliente reciba respuestas automaticas despues de que una persona ya tomo el caso.
 - Las plantillas del bot son para automatizacion. Las plantillas rapidas son para respuestas manuales del asesor.
+
+### Diferencia entre plantillas del bot y plantillas rapidas
+
+Plantillas del bot:
+
+- Las usa el bot automatico.
+- Se activan segun opciones que responde el cliente.
+- Pueden derivar a asesor.
+- Funcionan antes de que una persona tome el caso.
+
+Plantillas rapidas:
+
+- Las usa manualmente el asesor.
+- Solo insertan texto en el campo de mensaje.
+- No se envian automaticamente.
+- Ayudan durante la atencion humana.
 
 ## 19. Flujo recomendado para asesores
 
@@ -527,11 +631,19 @@ Sirve para:
 - Copiar webhooks.
 - Validar datos.
 - Sincronizar o diagnosticar integraciones.
+- Revisar que los identificadores usados correspondan a la misma pagina/cuenta.
 
 Uso recomendado:
 
 - Solo administrador o personal tecnico.
 - No debe manipularse durante atencion normal.
+
+Relaciones importantes:
+
+- WhatsApp usa Phone Number ID, Business Account ID, token y webhook.
+- Facebook Insights requiere Page ID y Page Access Token con permiso de estadisticas.
+- Instagram DMs puede usar Instagram Login, pero Instagram Insights requiere datos de la cuenta profesional y token compatible con insights.
+- TikTok esta preparado como integracion futura; sus analiticas reales dependen de TikTok Business/Marketing API.
 
 ## 22. Usuarios
 
@@ -586,11 +698,20 @@ Requiere:
 - Permisos correctos.
 - Webhook suscrito.
 
+Para estadisticas reales de Facebook:
+
+- El CRM consulta Meta Graph API.
+- Si sale SIN_DATOS, Meta acepto la consulta pero devolvio 0.
+- Si sale ERROR, revisar token, permisos o metrica.
+- Si sale NO_CONFIGURADO, falta Page ID o Page Access Token.
+
 ### TikTok
 
 Preparado como canal futuro de leads/campanas.
 
 No se debe prometer como inbox de DMs normales sin acceso oficial, partner o producto aprobado.
+
+Para estadisticas reales de TikTok se requiere una integracion aprobada con TikTok Business/Marketing API o un proveedor autorizado.
 
 ## 24. Seguridad visible para el usuario
 
@@ -666,6 +787,21 @@ Si no se envia un mensaje:
 - Revisar token.
 - Revisar Fallos.
 - Revisar si el envio real esta activo.
+
+Si las estadisticas externas salen en cero:
+
+- Revisar en Dashboard la seccion "Resultado por metrica de Meta".
+- Si dice CERO, la API respondio bien pero no hubo datos en ese rango.
+- Si dice ERROR, revisar el mensaje tecnico mostrado.
+- Si dice NO_CONFIGURADO, completar los datos en Conexiones.
+- Probar un rango de fechas mas amplio si aplica.
+
+Si no aparecen plantillas rapidas:
+
+- Revisar en Bot si existen plantillas rapidas activas.
+- Confirmar que se presiono "Guardar respuestas rapidas".
+- Abrir una conversacion en Comunicaciones; las plantillas solo aparecen dentro de un chat.
+- Si se editaron recientemente, recargar el modulo Comunicaciones.
 
 ## 27. Cierre
 
