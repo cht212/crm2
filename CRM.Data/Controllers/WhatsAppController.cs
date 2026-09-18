@@ -19,6 +19,7 @@ namespace CRM.Data.Controllers
         private readonly IWebHostEnvironment _environment;
         private readonly IConfiguration _configuration;
         private readonly SocialIntegrationService _socialIntegrations;
+        private readonly CrmAccessService _access;
         private readonly ILogger<WhatsAppController> _logger;
 
         public WhatsAppController(
@@ -28,6 +29,7 @@ namespace CRM.Data.Controllers
             IWebHostEnvironment environment,
             IConfiguration configuration,
             SocialIntegrationService socialIntegrations,
+            CrmAccessService access,
             ILogger<WhatsAppController> logger)
         {
             _whatsappService = whatsappService;
@@ -36,6 +38,7 @@ namespace CRM.Data.Controllers
             _environment = environment;
             _configuration = configuration;
             _socialIntegrations = socialIntegrations;
+            _access = access;
             _logger = logger;
         }
 
@@ -582,7 +585,10 @@ namespace CRM.Data.Controllers
         [HttpGet("conversaciones/{conversacionId:long}")]
         public async Task<IActionResult> Conversacion(long conversacionId)
         {
-            var resultado = await _whatsappService.ObtenerConversacionAsync(conversacionId);
+            var resultado = await _whatsappService.ObtenerConversacionAsync(
+                conversacionId,
+                _access.EsAsesor ? _access.UsuarioActualId : null,
+                _access.EsAsesor);
             if (resultado == null)
             {
                 return NotFound(new { message = "Conversacion no encontrada." });
@@ -594,13 +600,20 @@ namespace CRM.Data.Controllers
         [HttpGet("conversaciones")]
         public async Task<IActionResult> Todas()
         {
-            var conversaciones = await _whatsappService.ObtenerTodasConversacionesAsync();
+            var conversaciones = await _whatsappService.ObtenerTodasConversacionesAsync(
+                _access.EsAsesor ? _access.UsuarioActualId : null,
+                _access.EsAsesor);
             return Ok(conversaciones);
         }
 
         [HttpPost("conversaciones/{conversacionId:long}/escribiendo")]
         public async Task<IActionResult> MostrarEscribiendo(long conversacionId)
         {
+            if (!await _access.PuedeAccederConversacionAsync(conversacionId))
+            {
+                return Forbid();
+            }
+
             var enviado = await _whatsappService.MostrarEscribiendoAsync(conversacionId);
             return Ok(new { success = enviado });
         }
@@ -618,10 +631,15 @@ namespace CRM.Data.Controllers
                 return BadRequest("El mensaje es obligatorio.");
             }
 
+            if (!await _access.PuedeAccederConversacionAsync(conversacionId))
+            {
+                return Forbid();
+            }
+
             var mensajeId = await _whatsappService.ProcesarMensajeSalienteAsync(
                 conversacionId,
                 dto.Mensaje,
-                dto.UsuarioId,
+                _access.UsuarioActualId,
                 dto.Tipo ?? "text",
                 null);
 
@@ -634,6 +652,11 @@ namespace CRM.Data.Controllers
             if (conversacionId <= 0)
             {
                 return BadRequest("La conversacion es obligatoria.");
+            }
+
+            if (!await _access.PuedeAccederConversacionAsync(conversacionId))
+            {
+                return Forbid();
             }
 
             var usuarioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id)

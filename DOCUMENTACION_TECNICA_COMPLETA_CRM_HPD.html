@@ -1,0 +1,978 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>DOCUMENTACION TECNICA COMPLETA CRM HPD</title>
+  <style>
+    @page { size: A4; margin: 18mm 16mm; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: #142531;
+      font-family: "Segoe UI", Arial, sans-serif;
+      font-size: 11.5pt;
+      line-height: 1.52;
+    }
+    h1 {
+      margin: 0 0 18px;
+      padding-bottom: 10px;
+      border-bottom: 3px solid #0ea5c6;
+      color: #0b465b;
+      font-size: 24pt;
+      line-height: 1.15;
+    }
+    h2 {
+      margin: 24px 0 8px;
+      color: #0b465b;
+      font-size: 16pt;
+      break-after: avoid;
+    }
+    h3 {
+      margin: 18px 0 6px;
+      color: #14394a;
+      font-size: 13pt;
+      break-after: avoid;
+    }
+    p { margin: 0 0 8px; }
+    ul { margin: 4px 0 10px 20px; padding: 0; }
+    li { margin: 3px 0; }
+    code {
+      padding: 1px 4px;
+      border-radius: 4px;
+      background: #eef6f9;
+      color: #0b465b;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 10pt;
+    }
+    pre {
+      margin: 10px 0 12px;
+      padding: 10px 12px;
+      border: 1px solid #d9e7ee;
+      border-radius: 8px;
+      background: #f7fbfd;
+      white-space: pre-wrap;
+      break-inside: avoid;
+    }
+    pre code {
+      padding: 0;
+      background: transparent;
+    }
+  </style>
+</head>
+<body>
+<h1>Documentacion tecnica completa del CRM HPD</h1>
+<p>Fecha: 18 de septiembre de 2026</p>
+<h2>1. Objetivo</h2>
+<p>Este documento explica como esta construido el CRM HPD: carpetas, archivos, responsabilidades, flujo de datos, base de datos, seguridad, integraciones, despliegue recomendado y pendientes tecnicos.</p>
+<p>El manual para usuarios del CRM esta en <code>MANUAL_TECNICO_CRM_HPD.md</code>.</p>
+<h2>2. Resumen tecnico</h2>
+<p>El proyecto es una aplicacion ASP.NET Core con frontend estatico en <code>wwwroot</code>, backend por controladores API, Entity Framework Core para SQL Server, integraciones con Meta/WhatsApp/Instagram/Facebook, almacenamiento de archivos con Cloudinary y configuracion local editable en <code>App_Data</code>.</p>
+<p>Componentes principales:</p>
+<ul>
+<li>ASP.NET Core: servidor web, APIs, autenticacion y middleware.</li>
+<li>Entity Framework Core: acceso a SQL Server.</li>
+<li>SQL Server LocalDB: base local del CRM.</li>
+<li>Frontend HTML/CSS/JS: interfaz del usuario.</li>
+<li>App_Data: configuracion local de bot e integraciones.</li>
+<li>ngrok: tunel de desarrollo para webhooks publicos.</li>
+<li>Cloudinary: almacenamiento externo de archivos.</li>
+<li>Meta Graph API: WhatsApp, Facebook e Instagram.</li>
+</ul>
+<h2>3. Estructura general de carpetas</h2>
+<h3><code>CRM.Data/</code></h3>
+<p>Proyecto principal ASP.NET Core.</p>
+<p>Contiene:</p>
+<ul>
+<li><code>Program.cs</code>: arranque de la aplicacion.</li>
+<li><code>appsettings.json</code>: configuracion base local.</li>
+<li><code>Controllers/</code>: endpoints HTTP.</li>
+<li><code>Data/</code>: DbContext.</li>
+<li><code>Models/</code>: entidades de base de datos.</li>
+<li><code>Services/</code>: logica de negocio e integraciones.</li>
+<li><code>DTOs/</code>: objetos de entrada/salida.</li>
+<li><code>Extensions/</code>: configuracion de servicios, middleware y seguridad.</li>
+<li><code>Migrations/</code>: migraciones de Entity Framework.</li>
+<li><code>Startup/</code>: inicializacion de base y datos iniciales.</li>
+<li><code>wwwroot/</code>: interfaz web.</li>
+<li><code>App_Data/</code>: archivos JSON locales de configuracion.</li>
+</ul>
+<h3><code>tools/</code></h3>
+<p>Herramientas locales para generar documentacion:</p>
+<ul>
+<li><code>markdown_to_html.js</code>: convierte Markdown a HTML.</li>
+<li><code>markdown_to_pdf.js</code>: convierte Markdown a PDF.</li>
+</ul>
+<h3>Documentos raiz</h3>
+<ul>
+<li><code>AVANCE_PROYECTO_CRM.md</code>: avance general del proyecto.</li>
+<li><code>MANUAL_TECNICO_CRM_HPD.md</code>: manual operativo para personal.</li>
+<li><code>DOCUMENTACION_TECNICA_COMPLETA_CRM_HPD.md</code>: este documento.</li>
+</ul>
+<h2>4. Archivos de arranque y configuracion</h2>
+<h3><code>CRM.Data/Program.cs</code></h3>
+<p>Archivo de entrada de ASP.NET Core.</p>
+<p>Responsabilidades:</p>
+<ul>
+<li>Crear el builder.</li>
+<li>Registrar servicios.</li>
+<li>Registrar base de datos.</li>
+<li>Registrar autenticacion por cookies.</li>
+<li>Registrar rate limiting.</li>
+<li>Configurar CORS.</li>
+<li>Configurar headers de seguridad.</li>
+<li>Inicializar base de datos.</li>
+<li>Publicar archivos estaticos.</li>
+<li>Activar autenticacion y autorizacion.</li>
+<li>Mapear controladores.</li>
+<li>Mapear fallback hacia <code>index.html</code>.</li>
+</ul>
+<h3><code>CRM.Data/appsettings.json</code></h3>
+<p>Configuracion local del proyecto.</p>
+<p>Puede incluir:</p>
+<ul>
+<li>Connection string.</li>
+<li>Versiones de API.</li>
+<li>Tokens de integracion.</li>
+<li>App IDs.</li>
+<li>Flags de envio real.</li>
+<li>Configuracion Cloudinary.</li>
+</ul>
+<p>Recomendacion de seguridad:</p>
+<ul>
+<li>No usar secretos reales en repositorios.</li>
+<li>En produccion usar variables de entorno o secret manager.</li>
+<li>Regenerar tokens o secretos que hayan sido expuestos en capturas o chats.</li>
+</ul>
+<h3><code>CRM.Data/Properties/launchSettings.json</code></h3>
+<p>Configuracion de ejecucion local en Visual Studio.</p>
+<p>Define:</p>
+<ul>
+<li>Perfiles de arranque.</li>
+<li>URLs locales.</li>
+<li>Variables de entorno de desarrollo.</li>
+</ul>
+<h2>5. Controllers</h2>
+<p>Los controladores son los endpoints HTTP que consume el frontend o los webhooks externos.</p>
+<h3><code>AuthenticationController.cs</code></h3>
+<p>Maneja autenticacion.</p>
+<p>Endpoints principales:</p>
+<ul>
+<li>Login.</li>
+<li>Logout.</li>
+<li>Usuario actual.</li>
+</ul>
+<p>Seguridad:</p>
+<ul>
+<li>Usa cookies.</li>
+<li>Hashea contrasenas.</li>
+<li>Aplica bloqueo por intentos fallidos.</li>
+<li>Aplica rate limiting al login.</li>
+</ul>
+<h3><code>CrmManagementController.cs</code></h3>
+<p>Controlador central del CRM.</p>
+<p>Responsabilidades:</p>
+<ul>
+<li>Contactos.</li>
+<li>Pipeline.</li>
+<li>Usuarios.</li>
+<li>Estados de conversacion.</li>
+<li>Tomar conversacion.</li>
+<li>Asignar conversacion.</li>
+<li>Actualizar perfil Meta.</li>
+<li>Actividad.</li>
+<li>Exportar contactos.</li>
+<li>Comentarios.</li>
+<li>Fallos.</li>
+<li>Reportes.</li>
+</ul>
+<p>Seguridad:</p>
+<ul>
+<li>Requiere rol <code>Administrador</code>, <code>Supervisor</code> o <code>Asesor</code>.</li>
+<li>Usa <code>CrmAccessService</code> para filtrar clientes, conversaciones y mensajes cuando el usuario es asesor.</li>
+<li>Admin/supervisor ven todo.</li>
+<li>Asesor ve lo asignado y las conversaciones nuevas sin asignar que puede tomar; no ve conversaciones de otros asesores.</li>
+</ul>
+<h3><code>WhatsAppController.cs</code></h3>
+<p>Maneja WhatsApp y endpoints de conversaciones.</p>
+<p>Responsabilidades:</p>
+<ul>
+<li>Verificacion de webhook.</li>
+<li>Recepcion de webhooks de WhatsApp.</li>
+<li>Consulta de conversaciones.</li>
+<li>Consulta de una conversacion.</li>
+<li>Envio de mensajes.</li>
+<li>Indicador de escritura.</li>
+<li>Cambiar estado del bot por conversacion.</li>
+</ul>
+<p>Seguridad:</p>
+<ul>
+<li>Webhook de Meta permite acceso anonimo solo para verificacion/recepcion.</li>
+<li>Conversaciones y envio requieren autenticacion.</li>
+<li>Asesor puede operar conversaciones asignadas y tomar conversaciones nuevas sin asignar; no puede operar conversaciones de otros asesores.</li>
+</ul>
+<h3><code>WhatsAppAttachmentsController.cs</code></h3>
+<p>Maneja envio de archivos desde conversaciones.</p>
+<p>Responsabilidades:</p>
+<ul>
+<li>Validar tamano maximo.</li>
+<li>Validar extension permitida.</li>
+<li>Subir archivo a Cloudinary.</li>
+<li>Registrar mensaje de archivo.</li>
+<li>Enviar archivo por el canal cuando aplique.</li>
+</ul>
+<p>Seguridad:</p>
+<ul>
+<li>Requiere autenticacion.</li>
+<li>Valida acceso a la conversacion.</li>
+<li>Limita tipos de archivo.</li>
+<li>Limita tamano a 15 MB.</li>
+</ul>
+<h3><code>OportunidadesController.cs</code></h3>
+<p>Maneja oportunidades de venta.</p>
+<p>Responsabilidades:</p>
+<ul>
+<li>Listar oportunidades.</li>
+<li>Exportar oportunidades.</li>
+<li>Resumen por etapa.</li>
+<li>Crear oportunidad.</li>
+<li>Cambiar etapa.</li>
+<li>Asignar oportunidad.</li>
+</ul>
+<p>Seguridad:</p>
+<ul>
+<li>Admin/supervisor ven todo.</li>
+<li>Asesor solo ve oportunidades propias o vinculadas a clientes/conversaciones asignadas.</li>
+<li>Asesor no puede forzar asignacion a otro usuario al crear.</li>
+</ul>
+<h3><code>TareasController.cs</code></h3>
+<p>Maneja tareas de seguimiento.</p>
+<p>Responsabilidades:</p>
+<ul>
+<li>Listar tareas.</li>
+<li>Crear tarea.</li>
+<li>Completar tarea.</li>
+<li>Cancelar tarea.</li>
+</ul>
+<p>Seguridad:</p>
+<ul>
+<li>Admin/supervisor ven todo.</li>
+<li>Asesor solo ve tareas propias o relacionadas con sus clientes/conversaciones.</li>
+<li>Asesor no puede crear tareas asignadas a otro usuario.</li>
+</ul>
+<h3><code>NotasController.cs</code></h3>
+<p>Maneja notas internas por cliente.</p>
+<p>Responsabilidades:</p>
+<ul>
+<li>Listar notas.</li>
+<li>Crear notas.</li>
+</ul>
+<p>Seguridad:</p>
+<ul>
+<li>El asesor solo puede ver o crear notas de clientes permitidos.</li>
+<li>Si la nota referencia una conversacion, tambien se valida acceso a esa conversacion.</li>
+</ul>
+<h3><code>EtiquetasController.cs</code></h3>
+<p>Maneja etiquetas.</p>
+<p>Responsabilidades:</p>
+<ul>
+<li>Listar etiquetas.</li>
+<li>Crear etiquetas.</li>
+<li>Asignar etiqueta a cliente.</li>
+<li>Quitar etiqueta de cliente.</li>
+<li>Ver etiquetas de un cliente.</li>
+</ul>
+<p>Seguridad:</p>
+<ul>
+<li>Crear etiquetas queda para admin/supervisor.</li>
+<li>Asignar o quitar etiquetas valida acceso al cliente.</li>
+</ul>
+<h3><code>BotController.cs</code></h3>
+<p>Maneja configuracion del bot.</p>
+<p>Responsabilidades:</p>
+<ul>
+<li>Leer configuracion de bot.</li>
+<li>Guardar configuracion.</li>
+</ul>
+<p>Seguridad:</p>
+<ul>
+<li>Restringido a <code>Administrador</code> y <code>Supervisor</code>.</li>
+</ul>
+<h3><code>PlantillasController.cs</code></h3>
+<p>Maneja plantillas rapidas para asesores.</p>
+<p>Responsabilidades:</p>
+<ul>
+<li>Listar plantillas activas para todos los roles autenticados.</li>
+<li>Listar plantillas completas para administracion.</li>
+<li>Guardar plantillas rapidas.</li>
+</ul>
+<p>Seguridad:</p>
+<ul>
+<li>Asesor puede leer plantillas activas.</li>
+<li>Administrador y supervisor pueden administrarlas.</li>
+</ul>
+<h3><code>IntegracionesController.cs</code></h3>
+<p>Maneja integraciones sociales.</p>
+<p>Responsabilidades:</p>
+<ul>
+<li>Leer y guardar configuracion de canales.</li>
+<li>Copiar/mostrar webhooks.</li>
+<li>Ejecutar pruebas de inbound.</li>
+<li>Diagnosticar integraciones.</li>
+<li>Recibir webhook Meta para Facebook/Instagram.</li>
+<li>Recibir webhook TikTok preparado.</li>
+</ul>
+<h3><code>HealthController.cs</code></h3>
+<p>Endpoint de salud.</p>
+<p>Sirve para:</p>
+<ul>
+<li>Verificar que la aplicacion responde.</li>
+<li>Usarse en monitoreo simple.</li>
+</ul>
+<h2>6. Data</h2>
+<h3><code>CrmDbContext.cs</code></h3>
+<p>Es el DbContext de Entity Framework Core.</p>
+<p>Define:</p>
+<ul>
+<li>Tablas.</li>
+<li>Llaves primarias.</li>
+<li>Columnas.</li>
+<li>Relaciones.</li>
+<li>Indices.</li>
+<li>Comportamiento de borrado.</li>
+</ul>
+<p>DbSets:</p>
+<ul>
+<li><code>Clientes</code>.</li>
+<li><code>Conversaciones</code>.</li>
+<li><code>Mensajes</code>.</li>
+<li><code>Usuarios</code>.</li>
+<li><code>Etiquetas</code>.</li>
+<li><code>ClienteEtiquetas</code>.</li>
+<li><code>Oportunidades</code>.</li>
+<li><code>Tareas</code>.</li>
+<li><code>NotasInternas</code>.</li>
+<li><code>ActividadLogs</code>.</li>
+</ul>
+<h2>7. Models y base de datos</h2>
+<h3><code>Cliente.cs</code> / tabla <code>crm_cliente</code></h3>
+<p>Representa un cliente.</p>
+<p>Campos principales:</p>
+<ul>
+<li><code>nCliente</code>: identificador.</li>
+<li><code>cNombre</code>: nombre.</li>
+<li><code>cTelefono</code>: telefono o identificador principal.</li>
+<li><code>cEmail</code>: correo.</li>
+<li><code>cDocumento</code>: documento.</li>
+<li><code>cFotoPerfilUrl</code>: foto de perfil.</li>
+<li><code>cCanalOrigen</code>: canal de origen.</li>
+<li><code>dFechaRegistro</code>: fecha de creacion.</li>
+<li><code>cEstado</code>: estado.</li>
+</ul>
+<p>Relaciones:</p>
+<ul>
+<li>Tiene muchas conversaciones.</li>
+</ul>
+<h3><code>Conversacion.cs</code> / tabla <code>crm_conversacion</code></h3>
+<p>Representa un hilo de atencion.</p>
+<p>Campos principales:</p>
+<ul>
+<li><code>nConversacion</code>.</li>
+<li><code>nCliente</code>.</li>
+<li><code>nUsuarioAsignado</code>.</li>
+<li><code>cEstado</code>.</li>
+<li><code>cCanal</code>.</li>
+<li><code>cExternalThreadId</code>.</li>
+<li><code>cBotEstado</code>.</li>
+<li><code>dFechaInicio</code>.</li>
+<li><code>dUltimoMensaje</code>.</li>
+<li><code>dUltimoMensajeCliente</code>.</li>
+<li><code>dBotPausadoDesde</code>.</li>
+<li><code>nBotPausadoPor</code>.</li>
+</ul>
+<p>Relaciones:</p>
+<ul>
+<li>Pertenece a un cliente.</li>
+<li>Puede estar asignada a un usuario.</li>
+<li>Tiene muchos mensajes.</li>
+</ul>
+<h3><code>Mensaje.cs</code> / tabla <code>crm_mensaje</code></h3>
+<p>Representa un mensaje entrante o saliente.</p>
+<p>Campos principales:</p>
+<ul>
+<li><code>nMensaje</code>.</li>
+<li><code>nConversacion</code>.</li>
+<li><code>cWhatsappId</code>.</li>
+<li><code>cCanal</code>.</li>
+<li><code>cExternalId</code>.</li>
+<li><code>cDireccion</code>: entrante o saliente.</li>
+<li><code>cTipo</code>: texto, imagen, documento, bot, comentario.</li>
+<li><code>cMensaje</code>.</li>
+<li><code>cEstado</code>.</li>
+<li><code>dFecha</code>.</li>
+</ul>
+<h3><code>CrmUsuario.cs</code> / tabla <code>crm_usuario</code></h3>
+<p>Representa usuario interno.</p>
+<p>Campos principales:</p>
+<ul>
+<li><code>nUsuario</code>.</li>
+<li><code>cUsuario</code>.</li>
+<li><code>cNombre</code>.</li>
+<li><code>cPasswordHash</code>.</li>
+<li><code>cRol</code>.</li>
+<li><code>cEstado</code>.</li>
+</ul>
+<p>Roles:</p>
+<ul>
+<li>Administrador.</li>
+<li>Supervisor.</li>
+<li>Asesor.</li>
+</ul>
+<h3><code>Etiqueta.cs</code> y <code>ClienteEtiqueta</code></h3>
+<p>Representan segmentacion de clientes.</p>
+<p>Tablas:</p>
+<ul>
+<li><code>crm_etiqueta</code>.</li>
+<li><code>crm_cliente_etiqueta</code>.</li>
+</ul>
+<p>Uso:</p>
+<ul>
+<li>Etiquetar clientes.</li>
+<li>Buscar o clasificar clientes.</li>
+</ul>
+<h3><code>Oportunidad.cs</code> / tabla <code>crm_oportunidad</code></h3>
+<p>Representa una venta potencial.</p>
+<p>Campos:</p>
+<ul>
+<li>Cliente.</li>
+<li>Conversacion opcional.</li>
+<li>Usuario asignado.</li>
+<li>Titulo.</li>
+<li>Monto.</li>
+<li>Moneda.</li>
+<li>Etapa.</li>
+<li>Probabilidad.</li>
+<li>Fecha estimada.</li>
+<li>Fecha real de cierre.</li>
+<li>Motivo de perdida.</li>
+</ul>
+<h3><code>Tarea.cs</code> / tabla <code>crm_tarea</code></h3>
+<p>Representa un seguimiento.</p>
+<p>Campos:</p>
+<ul>
+<li>Cliente opcional.</li>
+<li>Conversacion opcional.</li>
+<li>Oportunidad opcional.</li>
+<li>Titulo.</li>
+<li>Descripcion.</li>
+<li>Fecha de vencimiento.</li>
+<li>Estado.</li>
+<li>Asignado a.</li>
+<li>Creado por.</li>
+</ul>
+<h3><code>NotaInterna.cs</code> / tabla <code>crm_nota_interna</code></h3>
+<p>Representa una nota privada del equipo.</p>
+<p>Campos:</p>
+<ul>
+<li>Cliente.</li>
+<li>Conversacion opcional.</li>
+<li>Texto.</li>
+<li>Usuario creador.</li>
+<li>Fecha.</li>
+</ul>
+<h3><code>ActividadLog.cs</code> / tabla <code>crm_actividad_log</code></h3>
+<p>Registra auditoria.</p>
+<p>Campos:</p>
+<ul>
+<li>Entidad.</li>
+<li>EntidadId.</li>
+<li>Accion.</li>
+<li>Valor anterior.</li>
+<li>Valor nuevo.</li>
+<li>Usuario.</li>
+<li>Fecha.</li>
+</ul>
+<h3><code>CanalSocial.cs</code></h3>
+<p>Constantes y normalizacion de canales.</p>
+<p>Canales:</p>
+<ul>
+<li>WhatsApp.</li>
+<li>Facebook.</li>
+<li>Instagram.</li>
+<li>TikTok.</li>
+</ul>
+<h2>8. Services</h2>
+<h3><code>WhatsAppService.cs</code></h3>
+<p>Clase parcial base del servicio WhatsApp. Agrupa logica dividida en archivos parciales.</p>
+<h3><code>WhatsAppService.Inbound.cs</code></h3>
+<p>Procesa mensajes entrantes.</p>
+<p>Flujo:</p>
+<ul>
+<li>Recibe mensaje del webhook.</li>
+<li>Evita duplicados.</li>
+<li>Busca o crea cliente.</li>
+<li>Busca o crea conversacion.</li>
+<li>Asigna automaticamente si aplica.</li>
+<li>Guarda mensaje.</li>
+<li>Actualiza fechas.</li>
+<li>Ejecuta bot si corresponde.</li>
+</ul>
+<h3><code>WhatsAppService.Outgoing.cs</code></h3>
+<p>Procesa mensajes salientes.</p>
+<p>Flujo:</p>
+<ul>
+<li>Valida conversacion.</li>
+<li>Marca conversacion en atencion.</li>
+<li>Asigna usuario si responde.</li>
+<li>Pausa bot.</li>
+<li>Guarda mensaje.</li>
+<li>Envia a Meta en segundo plano si el envio real esta activo.</li>
+</ul>
+<h3><code>WhatsAppService.Queries.cs</code></h3>
+<p>Consulta conversaciones.</p>
+<p>Incluye:</p>
+<ul>
+<li>Obtener una conversacion con cliente, asesor y mensajes.</li>
+<li>Obtener lista de conversaciones.</li>
+<li>Filtros opcionales por usuario asignado para asesores.</li>
+</ul>
+<h3><code>WhatsAppService.Assignment.cs</code></h3>
+<p>Maneja asignacion automatica y conversaciones pendientes.</p>
+<h3><code>WhatsAppService.BotState.cs</code></h3>
+<p>Maneja pausa/activacion del bot por conversacion.</p>
+<h3><code>WhatsAppService.Status.cs</code></h3>
+<p>Maneja estados de mensajes o callbacks de entrega.</p>
+<h3><code>WhatsAppService.Typing.cs</code></h3>
+<p>Maneja indicador de escritura.</p>
+<h3><code>WhatsAppCloudApiService.cs</code></h3>
+<p>Cliente HTTP para WhatsApp Cloud API.</p>
+<p>Responsabilidades:</p>
+<ul>
+<li>Enviar textos.</li>
+<li>Enviar archivos.</li>
+<li>Descargar media si aplica.</li>
+<li>Validar si el envio real esta activo.</li>
+</ul>
+<h3><code>MetaGraphApiService.cs</code></h3>
+<p>Cliente HTTP para Graph API/Instagram Graph.</p>
+<p>Responsabilidades:</p>
+<ul>
+<li>Consultar cuenta <code>me</code>.</li>
+<li>Consultar conversaciones de Instagram.</li>
+<li>Obtener perfil de contacto.</li>
+<li>Diagnosticar respuestas de Meta.</li>
+</ul>
+<h3><code>MetaMessagingService.cs</code></h3>
+<p>Servicio de envio para Facebook/Instagram cuando hay permisos y tokens configurados.</p>
+<h3><code>MetaWebhookService.cs</code></h3>
+<p>Procesa webhooks de Meta para Facebook/Instagram.</p>
+<h3><code>SocialInboundService.cs</code></h3>
+<p>Normaliza mensajes sociales entrantes.</p>
+<p>Responsabilidades:</p>
+<ul>
+<li>Buscar o crear cliente social.</li>
+<li>Buscar o crear conversacion social.</li>
+<li>Guardar mensaje.</li>
+<li>Ejecutar bot social si aplica.</li>
+</ul>
+<h3><code>SocialIntegrationService.cs</code></h3>
+<p>Maneja configuraciones de canales sociales.</p>
+<p>Lee y guarda:</p>
+<ul>
+<li>WhatsApp.</li>
+<li>Instagram.</li>
+<li>Facebook.</li>
+<li>TikTok.</li>
+</ul>
+<p>Archivo usado:</p>
+<ul>
+<li><code>App_Data/social-integrations.json</code>.</li>
+</ul>
+<h3><code>BotSettingsService.cs</code></h3>
+<p>Maneja configuracion del bot.</p>
+<p>Archivo usado:</p>
+<ul>
+<li><code>App_Data/bot-whatsapp.json</code>.</li>
+</ul>
+<h3><code>QuickReplyTemplatesService.cs</code></h3>
+<p>Maneja plantillas rapidas separadas del bot.</p>
+<p>Archivo usado:</p>
+<ul>
+<li><code>App_Data/quick-replies.json</code>.</li>
+</ul>
+<p>Regla:</p>
+<ul>
+<li>El bot automatiza.</li>
+<li>Las plantillas rapidas ayudan al asesor a responder manualmente.</li>
+</ul>
+<h3><code>CloudinaryStorageService.cs</code></h3>
+<p>Sube archivos a Cloudinary.</p>
+<p>Devuelve:</p>
+<ul>
+<li>URL segura.</li>
+<li>Public ID.</li>
+<li>Tipo de recurso.</li>
+</ul>
+<h3><code>AuditoriaService.cs</code></h3>
+<p>Registra actividad en <code>crm_actividad_log</code>.</p>
+<h3><code>CrmAccessService.cs</code></h3>
+<p>Servicio central de permisos por pertenencia.</p>
+<p>Responsabilidades:</p>
+<ul>
+<li>Saber usuario actual.</li>
+<li>Saber si el usuario es asesor.</li>
+<li>Saber si tiene acceso global.</li>
+<li>Filtrar conversaciones.</li>
+<li>Filtrar clientes.</li>
+<li>Filtrar mensajes.</li>
+<li>Filtrar oportunidades.</li>
+<li>Filtrar tareas.</li>
+<li>Validar acceso a conversacion, cliente, oportunidad y tarea.</li>
+</ul>
+<p>Regla:</p>
+<ul>
+<li>Administrador y supervisor tienen acceso global.</li>
+<li>Asesor accede a lo asignado y a conversaciones nuevas sin asignar disponibles para tomar.</li>
+</ul>
+<h2>9. DTOs</h2>
+<h3><code>DTOs/Bot</code></h3>
+<p>Define objetos para configurar bot:</p>
+<ul>
+<li>Opciones.</li>
+<li>Respuestas.</li>
+<li>Mensaje inicial.</li>
+<li>Configuracion general.</li>
+</ul>
+<h3><code>DTOs/Social</code></h3>
+<p>Define objetos para integraciones sociales:</p>
+<ul>
+<li>Pruebas inbound.</li>
+<li>Guardado de configuracion.</li>
+</ul>
+<h2>10. Extensions</h2>
+<h3><code>ServiceCollectionExtensions.cs</code></h3>
+<p>Registra servicios en DI.</p>
+<p>Incluye:</p>
+<ul>
+<li>Base de datos.</li>
+<li>Servicios internos.</li>
+<li>HttpClients externos.</li>
+<li>Autenticacion por cookies.</li>
+<li>Rate limiting.</li>
+<li>CORS.</li>
+</ul>
+<h3><code>ApplicationBuilderExtensions.cs</code></h3>
+<p>Extension de pipeline de aplicacion.</p>
+<h3><code>SecurityHeadersExtensions.cs</code></h3>
+<p>Agrega headers de seguridad:</p>
+<ul>
+<li><code>X-Content-Type-Options</code>.</li>
+<li><code>X-Frame-Options</code>.</li>
+<li><code>Referrer-Policy</code>.</li>
+<li><code>Permissions-Policy</code>.</li>
+<li><code>X-Permitted-Cross-Domain-Policies</code>.</li>
+<li>Content Security Policy.</li>
+</ul>
+<h3><code>RequestSecurityExtensions.cs</code></h3>
+<p>Protege solicitudes.</p>
+<p>Incluye:</p>
+<ul>
+<li><code>no-store</code> para respuestas <code>/api</code>.</li>
+<li>Bloqueo de peticiones cross-site peligrosas.</li>
+<li>Excepciones para webhooks externos.</li>
+</ul>
+<h2>11. Startup</h2>
+<h3><code>DatabaseInitializer.cs</code></h3>
+<p>Inicializa base de datos y datos necesarios.</p>
+<p>Puede:</p>
+<ul>
+<li>Aplicar migraciones.</li>
+<li>Crear usuario administrador inicial.</li>
+<li>Crear datos base si no existen.</li>
+</ul>
+<h2>12. Migrations</h2>
+<p>Carpeta con migraciones EF Core.</p>
+<p>Archivos:</p>
+<ul>
+<li><code>20260914235831_InicialCrm</code>: base inicial.</li>
+<li><code>20260915093000_BotPorConversacion</code>: estado de bot por conversacion.</li>
+<li><code>20260915103000_CanalesSociales</code>: soporte multicanal.</li>
+<li><code>20260916153000_ClienteFotoPerfil</code>: foto de perfil de cliente.</li>
+<li><code>CrmDbContextModelSnapshot</code>: snapshot del modelo actual.</li>
+</ul>
+<h2>13. wwwroot</h2>
+<p>Contiene frontend estatico.</p>
+<h3><code>index.html</code></h3>
+<p>Pantalla principal del CRM.</p>
+<h3><code>login.html</code></h3>
+<p>Pantalla de inicio de sesion.</p>
+<h3><code>MaterializeReference.css</code></h3>
+<p>Estilos principales heredados/base.</p>
+<h3><code>Script.js</code></h3>
+<p>Script historico o base.</p>
+<h3><code>js/api-session.js</code></h3>
+<p>Maneja sesion del usuario, modulo inicial, navegacion por rol y cierre de sesion.</p>
+<h3><code>js/module-router.js</code></h3>
+<p>Maneja navegacion interna y evita entrada visual a modulos no permitidos.</p>
+<h3><code>js/app.js</code></h3>
+<p>Arranque general del frontend.</p>
+<h3><code>js/state.js</code></h3>
+<p>Estado compartido del frontend.</p>
+<h3><code>js/utils.js</code></h3>
+<p>Funciones auxiliares.</p>
+<h3><code>js/inbox.js</code></h3>
+<p>Interfaz de Comunicaciones: lista conversaciones, abre chats, renderiza mensajes, muestra plantillas rapidas y envia respuestas.</p>
+<h3><code>js/messaging-attachments.js</code></h3>
+<p>Maneja adjuntos: seleccion, validacion, envio y renderizado.</p>
+<h3><code>js/contacts.js</code></h3>
+<p>Interfaz de Contactos: lista, busca, crea y abre ficha de cliente.</p>
+<h3><code>js/customer-panel.js</code></h3>
+<p>Ficha 360 del cliente: datos, notas, tareas, oportunidades y etiquetas.</p>
+<h3><code>js/tasks-sales.js</code></h3>
+<p>Modulo de tareas y ventas: seguimientos y oportunidades.</p>
+<h3><code>js/pipeline.js</code></h3>
+<p>Vista de pipeline de conversaciones.</p>
+<p>Para asesores, el Pipeline funciona como tablero filtrado: muestra sus conversaciones y las nuevas sin asignar disponibles para tomar. Para administradores y supervisores funciona como tablero operativo global con controles de asignacion.</p>
+<p>Incluye movimiento de tarjetas con drag and drop entre etapas.</p>
+<h3><code>js/dashboard.js</code></h3>
+<p>Dashboard ejecutivo.</p>
+<h3><code>js/activity-reports.js</code></h3>
+<p>Reportes, actividad y fallos.</p>
+<h3><code>js/bot.js</code></h3>
+<p>Configuracion del bot.</p>
+<h3><code>js/connections.js</code></h3>
+<p>Configuracion de integraciones.</p>
+<h3><code>js/users.js</code></h3>
+<p>Administracion de usuarios.</p>
+<h3><code>js/layout-profile.js</code></h3>
+<p>Comportamiento visual del perfil/layout.</p>
+<h3><code>js/quality-modules.js</code></h3>
+<p>Modulos de calidad operativa complementaria.</p>
+<h2>14. App_Data</h2>
+<h3><code>bot-whatsapp.json</code></h3>
+<p>Configuracion local del bot.</p>
+<p>Contiene:</p>
+<ul>
+<li>Mensaje inicial.</li>
+<li>Opciones.</li>
+<li>Respuestas.</li>
+<li>Limites.</li>
+</ul>
+<h3><code>quick-replies.json</code></h3>
+<p>Configuracion local de plantillas rapidas para asesores.</p>
+<p>Contiene:</p>
+<ul>
+<li>Titulo.</li>
+<li>Mensaje.</li>
+<li>Categoria.</li>
+<li>Estado activo/inactivo.</li>
+</ul>
+<h3><code>social-integrations.json</code></h3>
+<p>Configuracion local de integraciones.</p>
+<p>Puede contener:</p>
+<ul>
+<li>App IDs.</li>
+<li>Versiones de API.</li>
+<li>Tokens.</li>
+<li>Verify tokens.</li>
+<li>IDs de cuenta/pagina.</li>
+</ul>
+<p>Recomendacion:</p>
+<ul>
+<li>No subir este archivo con secretos reales.</li>
+<li>Usar variables de entorno o secret manager en produccion.</li>
+</ul>
+<h2>15. Flujo de autenticacion</h2>
+<p>1. Usuario entra a <code>login.html</code>.</p>
+<p>2. Frontend llama al endpoint de login.</p>
+<p>3. Backend busca usuario activo.</p>
+<p>4. Backend valida password con hash.</p>
+<p>5. Si es valido, genera cookie segura.</p>
+<p>6. Frontend consulta <code>/api/auth/me</code>.</p>
+<p>7. Se cargan modulos segun rol.</p>
+<p>Seguridad:</p>
+<ul>
+<li>Cookie <code>HttpOnly</code>.</li>
+<li>Cookie <code>Secure</code>.</li>
+<li><code>SameSite=Lax</code>.</li>
+<li>Expiracion controlada.</li>
+<li>Bloqueo por intentos fallidos.</li>
+<li>Rate limiting.</li>
+</ul>
+<h2>16. Flujo de WhatsApp entrante</h2>
+<p>1. Cliente escribe por WhatsApp.</p>
+<p>2. Meta envia webhook al endpoint publico.</p>
+<p>3. ngrok o tunel reenvia al backend local.</p>
+<p>4. Backend valida y procesa payload.</p>
+<p>5. Busca o crea cliente.</p>
+<p>6. Busca o crea conversacion.</p>
+<p>7. Guarda mensaje entrante.</p>
+<p>8. Actualiza ultimo mensaje.</p>
+<p>9. Asigna asesor si aplica.</p>
+<p>10. Ejecuta bot si corresponde.</p>
+<p>11. Frontend muestra la conversacion.</p>
+<h2>17. Flujo de mensaje saliente</h2>
+<p>1. Asesor escribe desde Comunicaciones.</p>
+<p>2. Frontend llama al endpoint de envio.</p>
+<p>3. Backend valida acceso a la conversacion.</p>
+<p>4. Backend pausa bot.</p>
+<p>5. Backend registra mensaje saliente.</p>
+<p>6. Si envio real esta activo, manda a Meta.</p>
+<p>7. Estado queda registrado.</p>
+<h2>18. Flujo de archivos</h2>
+<p>1. Asesor selecciona archivo.</p>
+<p>2. Frontend envia multipart al backend.</p>
+<p>3. Backend valida extension y tamano.</p>
+<p>4. Backend valida acceso a conversacion.</p>
+<p>5. Backend sube archivo a Cloudinary.</p>
+<p>6. Backend guarda mensaje de archivo.</p>
+<p>7. Backend envia por canal si aplica.</p>
+<h2>19. Flujo de Instagram/Facebook</h2>
+<p>Estado actual:</p>
+<ul>
+<li>Configuracion preparada.</li>
+<li>Webhook Meta preparado.</li>
+<li>Perfil de contacto preparado.</li>
+<li>Instagram Login validado para cuenta profesional.</li>
+</ul>
+<p>Limitacion:</p>
+<ul>
+<li>En modo desarrollador Meta no entrega DMs reales externos como produccion.</li>
+<li>Se requiere publicacion/capability/App Review para DMs reales y webhooks reales.</li>
+</ul>
+<h2>20. Seguridad implementada</h2>
+<h3>Autenticacion y roles</h3>
+<ul>
+<li>Login obligatorio.</li>
+<li>Roles: Administrador, Supervisor, Asesor.</li>
+<li>Password hash.</li>
+<li>Cookies endurecidas.</li>
+<li>Endpoints con <code>[Authorize]</code>.</li>
+</ul>
+<h3>Rate limiting</h3>
+<ul>
+<li>Login: limite por usuario/IP.</li>
+<li>APIs internas: limite por usuario/IP.</li>
+<li>Respuesta 429 JSON.</li>
+</ul>
+<h3>Headers</h3>
+<ul>
+<li><code>X-Content-Type-Options</code>.</li>
+<li><code>X-Frame-Options</code>.</li>
+<li><code>Referrer-Policy</code>.</li>
+<li><code>Permissions-Policy</code>.</li>
+<li>Content Security Policy basica.</li>
+</ul>
+<h3>Proteccion cross-site</h3>
+<ul>
+<li>Bloqueo de metodos peligrosos cross-site.</li>
+<li>Excepciones para webhooks externos.</li>
+</ul>
+<h3>Control por asesor</h3>
+<p>Implementado en backend con <code>CrmAccessService</code>.</p>
+<p>Protege:</p>
+<ul>
+<li>Clientes.</li>
+<li>Conversaciones.</li>
+<li>Mensajes.</li>
+<li>Comentarios.</li>
+<li>Archivos.</li>
+<li>Plantillas rapidas.</li>
+<li>Notas.</li>
+<li>Etiquetas por cliente.</li>
+<li>Tareas.</li>
+<li>Oportunidades.</li>
+</ul>
+<h3>Cache</h3>
+<ul>
+<li>Respuestas <code>/api</code> con <code>no-store</code>.</li>
+</ul>
+<h2>21. Riesgos y recomendaciones de produccion</h2>
+<p>Riesgos:</p>
+<ul>
+<li>Secretos en <code>appsettings.json</code>.</li>
+<li>Tokens expuestos en capturas.</li>
+<li>ngrok como tunel temporal.</li>
+<li>CRM conectado directamente al ERP con credenciales amplias.</li>
+<li>Falta de 2FA.</li>
+<li>Falta de backups probados.</li>
+</ul>
+<p>Recomendaciones:</p>
+<ul>
+<li>Rotar secretos expuestos.</li>
+<li>Mover secretos a variables de entorno o secret manager.</li>
+<li>Usar Cloudflare Tunnel o hosting formal.</li>
+<li>Usar Cloudflare Access con 2FA.</li>
+<li>Usar WAF y rate limiting externo.</li>
+<li>Separar CRM y ERP.</li>
+<li>No conectar directo a la base del ERP.</li>
+<li>Crear API puente para ERP con permisos minimos.</li>
+<li>Backups automaticos y prueba de restauracion.</li>
+<li>Monitoreo de logs y errores.</li>
+</ul>
+<h2>22. Flujo seguro recomendado con ERP</h2>
+<p>No recomendado:</p>
+<ul>
+<li>CRM expuesto con acceso directo amplio a la base del ERP.</li>
+</ul>
+<p>Recomendado:</p>
+<p>1. Usuario.</p>
+<p>2. Cloudflare Access/WAF/2FA.</p>
+<p>3. CRM Web.</p>
+<p>4. API del CRM.</p>
+<p>5. API puente ERP.</p>
+<p>6. Base de datos ERP en red privada.</p>
+<p>La API puente debe permitir solo operaciones controladas:</p>
+<ul>
+<li>Consultar cliente.</li>
+<li>Consultar stock.</li>
+<li>Consultar precios.</li>
+<li>Crear cotizacion.</li>
+<li>Crear pedido.</li>
+<li>Consultar estado de pedido.</li>
+</ul>
+<p>No debe permitir:</p>
+<ul>
+<li>Operaciones administrativas.</li>
+<li>Borrados masivos.</li>
+<li><code>DROP</code>.</li>
+<li><code>ALTER</code>.</li>
+<li>Lectura libre de tablas sensibles.</li>
+</ul>
+<h2>23. Validaciones tecnicas usadas</h2>
+<p>Comandos usados para validar:</p>
+<pre><code>Get-ChildItem CRM.Data\wwwroot\js\*.js | Sort-Object Name | ForEach-Object { node --check $_.FullName }
+dotnet build CRM.Data\CRM.Data.csproj -o _codex_build_check\crmdata</code></pre>
+<p>Resultado reciente:</p>
+<ul>
+<li>JavaScript valido.</li>
+<li>Build correcto.</li>
+<li>0 errores.</li>
+<li>0 advertencias.</li>
+</ul>
+<h2>24. Pendientes tecnicos recomendados</h2>
+<ul>
+<li>Mover secretos fuera de <code>appsettings.json</code>.</li>
+<li>Rotar App Secret y tokens expuestos.</li>
+<li>Agregar pruebas automatizadas de permisos por rol/pertenencia.</li>
+<li>Implementar Cloudflare Tunnel o hosting formal.</li>
+<li>Configurar Cloudflare Access/2FA.</li>
+<li>Crear API puente ERP.</li>
+<li>Mejorar exportaciones Excel/PDF.</li>
+<li>Agregar monitoreo y logs consultables.</li>
+<li>Definir politica de backups.</li>
+<li>Completar publicacion/revision Meta para Instagram Messaging.</li>
+</ul>
+<h2>25. Cierre</h2>
+<p>El CRM tiene una base funcional y mantenible:</p>
+<ul>
+<li>Backend ASP.NET Core.</li>
+<li>Frontend modular.</li>
+<li>Base de datos relacional.</li>
+<li>Seguridad inicial aplicada.</li>
+<li>Control de asesores desde backend.</li>
+<li>WhatsApp operativo.</li>
+<li>Canales sociales preparados segun limitaciones reales.</li>
+<li>Documentacion separada para uso y mantenimiento.</li>
+</ul>
+</body>
+</html>

@@ -1,8 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using CRM.Data.Data;
 using CRM.Data.Models;
+using CRM.Data.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace CRM.Data.Controllers;
@@ -10,13 +12,16 @@ namespace CRM.Data.Controllers;
 [ApiController]
 [Route("api/etiquetas")]
 [Authorize(Roles = "Administrador,Supervisor,Asesor")]
+[EnableRateLimiting("api")]
 public class EtiquetasController : ControllerBase
 {
     private readonly CrmDbContext _context;
+    private readonly CrmAccessService _access;
 
-    public EtiquetasController(CrmDbContext context)
+    public EtiquetasController(CrmDbContext context, CrmAccessService access)
     {
         _context = context;
+        _access = access;
     }
 
     [HttpGet]
@@ -62,6 +67,11 @@ public class EtiquetasController : ControllerBase
         var etiquetaExiste = await _context.Etiquetas.AnyAsync(e => e.nEtiqueta == etiquetaId);
         if (!clienteExiste || !etiquetaExiste) return NotFound("Cliente o etiqueta no encontrada.");
 
+        if (!await _access.PuedeAccederClienteAsync(clienteId))
+        {
+            return Forbid();
+        }
+
         var yaAsignada = await _context.ClienteEtiquetas
             .AnyAsync(ce => ce.nCliente == clienteId && ce.nEtiqueta == etiquetaId);
         if (yaAsignada) return Ok(new { success = true });
@@ -84,6 +94,11 @@ public class EtiquetasController : ControllerBase
             .FirstOrDefaultAsync(ce => ce.nCliente == clienteId && ce.nEtiqueta == etiquetaId);
         if (relacion == null) return NotFound();
 
+        if (!await _access.PuedeAccederClienteAsync(clienteId))
+        {
+            return Forbid();
+        }
+
         _context.ClienteEtiquetas.Remove(relacion);
         await _context.SaveChangesAsync();
 
@@ -93,6 +108,11 @@ public class EtiquetasController : ControllerBase
     [HttpGet("clientes/{clienteId:long}")]
     public async Task<IActionResult> DeCliente(long clienteId)
     {
+        if (!await _access.PuedeAccederClienteAsync(clienteId))
+        {
+            return Forbid();
+        }
+
         var etiquetas = await _context.ClienteEtiquetas
             .AsNoTracking()
             .Where(ce => ce.nCliente == clienteId)

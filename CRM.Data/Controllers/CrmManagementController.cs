@@ -7,6 +7,7 @@ using CRM.Data.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace CRM.Data.Controllers;
@@ -14,6 +15,7 @@ namespace CRM.Data.Controllers;
 [ApiController]
 [Route("api/crm")]
 [Authorize(Roles = "Administrador,Supervisor,Asesor")]
+[EnableRateLimiting("api")]
 public class CrmManagementController : ControllerBase
 {
     private static readonly string[] EstadosConversacionPermitidos =
@@ -33,19 +35,22 @@ public class CrmManagementController : ControllerBase
     private readonly WhatsAppService _whatsappService;
     private readonly AuditoriaService _auditoria;
     private readonly MetaGraphApiService _metaGraph;
+    private readonly CrmAccessService _access;
 
     public CrmManagementController(
         CrmDbContext context,
         IPasswordHasher<CrmUsuario> hasher,
         WhatsAppService whatsappService,
         AuditoriaService auditoria,
-        MetaGraphApiService metaGraph)
+        MetaGraphApiService metaGraph,
+        CrmAccessService access)
     {
         _context = context;
         _hasher = hasher;
         _whatsappService = whatsappService;
         _auditoria = auditoria;
         _metaGraph = metaGraph;
+        _access = access;
     }
 
     private int? UsuarioActualId =>
@@ -58,7 +63,7 @@ public class CrmManagementController : ControllerBase
         [FromQuery] int? usuarioId = null,
         [FromQuery] int? etiquetaId = null)
     {
-        var query = _context.Clientes.AsNoTracking().AsQueryable();
+        var query = _access.FiltrarClientes(_context.Clientes.AsNoTracking());
         if (!string.IsNullOrWhiteSpace(search))
         {
             search = search.Trim();
@@ -85,8 +90,11 @@ public class CrmManagementController : ControllerBase
 
         if (usuarioId.HasValue)
         {
-            query = query.Where(cliente =>
-                cliente.Conversaciones.Any(conversacion => conversacion.nUsuarioAsignado == usuarioId.Value));
+            if (_access.TieneAccesoGlobal)
+            {
+                query = query.Where(cliente =>
+                    cliente.Conversaciones.Any(conversacion => conversacion.nUsuarioAsignado == usuarioId.Value));
+            }
         }
 
         if (etiquetaId.HasValue)
@@ -164,6 +172,29 @@ public class CrmManagementController : ControllerBase
 
         _context.Clientes.Add(clienteNuevo);
         await _context.SaveChangesAsync();
+
+        long? conversacionInicialId = null;
+        if (_access.EsAsesor && UsuarioActualId.HasValue)
+        {
+            var conversacionInicial = new Conversacion
+            {
+                nCliente = clienteNuevo.nCliente,
+                nUsuarioAsignado = UsuarioActualId.Value,
+                cEstado = "EN_ATENCION",
+                cCanal = CanalSocial.WhatsApp,
+                cExternalThreadId = clienteNuevo.cTelefono,
+                cBotEstado = "PAUSADO",
+                dFechaInicio = DateTime.Now,
+                dUltimoMensaje = DateTime.Now,
+                dBotPausadoDesde = DateTime.Now,
+                nBotPausadoPor = UsuarioActualId.Value
+            };
+
+            _context.Conversaciones.Add(conversacionInicial);
+            await _context.SaveChangesAsync();
+            conversacionInicialId = conversacionInicial.nConversacion;
+        }
+
         await _auditoria.RegistrarAsync("Cliente", clienteNuevo.nCliente, "CREACION", null,
             $"{clienteNuevo.cNombre} / {clienteNuevo.cTelefono}", UsuarioActualId);
 
@@ -172,7 +203,8 @@ public class CrmManagementController : ControllerBase
             success = true,
             id = clienteNuevo.nCliente,
             nombre = clienteNuevo.cNombre,
-            telefono = clienteNuevo.cTelefono
+            telefono = clienteNuevo.cTelefono,
+            conversacionId = conversacionInicialId
         });
     }
 
@@ -184,6 +216,11 @@ public class CrmManagementController : ControllerBase
         if (cliente == null)
         {
             return NotFound("Cliente no encontrado.");
+        }
+
+        if (!_access.TieneAccesoGlobal && !await _access.PuedeAccederClienteAsync(id))
+        {
+            return Forbid();
         }
 
         var conversacionAbierta = await _context.Conversaciones
@@ -234,7 +271,7 @@ public class CrmManagementController : ControllerBase
         page = page < 1 ? 1 : page;
         pageSize = pageSize is < 1 or > 200 ? 50 : pageSize;
 
-        var query = _context.Conversaciones.AsNoTracking().AsQueryable();
+        var query = _access.FiltrarConversaciones(_context.Conversaciones.AsNoTracking());
         if (!string.IsNullOrWhiteSpace(estado))
         {
             query = query.Where(c => c.cEstado == estado.Trim().ToUpperInvariant());
@@ -370,6 +407,11 @@ public class CrmManagementController : ControllerBase
             return NotFound("Conversación no encontrada.");
         }
 
+        if (!await _access.PuedeAccederConversacionAsync(id))
+        {
+            return Forbid();
+        }
+
         var estadoAnterior = conversacion.cEstado;
         conversacion.cEstado = estado;
         await _context.SaveChangesAsync();
@@ -390,6 +432,13 @@ public class CrmManagementController : ControllerBase
         if (conversacion == null)
         {
             return NotFound("Conversación no encontrada.");
+        }
+
+        if (!_access.TieneAccesoGlobal &&
+            conversacion.nUsuarioAsignado.HasValue &&
+            conversacion.nUsuarioAsignado != UsuarioActualId)
+        {
+            return Forbid();
         }
 
         var asignadoAnterior = conversacion.nUsuarioAsignado?.ToString() ?? "sin asignar";
@@ -463,6 +512,11 @@ public class CrmManagementController : ControllerBase
         if (conversacion == null)
         {
             return NotFound("Conversación no encontrada.");
+        }
+
+        if (!await _access.PuedeAccederConversacionAsync(id))
+        {
+            return Forbid();
         }
 
         if (conversacion.cCanal is not (CanalSocial.Facebook or CanalSocial.Instagram))
@@ -604,7 +658,7 @@ public class CrmManagementController : ControllerBase
         [FromQuery] int? usuarioId = null,
         [FromQuery] int? etiquetaId = null)
     {
-        var query = _context.Clientes.AsNoTracking().AsQueryable();
+        var query = _access.FiltrarClientes(_context.Clientes.AsNoTracking());
         if (!string.IsNullOrWhiteSpace(search))
         {
             search = search.Trim();
@@ -621,7 +675,7 @@ public class CrmManagementController : ControllerBase
             query = query.Where(cliente => cliente.cCanalOrigen == canalNormalizado || cliente.Conversaciones.Any(c => c.cCanal == canalNormalizado));
         }
 
-        if (usuarioId.HasValue) query = query.Where(cliente => cliente.Conversaciones.Any(c => c.nUsuarioAsignado == usuarioId.Value));
+        if (usuarioId.HasValue && _access.TieneAccesoGlobal) query = query.Where(cliente => cliente.Conversaciones.Any(c => c.nUsuarioAsignado == usuarioId.Value));
         if (etiquetaId.HasValue) query = query.Where(cliente => _context.ClienteEtiquetas.Any(ce => ce.nCliente == cliente.nCliente && ce.nEtiqueta == etiquetaId.Value));
 
         var filas = await query
@@ -648,7 +702,8 @@ public class CrmManagementController : ControllerBase
         page = page < 1 ? 1 : page;
         pageSize = pageSize is < 1 or > 200 ? 100 : pageSize;
 
-        var query = _context.Mensajes.AsNoTracking().Where(mensaje => mensaje.cTipo == "comment");
+        var query = _access.FiltrarMensajes(_context.Mensajes.AsNoTracking())
+            .Where(mensaje => mensaje.cTipo == "comment");
         if (!string.IsNullOrWhiteSpace(canal) && !canal.Equals("TODOS", StringComparison.OrdinalIgnoreCase))
         {
             var canalNormalizado = CanalSocial.Normalizar(canal);

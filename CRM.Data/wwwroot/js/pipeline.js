@@ -9,9 +9,13 @@
             if (!response.ok) throw new Error("Pipeline no disponible");
             const paginaPipeline = await response.json();
             const conversacionesPipeline = paginaPipeline.items || [];
-            const usuariosResponse = await api("/api/crm/usuarios");
-            if (!usuariosResponse.ok) throw new Error("Usuarios no disponibles");
-            const usuarios = await usuariosResponse.json();
+            const puedeGestionarEquipo = rolActual === "Administrador" || rolActual === "Supervisor";
+            let usuarios = [];
+            if (puedeGestionarEquipo) {
+                const usuariosResponse = await api("/api/crm/usuarios");
+                if (!usuariosResponse.ok) throw new Error("Usuarios no disponibles");
+                usuarios = await usuariosResponse.json();
+            }
             const etapas = estadosConversacion().map(etapa => etapa.id);
 
             const iniciales = nombre => (nombre || "C")
@@ -23,7 +27,7 @@
             const renderAsesor = item => {
                 const asesorNombre = item.asesor || "Sin asignar";
                 const avatar = item.asesor ? iniciales(asesorNombre) : "?";
-                const puedeAsignar = rolActual === "Administrador" || rolActual === "Supervisor";
+                const puedeAsignar = puedeGestionarEquipo;
 
                 return `<div class="assignee-profile">
                     <button type="button" class="assignee-avatar" title="${escapeAttribute(asesorNombre)}" aria-label="Ver asesor asignado">
@@ -48,7 +52,7 @@
             vista.innerHTML = `
                         <div class="module-heading">
                             <div><h1>Pipeline</h1><p>Gestiona la etapa de cada conversación como tablero kanban.</p></div>
-                            ${(rolActual === "Administrador" || rolActual === "Supervisor")
+                            ${puedeGestionarEquipo
                                 ? '<button type="button" id="btnAsignarPendientes" class="secondary-btn">Asignar pendientes automáticamente</button>'
                                 : ""}
                         </div>
@@ -70,7 +74,7 @@
                                     <div class="stage-meta">${items.length} ${items.length === 1 ? "cliente potencial" : "clientes potenciales"}</div>
                                     <div class="stage-bar"></div>
                                 </div>
-                                ${items.map(item => `<div class="deal-card" data-conversation-id="${item.id}">
+                                ${items.map(item => `<div class="deal-card" data-conversation-id="${item.id}" draggable="true">
                                 <div class="deal-card-top">
                                     <div class="deal-avatar">${escapeHtml(iniciales(item.cliente.nombre))}</div>
                                     <div class="deal-info">
@@ -120,9 +124,35 @@
              * aquí mismo.
              */
             vista.querySelectorAll(".deal-card").forEach(card => {
+                card.addEventListener("dragstart", event => {
+                    event.dataTransfer.setData("text/plain", card.dataset.conversationId || "");
+                    event.dataTransfer.effectAllowed = "move";
+                    card.classList.add("dragging");
+                });
+                card.addEventListener("dragend", () => {
+                    card.classList.remove("dragging");
+                });
                 card.addEventListener("click", event => {
                     if (event.target.closest("select") || event.target.closest(".assignee-profile")) return;
                     abrirDetalleConversacion(card.dataset.conversationId, "pipeline");
+                });
+            });
+            vista.querySelectorAll(".stage-column").forEach(column => {
+                column.addEventListener("dragover", event => {
+                    event.preventDefault();
+                    event.dataTransfer.dropEffect = "move";
+                    column.classList.add("drag-over");
+                });
+                column.addEventListener("dragleave", () => {
+                    column.classList.remove("drag-over");
+                });
+                column.addEventListener("drop", async event => {
+                    event.preventDefault();
+                    column.classList.remove("drag-over");
+                    const id = event.dataTransfer.getData("text/plain");
+                    const estado = column.dataset.stage;
+                    if (!id || !estado) return;
+                    await cambiarEstado(id, estado);
                 });
             });
 

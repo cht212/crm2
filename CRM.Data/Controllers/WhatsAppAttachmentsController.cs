@@ -28,13 +28,16 @@ public class WhatsAppAttachmentsController : ControllerBase
     private const long TamanoMaximo = 15 * 1024 * 1024;
     private readonly WhatsAppService _whatsappService;
     private readonly CloudinaryStorageService _storage;
+    private readonly CrmAccessService _access;
 
     public WhatsAppAttachmentsController(
         WhatsAppService whatsappService,
-        CloudinaryStorageService storage)
+        CloudinaryStorageService storage,
+        CrmAccessService access)
     {
         _whatsappService = whatsappService;
         _storage = storage;
+        _access = access;
     }
 
     [HttpPost("{conversacionId:long}/archivos")]
@@ -71,6 +74,11 @@ public class WhatsAppAttachmentsController : ControllerBase
             return BadRequest(new { success = false, message = "El usuario no es valido." });
         }
 
+        if (!await _access.PuedeAccederConversacionAsync(conversacionId))
+        {
+            return Forbid();
+        }
+
         var resultado = await _storage.UploadAsync(archivo, "crm-hpd", cancellationToken);
         var urlPublica = resultado.SecureUrl;
         var contenido = JsonSerializer.Serialize(new
@@ -85,7 +93,7 @@ public class WhatsAppAttachmentsController : ControllerBase
         var mensajeId = await _whatsappService.ProcesarMensajeSalienteAsync(
             conversacionId,
             contenido,
-            usuarioIdParsed,
+            _access.UsuarioActualId ?? usuarioIdParsed,
             DeterminarTipo(extension),
             null);
 

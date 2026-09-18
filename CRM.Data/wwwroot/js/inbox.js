@@ -276,11 +276,11 @@
             if (plantillasRapidasCache) return plantillasRapidasCache;
 
             try {
-                const response = await api("/api/bot/whatsapp");
+                const response = await api("/api/plantillas-rapidas");
                 if (!response.ok) throw new Error("No se pudieron cargar las plantillas.");
                 const data = await response.json();
-                plantillasRapidasCache = Array.isArray(data.options)
-                    ? data.options.filter(option => option.response)
+                plantillasRapidasCache = Array.isArray(data.templates)
+                    ? data.templates.filter(template => template.message)
                     : [];
             } catch (error) {
                 console.error(error);
@@ -311,9 +311,9 @@
                     <span>Plantillas rápidas</span>
                 </div>
                 <div class="quick-replies-list">
-                    ${plantillas.slice(0, 8).map(option => `
-                        <button type="button" class="quick-reply" data-quick-reply="${escapeAttribute(option.response)}" title="${escapeAttribute(option.response)}">
-                            ${escapeHtml(option.title || option.key || "Respuesta")}
+                    ${plantillas.slice(0, 10).map(template => `
+                        <button type="button" class="quick-reply" data-quick-reply="${escapeAttribute(template.message)}" title="${escapeAttribute(template.message)}">
+                            ${escapeHtml(template.title || "Respuesta")}
                         </button>
                     `).join("")}
                 </div>`;

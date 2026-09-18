@@ -2,8 +2,10 @@
 using System.Security.Claims;
 using CRM.Data.Data;
 using CRM.Data.Models;
+using CRM.Data.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace CRM.Data.Controllers;
@@ -23,13 +25,16 @@ namespace CRM.Data.Controllers;
 [ApiController]
 [Route("api/tareas")]
 [Authorize(Roles = "Administrador,Supervisor,Asesor")]
+[EnableRateLimiting("api")]
 public class TareasController : ControllerBase
 {
     private readonly CrmDbContext _context;
+    private readonly CrmAccessService _access;
 
-    public TareasController(CrmDbContext context)
+    public TareasController(CrmDbContext context, CrmAccessService access)
     {
         _context = context;
+        _access = access;
     }
 
     private int? UsuarioActualId =>
@@ -49,8 +54,8 @@ public class TareasController : ControllerBase
         page = page < 1 ? 1 : page;
         pageSize = pageSize is < 1 or > 200 ? 50 : pageSize;
 
-        var query = _context.Tareas.AsNoTracking().AsQueryable();
-        if (usuarioId.HasValue) query = query.Where(t => t.nAsignadoA == usuarioId.Value);
+        var query = _access.FiltrarTareas(_context.Tareas.AsNoTracking());
+        if (usuarioId.HasValue && _access.TieneAccesoGlobal) query = query.Where(t => t.nAsignadoA == usuarioId.Value);
         if (clienteId.HasValue) query = query.Where(t => t.nCliente == clienteId.Value);
         if (conversacionId.HasValue) query = query.Where(t => t.nConversacion == conversacionId.Value);
         if (!string.IsNullOrWhiteSpace(estado))
@@ -90,6 +95,21 @@ public class TareasController : ControllerBase
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
+        if (dto.ClienteId.HasValue && !await _access.PuedeAccederClienteAsync(dto.ClienteId.Value))
+        {
+            return Forbid();
+        }
+
+        if (dto.ConversacionId.HasValue && !await _access.PuedeAccederConversacionAsync(dto.ConversacionId.Value))
+        {
+            return Forbid();
+        }
+
+        if (dto.OportunidadId.HasValue && !await _access.PuedeAccederOportunidadAsync(dto.OportunidadId.Value))
+        {
+            return Forbid();
+        }
+
         var tarea = new Tarea
         {
             nCliente = dto.ClienteId,
@@ -98,7 +118,7 @@ public class TareasController : ControllerBase
             cTitulo = dto.Titulo!.Trim(),
             cDescripcion = dto.Descripcion?.Trim(),
             dFechaVencimiento = dto.FechaVencimiento,
-            nAsignadoA = dto.AsignadoAId,
+            nAsignadoA = _access.EsAsesor ? UsuarioActualId : dto.AsignadoAId,
             nCreadoPor = UsuarioActualId,
             cEstado = "PENDIENTE",
             dFechaCreacion = DateTime.Now
@@ -116,6 +136,11 @@ public class TareasController : ControllerBase
         var tarea = await _context.Tareas.FindAsync(id);
         if (tarea == null) return NotFound("Tarea no encontrada.");
 
+        if (!await _access.PuedeAccederTareaAsync(id))
+        {
+            return Forbid();
+        }
+
         tarea.cEstado = "COMPLETADA";
         tarea.dFechaCompletada = DateTime.Now;
         await _context.SaveChangesAsync();
@@ -128,6 +153,11 @@ public class TareasController : ControllerBase
     {
         var tarea = await _context.Tareas.FindAsync(id);
         if (tarea == null) return NotFound("Tarea no encontrada.");
+
+        if (!await _access.PuedeAccederTareaAsync(id))
+        {
+            return Forbid();
+        }
 
         tarea.cEstado = "CANCELADA";
         await _context.SaveChangesAsync();

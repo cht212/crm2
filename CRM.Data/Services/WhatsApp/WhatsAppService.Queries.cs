@@ -11,15 +11,29 @@ public partial class WhatsAppService
 // =========================================================
 
 public async Task<object?> ObtenerConversacionAsync(
-    long conversacionId)
+    long conversacionId,
+    int? usuarioAsignadoId = null,
+    bool incluirDisponiblesParaTomar = false)
 {
-    var conversacion =
-        await _context.Conversaciones
+    IQueryable<Conversacion> query =
+        _context.Conversaciones
             .AsNoTracking()
             .Include(c => c.Cliente)
             .Include(c => c.UsuarioAsignado)
-            .FirstOrDefaultAsync(c =>
-                c.nConversacion == conversacionId);
+            .Where(c => c.nConversacion == conversacionId);
+
+    if (usuarioAsignadoId.HasValue)
+    {
+        query = query.Where(c =>
+            c.nUsuarioAsignado == usuarioAsignadoId.Value ||
+            (incluirDisponiblesParaTomar &&
+             !c.nUsuarioAsignado.HasValue &&
+             (c.cEstado == "NUEVO" ||
+              c.cEstado == "ABIERTO" ||
+              c.cEstado == "EN_ATENCION")));
+    }
+
+    var conversacion = await query.FirstOrDefaultAsync();
 
     if (conversacion == null)
     {
@@ -134,13 +148,29 @@ public async Task<object?> ObtenerConversacionAsync(
 // TODAS LAS CONVERSACIONES
 // =========================================================
 
-public async Task<object> ObtenerTodasConversacionesAsync()
+public async Task<object> ObtenerTodasConversacionesAsync(
+    int? usuarioAsignadoId = null,
+    bool incluirDisponiblesParaTomar = false)
 {
-    var conversaciones =
-        await _context.Conversaciones
+    IQueryable<Conversacion> query =
+        _context.Conversaciones
             .AsNoTracking()
             .Include(c => c.Cliente)
-            .Include(c => c.UsuarioAsignado)
+            .Include(c => c.UsuarioAsignado);
+
+    if (usuarioAsignadoId.HasValue)
+    {
+        query = query.Where(c =>
+            c.nUsuarioAsignado == usuarioAsignadoId.Value ||
+            (incluirDisponiblesParaTomar &&
+             !c.nUsuarioAsignado.HasValue &&
+             (c.cEstado == "NUEVO" ||
+              c.cEstado == "ABIERTO" ||
+              c.cEstado == "EN_ATENCION")));
+    }
+
+    var conversaciones =
+        await query
             .OrderByDescending(
                 c => c.dUltimoMensaje)
             .Select(c => new

@@ -2851,6 +2851,87 @@ body {
     color: var(--green-dark);
 }
 
+.analytics-readiness {
+    display: grid;
+    gap: 14px;
+}
+
+.analytics-status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+}
+
+.analytics-status {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--materialize-danger);
+    border-radius: 10px;
+    background: #fff;
+    padding: 14px;
+}
+
+.analytics-status.ok {
+    border-left-color: var(--green);
+}
+
+.analytics-status.warning {
+    border-left-color: var(--materialize-warning);
+}
+
+.analytics-status-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.analytics-status-head strong {
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: var(--ink);
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.analytics-status.ok .analytics-status-head strong {
+    background: #e9fbef;
+    color: #14783f;
+}
+
+.analytics-status.warning .analytics-status-head strong {
+    background: #fff7df;
+    color: #9a6700;
+}
+
+.analytics-status.danger .analytics-status-head strong {
+    background: #fff0f0;
+    color: #b42318;
+}
+
+.analytics-status p,
+.analytics-status small,
+.analytics-status li {
+    color: var(--muted);
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.analytics-status p {
+    margin: 0;
+}
+
+.analytics-status ul {
+    display: grid;
+    gap: 5px;
+    margin: 0;
+    padding-left: 18px;
+}
+
 .connections-summary {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -3680,6 +3761,21 @@ button.bot-channel-card.active {
 .deal-card:hover {
     box-shadow: 0 8px 18px rgba(20, 33, 43, 0.08);
     transform: translateY(-1px);
+}
+
+.deal-card[draggable="true"] {
+    cursor: grab;
+}
+
+.deal-card.dragging {
+    cursor: grabbing;
+    opacity: .65;
+}
+
+.stage-column.drag-over {
+    outline: 2px dashed var(--stage-color, #0ea5c6);
+    outline-offset: -6px;
+    background: rgba(14, 165, 198, .08);
 }
 
 .deal-card-top {

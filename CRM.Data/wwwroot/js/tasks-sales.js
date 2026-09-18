@@ -39,9 +39,10 @@
         }
 
         async function cargarModuloTareas(vista) {
+            const puedeGestionarEquipo = rolActual === "Administrador" || rolActual === "Supervisor";
             const [tareasResponse, usuarios] = await Promise.all([
                 api("/api/tareas?pageSize=200"),
-                cargarUsuarios()
+                puedeGestionarEquipo ? cargarUsuarios() : Promise.resolve([])
             ]);
             if (!tareasResponse.ok) throw new Error("Tareas no disponibles");
             const pagina = await tareasResponse.json();
@@ -81,10 +82,10 @@
                     <form id="quickTaskForm" class="user-form task-form">
                         <input name="titulo" maxlength="200" placeholder="Nueva tarea o seguimiento" required>
                         <input name="fechaVencimiento" type="datetime-local" required>
-                        <select name="asignadoAId">
+                        ${puedeGestionarEquipo ? `<select name="asignadoAId">
                             <option value="">Asignar a...</option>
                             ${usuarios.map(usuario => `<option value="${usuario.id}" ${Number(usuario.id) === Number(sesionActual?.id) ? "selected" : ""}>${escapeHtml(usuario.nombre)}</option>`).join("")}
-                        </select>
+                        </select>` : ""}
                         <button type="submit">Crear tarea</button>
                     </form>
                     <div class="task-filters">
@@ -165,10 +166,11 @@
         }
 
         async function cargarModuloVentas(vista) {
+            const puedeGestionarEquipo = rolActual === "Administrador" || rolActual === "Supervisor";
             const [ventasResponse, contactosResponse, usuarios] = await Promise.all([
                 api("/api/oportunidades?pageSize=200"),
                 api("/api/crm/contactos"),
-                cargarUsuarios()
+                puedeGestionarEquipo ? cargarUsuarios() : Promise.resolve([])
             ]);
             if (!ventasResponse.ok) throw new Error("Ventas no disponibles");
             if (!contactosResponse.ok) throw new Error("Contactos no disponibles");
@@ -205,10 +207,10 @@
                         </select>
                         <input name="monto" type="number" min="0" step="0.01" placeholder="Monto">
                         <select name="moneda"><option value="PEN">PEN</option><option value="USD">USD</option></select>
-                        <select name="usuarioAsignadoId">
+                        ${puedeGestionarEquipo ? `<select name="usuarioAsignadoId">
                             <option value="">Asesor...</option>
                             ${usuarios.map(usuario => `<option value="${usuario.id}" ${Number(usuario.id) === Number(sesionActual?.id) ? "selected" : ""}>${escapeHtml(usuario.nombre)}</option>`).join("")}
-                        </select>
+                        </select>` : ""}
                         <button type="submit">Crear venta</button>
                     </form>
                     <div class="task-filters">

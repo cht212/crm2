@@ -1,14 +1,16 @@
 # Documentacion Integral del Proyecto CRM
 
-Fecha: 17 de septiembre de 2026
+Fecha: 18 de septiembre de 2026
 
 ## 1. Resumen ejecutivo
 
-El proyecto es un CRM local enfocado en la atencion de clientes por WhatsApp y preparado para evolucionar a un centro multicanal con Facebook, Instagram y TikTok. La aplicacion permite centralizar conversaciones, registrar clientes, responder mensajes, organizar estados de atencion, asignar asesores, crear tareas de seguimiento, registrar oportunidades de venta, guardar notas internas, clasificar clientes con etiquetas, administrar bot de derivacion, configurar conexiones externas y consultar reportes operativos.
+El proyecto es un CRM local enfocado en la atencion de clientes por WhatsApp y preparado para evolucionar a un centro multicanal con Facebook, Instagram y TikTok. La aplicacion permite centralizar conversaciones, registrar clientes, responder mensajes, organizar estados de atencion, asignar asesores, crear tareas de seguimiento, registrar oportunidades de venta, guardar notas internas, clasificar clientes con etiquetas, administrar bot de derivacion, configurar conexiones externas, consultar reportes operativos y aplicar controles iniciales de seguridad.
 
 El sistema empezo como una integracion con WhatsApp Cloud API y fue creciendo hasta convertirse en una plataforma CRM funcional. Actualmente corre en la maquina local de desarrollo y utiliza ngrok para exponer temporalmente webhooks HTTPS publicos hacia Meta. A futuro, la idea es usar Cloudflare Tunnel para tener una conexion publica mas estable y controlada.
 
 En una explicacion simple: el CRM vive localmente, los canales externos se comunican con el por un tunel seguro, la informacion se guarda en SQL Server y los archivos se publican mediante Cloudinary cuando se necesita una URL HTTPS.
+
+Para una etapa productiva con datos sensibles del ERP, el enfoque recomendado no es exponer el CRM directamente con acceso amplio a la base del ERP. El flujo seguro propuesto es: Cloudflare/Access/WAF, CRM, API del CRM, API puente del ERP y finalmente base de datos del ERP con permisos minimos.
 
 ## 2. Objetivo del proyecto
 
@@ -54,9 +56,15 @@ El alcance actual incluye:
 - Auditoria.
 - Bot de derivacion con plantillas editables.
 - Modulo de conexiones para tokens, webhooks y OAuth.
+- Centro de notificaciones con avisos operativos.
+- Historial de fallos de integracion.
+- Dashboard ejecutivo.
+- Vista 360 del cliente.
+- Modo oscuro.
+- Seguridad inicial: cookies endurecidas, headers de seguridad, rate limiting y proteccion cross-site.
 - Configuracion local en `App_Data`.
 - Base de datos relacional.
-- Documentacion y diagramas explicativos.
+- Documentacion tecnica general en Markdown, HTML y PDF.
 
 ## 4. Arquitectura general
 
@@ -124,6 +132,7 @@ Cloudflare Tunnel como siguiente etapa:
 - Permite mejor control de acceso y seguridad.
 - Puede trabajar con un dominio propio.
 - Evita abrir puertos manualmente en el router.
+- Puede combinarse con Cloudflare Access para exigir autenticacion previa y 2FA antes de llegar al CRM.
 
 Forma correcta de explicar esto: el CRM es local, pero WhatsApp necesita una URL publica para entregar mensajes. ngrok es el puente actual; Cloudflare Tunnel seria el puente futuro mas estable.
 
@@ -223,6 +232,14 @@ Roles actuales:
 - Administrador: acceso completo, puede crear usuarios y gestionar modulos sensibles.
 - Supervisor: puede gestionar pipeline, asignaciones, etiquetas y reportes.
 - Asesor: puede atender conversaciones y trabajar con clientes asignados.
+
+Experiencia por rol:
+
+- Administrador: ve todos los modulos, incluyendo conexiones, bot, usuarios, actividad y fallos.
+- Supervisor: ve control operativo, reportes, actividad y fallos, pero no usuarios ni conexiones.
+- Asesor: ve una interfaz simplificada centrada en Comunicaciones, Contactos, Tareas y Ventas.
+
+Este ajuste reduce complejidad para el asesor y evita que vea opciones tecnicas que no necesita. La seguridad de backend tambien se reforzo: el asesor solo puede ver u operar clientes, conversaciones, mensajes, archivos, notas, etiquetas, tareas y oportunidades relacionadas con sus asignaciones.
 
 Funciones relacionadas:
 
@@ -1048,12 +1065,20 @@ Permiten responder preguntas como:
 Medidas actuales:
 
 - Login obligatorio.
-- Cookies de autenticacion.
+- Cookies de autenticacion endurecidas con `HttpOnly`, `Secure`, `SameSite=Lax` y expiracion controlada.
 - Roles por usuario.
 - Hash de contrasenas.
 - Endpoints protegidos.
 - Restriccion de acciones administrativas.
 - Auditoria de cambios importantes.
+- Bloqueo basico por intentos fallidos de login.
+- Rate limiting para login y APIs internas.
+- Headers de seguridad: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` y Content Security Policy basica.
+- Proteccion contra peticiones cross-site en acciones sensibles (`POST`, `PUT`, `PATCH`, `DELETE`), manteniendo exentos los webhooks externos.
+- Cabeceras `no-store` para respuestas de API.
+- Configuracion global del bot restringida a administrador/supervisor.
+- Navegacion por rol para reducir superficie operativa.
+- Filtro backend por pertenencia para asesores en clientes, conversaciones, mensajes, comentarios, archivos, notas, etiquetas, tareas y oportunidades.
 
 Consideraciones:
 
@@ -1062,6 +1087,19 @@ Consideraciones:
 - Cloudflare Tunnel o un despliegue formal ayudarian a mejorar seguridad y estabilidad.
 - Se recomienda usar variables de entorno para credenciales.
 - `App_Data/*.json` esta ignorado para evitar subir tokens locales.
+- Los secretos expuestos durante pruebas, como App Secret o tokens, deben regenerarse antes de cualquier uso real.
+- Para integracion con ERP sensible, el CRM no debe conectarse directamente a toda la base del ERP. Se recomienda una API puente con permisos minimos.
+
+Flujo seguro recomendado para produccion:
+
+- Internet.
+- Cloudflare, WAF, Access y 2FA.
+- CRM Web.
+- API del CRM.
+- API puente del ERP.
+- Base de datos del ERP.
+
+El ERP debe permanecer en red privada o detras de una API controlada. El usuario tecnico usado por esa API debe tener permisos reducidos y nunca permisos administrativos generales.
 
 ## 22. Limpieza y mejoras realizadas
 
@@ -1085,6 +1123,15 @@ Acciones realizadas:
 - Campos de canal en cliente, conversacion y mensaje.
 - Envio saliente optimizado con respuesta visual inmediata.
 - Pulido visual general del CRM.
+- Modo oscuro.
+- Dashboard ejecutivo con salud operativa.
+- Centro de notificaciones con avisos de sistema.
+- Ficha 360 del cliente.
+- Historial de fallos visible para diagnostico.
+- Diagnostico de sincronizacion de Instagram dentro del CRM.
+- Navegacion simplificada por rol.
+- Endurecimiento inicial de seguridad: cookies, headers, rate limiting, proteccion cross-site y cache-control para APIs.
+- Restriccion backend para que asesores solo vean y operen informacion asignada.
 
 ## 23. Estado actual del proyecto
 
@@ -1108,7 +1155,7 @@ Estado por canal:
 
 - WhatsApp: operativo para mensajes reales, archivos, bot, estados y CRM.
 - Facebook: preparado para Messenger real con Page ID, Page Access Token, permisos de pagina y webhook Meta suscrito.
-- Instagram: backend y webhook validados con prueba simulada; DMs reales pendientes de capability/App Review de Meta.
+- Instagram: token `IGAA`, cuenta business y Professional User ID validados; el CRM consulta `graph.instagram.com` correctamente, pero Meta devuelve `data: []` y el asistente oficial no muestra destinatarios externos en modo desarrollador. Los DMs reales y webhooks reales de mensajes quedan pendientes de publicacion/capability/aprobacion de Meta.
 - TikTok: preparado como canal de leads/campanas; DMs normales no estan disponibles por API publica sin partner o aprobacion especifica.
 
 ## 24. Pendientes recomendados
@@ -1117,6 +1164,11 @@ Pendientes tecnicos:
 
 - Pasar de ngrok a Cloudflare Tunnel.
 - Mover secretos a variables de entorno.
+- Regenerar App Secret y tokens expuestos durante pruebas.
+- Definir flujo seguro con ERP mediante API puente, no conexion directa amplia a la BD.
+- Agregar pruebas automatizadas que verifiquen permisos por pertenencia para asesores.
+- Agregar 2FA para administradores.
+- Preparar Cloudflare Access/WAF/rate limiting externo para despliegue.
 - Crear pruebas automatizadas.
 - Agregar logs mas consultables.
 - Preparar instalacion o despliegue controlado.
@@ -1127,14 +1179,12 @@ Pendientes tecnicos:
 
 Pendientes funcionales:
 
-- Busqueda avanzada.
-- Filtros por asesor, etiqueta, estado y fecha.
-- Exportacion a Excel o PDF.
-- Plantillas de respuesta rapida.
-- Notificaciones de tareas vencidas.
+- Exportacion a Excel real y PDF con formato.
 - Mejor panel para administracion de etiquetas.
-- Bandeja especifica para comentarios de publicaciones.
-- Pipeline comercial separado de pipeline de atencion si se desea seguir el modelo de otros CRM.
+- Reglas automaticas por canal y palabras clave.
+- Calendario de tareas.
+- Reintento manual de fallos de envio/webhook.
+- Permisos finos por modulo y accion.
 
 ## 25. Como presentar el proyecto
 
@@ -1154,18 +1204,22 @@ Frase corta para explicarlo:
 
 Este CRM permite que una empresa atienda WhatsApp desde una plataforma ordenada, con clientes, historial, responsables, tareas, ventas, reportes, bot, conexiones y auditoria. Por ahora corre local con ngrok, y la siguiente etapa es estabilizar la exposicion con Cloudflare Tunnel, consolidar Facebook Messenger, completar la aprobacion de Instagram Messaging y definir TikTok como leads/campanas o integracion partner.
 
-## 26. Documentos e imagenes generadas
+## 26. Documentos generados
 
 Archivos generados:
 
 - `AVANCE_PROYECTO_CRM.md`: documentacion en Markdown.
-- `AVANCE_PROYECTO_CRM.docx`: documento Word para presentar.
-- `ARQUITECTURA_CRM.png`: imagen de arquitectura local con ngrok y futuro Cloudflare.
-- `MODELO_DATOS_CRM.png`: imagen explicativa del modelo de datos.
-- `tools/generar_documento_avance.ps1`: script para regenerar el Word y las imagenes.
+- `MANUAL_TECNICO_CRM_HPD.md`: manual operativo para personal que usara el CRM.
+- `MANUAL_TECNICO_CRM_HPD_ACTUALIZADO.html`: version navegable/imprimible del manual operativo.
+- `MANUAL_TECNICO_CRM_HPD.pdf`: version entregable del manual operativo.
+- `DOCUMENTACION_TECNICA_COMPLETA_CRM_HPD.md`: documentacion tecnica de carpetas, archivos, flujo, base de datos, seguridad e integraciones.
+- `DOCUMENTACION_TECNICA_COMPLETA_CRM_HPD.html`: version navegable/imprimible de la documentacion tecnica.
+- `DOCUMENTACION_TECNICA_COMPLETA_CRM_HPD.pdf`: version entregable de la documentacion tecnica.
+- `tools/markdown_to_html.js`: generador local de HTML desde Markdown.
+- `tools/markdown_to_pdf.js`: generador local de PDF desde Markdown.
 
 ## 27. Conclusion
 
-El proyecto ya cuenta con una base solida de CRM conectado a WhatsApp. Tiene atencion conversacional, gestion de clientes, pipeline, usuarios, roles, tareas, notas, oportunidades, etiquetas, reportes, auditoria, bot editable, modulo de conexiones, manejo de archivos y documentacion tecnica.
+El proyecto ya cuenta con una base solida de CRM conectado a WhatsApp. Tiene atencion conversacional, gestion de clientes, pipeline, usuarios, roles, tareas, notas, oportunidades, etiquetas, reportes, auditoria, bot editable, modulo de conexiones, manejo de archivos, documentacion tecnica y una primera capa de seguridad general.
 
-La arquitectura actual es adecuada para desarrollo y demostracion local: ASP.NET Core y SQL Server corren en la maquina local, ngrok expone webhooks, Cloudinary publica archivos y `App_Data` guarda configuracion local editable. El siguiente paso natural es reemplazar ngrok por Cloudflare Tunnel, estabilizar Facebook Messenger, gestionar la revision de Instagram Messaging ante Meta y avanzar hacia un despliegue mas estable.
+La arquitectura actual es adecuada para desarrollo y demostracion local: ASP.NET Core y SQL Server corren en la maquina local, ngrok expone webhooks, Cloudinary publica archivos y `App_Data` guarda configuracion local editable. Para una etapa productiva, especialmente si habra conexion con un ERP sensible, el siguiente paso no debe ser solo "subirlo a la nube"; debe definirse una arquitectura segura con Cloudflare/Access/WAF, secretos fuera del codigo, API puente hacia ERP, permisos minimos, backups, monitoreo y controles por rol tambien en backend.

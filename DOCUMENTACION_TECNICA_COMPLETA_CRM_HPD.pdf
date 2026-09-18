@@ -1,0 +1,978 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R 19 0 R 21 0 R 23 0 R 25 0 R 27 0 R 29 0 R 31 0 R 33 0 R 35 0 R 37 0 R 39 0 R 41 0 R 43 0 R 45 0 R] /Count 20 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Length 3562 >>
+stream
+BT /F2 20.00 Tf 1 0 0 1 51.02 784.87 Tm (Documentacion tecnica completa del CRM HPD) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 746.87 Tm (Fecha: 18 de septiembre de 2026) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 720.37 Tm (1. Objetivo) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 691.37 Tm (Este documento explica como esta construido el CRM HPD: carpetas, archivos, responsabilidades, flujo) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 677.87 Tm (de datos, base de datos, seguridad, integraciones, despliegue recomendado y pendientes tecnicos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 655.37 Tm (El manual para usuarios del CRM esta en MANUAL_TECNICO_CRM_HPD.md.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 628.87 Tm (2. Resumen tecnico) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 599.87 Tm (El proyecto es una aplicacion ASP.NET Core con frontend estatico en wwwroot, backend por) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 586.37 Tm (controladores API, Entity Framework Core para SQL Server, integraciones con) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 572.87 Tm (Meta/WhatsApp/Instagram/Facebook, almacenamiento de archivos con Cloudinary y configuracion local) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 559.37 Tm (editable en App_Data.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 536.87 Tm (Componentes principales:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 514.37 Tm (- ASP.NET Core: servidor web, APIs, autenticacion y middleware.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 498.87 Tm (- Entity Framework Core: acceso a SQL Server.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 483.37 Tm (- SQL Server LocalDB: base local del CRM.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 467.87 Tm (- Frontend HTML/CSS/JS: interfaz del usuario.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 452.37 Tm (- App_Data: configuracion local de bot e integraciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 436.87 Tm (- ngrok: tunel de desarrollo para webhooks publicos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 421.37 Tm (- Cloudinary: almacenamiento externo de archivos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 405.87 Tm (- Meta Graph API: WhatsApp, Facebook e Instagram.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 381.37 Tm (3. Estructura general de carpetas) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 348.37 Tm (CRM.Data/) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 323.87 Tm (Proyecto principal ASP.NET Core.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 301.37 Tm (Contiene:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 278.87 Tm (- Program.cs: arranque de la aplicacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 263.37 Tm (- appsettings.json: configuracion base local.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 247.87 Tm (- Controllers/: endpoints HTTP.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 232.37 Tm (- Data/: DbContext.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 216.87 Tm (- Models/: entidades de base de datos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 201.37 Tm (- Services/: logica de negocio e integraciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 185.87 Tm (- DTOs/: objetos de entrada/salida.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 170.37 Tm (- Extensions/: configuracion de servicios, middleware y seguridad.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 154.87 Tm (- Migrations/: migraciones de Entity Framework.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 139.37 Tm (- Startup/: inicializacion de base y datos iniciales.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 123.87 Tm (- wwwroot/: interfaz web.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 108.37 Tm (- App_Data/: archivos JSON locales de configuracion.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 83.87 Tm (tools/) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 59.37 Tm (Herramientas locales para generar documentacion:) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 3087 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- markdown_to_html.js: convierte Markdown a HTML.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- markdown_to_pdf.js: convierte Markdown a PDF.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 750.87 Tm (Documentos raiz) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 726.37 Tm (- AVANCE_PROYECTO_CRM.md: avance general del proyecto.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 710.87 Tm (- MANUAL_TECNICO_CRM_HPD.md: manual operativo para personal.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 695.37 Tm (- DOCUMENTACION_TECNICA_COMPLETA_CRM_HPD.md: este documento.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 670.87 Tm (4. Archivos de arranque y configuracion) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 637.87 Tm (CRM.Data/Program.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 613.37 Tm (Archivo de entrada de ASP.NET Core.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 590.87 Tm (Responsabilidades:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 568.37 Tm (- Crear el builder.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 552.87 Tm (- Registrar servicios.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 537.37 Tm (- Registrar base de datos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 521.87 Tm (- Registrar autenticacion por cookies.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 506.37 Tm (- Registrar rate limiting.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 490.87 Tm (- Configurar CORS.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 475.37 Tm (- Configurar headers de seguridad.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 459.87 Tm (- Inicializar base de datos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 444.37 Tm (- Publicar archivos estaticos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 428.87 Tm (- Activar autenticacion y autorizacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 413.37 Tm (- Mapear controladores.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 397.87 Tm (- Mapear fallback hacia index.html.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 373.37 Tm (CRM.Data/appsettings.json) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 348.87 Tm (Configuracion local del proyecto.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 326.37 Tm (Puede incluir:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 303.87 Tm (- Connection string.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 288.37 Tm (- Versiones de API.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 272.87 Tm (- Tokens de integracion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 257.37 Tm (- App IDs.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 241.87 Tm (- Flags de envio real.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 226.37 Tm (- Configuracion Cloudinary.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 205.87 Tm (Recomendacion de seguridad:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 183.37 Tm (- No usar secretos reales en repositorios.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 167.87 Tm (- En produccion usar variables de entorno o secret manager.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 152.37 Tm (- Regenerar tokens o secretos que hayan sido expuestos en capturas o chats.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 127.87 Tm (CRM.Data/Properties/launchSettings.json) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 103.37 Tm (Configuracion de ejecucion local en Visual Studio.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 80.87 Tm (Define:) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 8 0 R >>
+endobj
+10 0 obj
+<< /Length 2996 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Perfiles de arranque.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- URLs locales.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 759.87 Tm (- Variables de entorno de desarrollo.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 735.37 Tm (5. Controllers) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 706.37 Tm (Los controladores son los endpoints HTTP que consume el frontend o los webhooks externos.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 679.87 Tm (AuthenticationController.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 655.37 Tm (Maneja autenticacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 632.87 Tm (Endpoints principales:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 610.37 Tm (- Login.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 594.87 Tm (- Logout.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 579.37 Tm (- Usuario actual.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 558.87 Tm (Seguridad:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 536.37 Tm (- Usa cookies.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 520.87 Tm (- Hashea contrasenas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 505.37 Tm (- Aplica bloqueo por intentos fallidos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 489.87 Tm (- Aplica rate limiting al login.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 465.37 Tm (CrmManagementController.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 440.87 Tm (Controlador central del CRM.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 418.37 Tm (Responsabilidades:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 395.87 Tm (- Contactos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 380.37 Tm (- Pipeline.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 364.87 Tm (- Usuarios.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 349.37 Tm (- Estados de conversacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 333.87 Tm (- Tomar conversacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 318.37 Tm (- Asignar conversacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 302.87 Tm (- Actualizar perfil Meta.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 287.37 Tm (- Actividad.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 271.87 Tm (- Exportar contactos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 256.37 Tm (- Comentarios.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 240.87 Tm (- Fallos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 225.37 Tm (- Reportes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 204.87 Tm (Seguridad:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 182.37 Tm (- Requiere rol Administrador, Supervisor o Asesor.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 166.87 Tm (- Usa CrmAccessService para filtrar clientes, conversaciones y mensajes cuando el usuario es) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 153.37 Tm (asesor.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 137.87 Tm (- Admin/supervisor ven todo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 122.37 Tm (- Asesor ve lo asignado y las conversaciones nuevas sin asignar que puede tomar; no ve) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 108.87 Tm (conversaciones de otros asesores.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 84.37 Tm (WhatsAppController.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 59.87 Tm (Maneja WhatsApp y endpoints de conversaciones.) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 10 0 R >>
+endobj
+12 0 obj
+<< /Length 3234 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 51.02 790.87 Tm (Responsabilidades:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 768.37 Tm (- Verificacion de webhook.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 752.87 Tm (- Recepcion de webhooks de WhatsApp.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 737.37 Tm (- Consulta de conversaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 721.87 Tm (- Consulta de una conversacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 706.37 Tm (- Envio de mensajes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 690.87 Tm (- Indicador de escritura.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 675.37 Tm (- Cambiar estado del bot por conversacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 654.87 Tm (Seguridad:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 632.37 Tm (- Webhook de Meta permite acceso anonimo solo para verificacion/recepcion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 616.87 Tm (- Conversaciones y envio requieren autenticacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 601.37 Tm (- Asesor puede operar conversaciones asignadas y tomar conversaciones nuevas sin asignar; no) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 587.87 Tm (puede operar conversaciones de otros asesores.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 563.37 Tm (WhatsAppAttachmentsController.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 538.87 Tm (Maneja envio de archivos desde conversaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 516.37 Tm (Responsabilidades:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 493.87 Tm (- Validar tamano maximo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 478.37 Tm (- Validar extension permitida.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 462.87 Tm (- Subir archivo a Cloudinary.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 447.37 Tm (- Registrar mensaje de archivo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 431.87 Tm (- Enviar archivo por el canal cuando aplique.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 411.37 Tm (Seguridad:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 388.87 Tm (- Requiere autenticacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 373.37 Tm (- Valida acceso a la conversacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 357.87 Tm (- Limita tipos de archivo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 342.37 Tm (- Limita tamano a 15 MB.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 317.87 Tm (OportunidadesController.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 293.37 Tm (Maneja oportunidades de venta.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 270.87 Tm (Responsabilidades:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 248.37 Tm (- Listar oportunidades.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 232.87 Tm (- Exportar oportunidades.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 217.37 Tm (- Resumen por etapa.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 201.87 Tm (- Crear oportunidad.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 186.37 Tm (- Cambiar etapa.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 170.87 Tm (- Asignar oportunidad.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 150.37 Tm (Seguridad:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 127.87 Tm (- Admin/supervisor ven todo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 112.37 Tm (- Asesor solo ve oportunidades propias o vinculadas a clientes/conversaciones asignadas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 96.87 Tm (- Asesor no puede forzar asignacion a otro usuario al crear.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 72.37 Tm (TareasController.cs) Tj ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 12 0 R >>
+endobj
+14 0 obj
+<< /Length 2837 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 51.02 790.87 Tm (Maneja tareas de seguimiento.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 768.37 Tm (Responsabilidades:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 745.87 Tm (- Listar tareas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 730.37 Tm (- Crear tarea.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 714.87 Tm (- Completar tarea.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 699.37 Tm (- Cancelar tarea.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 678.87 Tm (Seguridad:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 656.37 Tm (- Admin/supervisor ven todo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 640.87 Tm (- Asesor solo ve tareas propias o relacionadas con sus clientes/conversaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 625.37 Tm (- Asesor no puede crear tareas asignadas a otro usuario.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 600.87 Tm (NotasController.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 576.37 Tm (Maneja notas internas por cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 553.87 Tm (Responsabilidades:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 531.37 Tm (- Listar notas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 515.87 Tm (- Crear notas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 495.37 Tm (Seguridad:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 472.87 Tm (- El asesor solo puede ver o crear notas de clientes permitidos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 457.37 Tm (- Si la nota referencia una conversacion, tambien se valida acceso a esa conversacion.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 432.87 Tm (EtiquetasController.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 408.37 Tm (Maneja etiquetas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 385.87 Tm (Responsabilidades:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 363.37 Tm (- Listar etiquetas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 347.87 Tm (- Crear etiquetas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 332.37 Tm (- Asignar etiqueta a cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 316.87 Tm (- Quitar etiqueta de cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 301.37 Tm (- Ver etiquetas de un cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 280.87 Tm (Seguridad:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 258.37 Tm (- Crear etiquetas queda para admin/supervisor.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 242.87 Tm (- Asignar o quitar etiquetas valida acceso al cliente.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 218.37 Tm (BotController.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 193.87 Tm (Maneja configuracion del bot.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 171.37 Tm (Responsabilidades:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 148.87 Tm (- Leer configuracion de bot.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 133.37 Tm (- Guardar configuracion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 112.87 Tm (Seguridad:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 90.37 Tm (- Restringido a Administrador y Supervisor.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 65.87 Tm (PlantillasController.cs) Tj ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 14 0 R >>
+endobj
+16 0 obj
+<< /Length 2785 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 51.02 790.87 Tm (Maneja plantillas rapidas para asesores.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 768.37 Tm (Responsabilidades:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 745.87 Tm (- Listar plantillas activas para todos los roles autenticados.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 730.37 Tm (- Listar plantillas completas para administracion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 714.87 Tm (- Guardar plantillas rapidas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 694.37 Tm (Seguridad:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 671.87 Tm (- Asesor puede leer plantillas activas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 656.37 Tm (- Administrador y supervisor pueden administrarlas.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 631.87 Tm (IntegracionesController.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 607.37 Tm (Maneja integraciones sociales.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 584.87 Tm (Responsabilidades:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 562.37 Tm (- Leer y guardar configuracion de canales.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 546.87 Tm (- Copiar/mostrar webhooks.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 531.37 Tm (- Ejecutar pruebas de inbound.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 515.87 Tm (- Diagnosticar integraciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 500.37 Tm (- Recibir webhook Meta para Facebook/Instagram.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 484.87 Tm (- Recibir webhook TikTok preparado.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 460.37 Tm (HealthController.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 435.87 Tm (Endpoint de salud.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 413.37 Tm (Sirve para:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 390.87 Tm (- Verificar que la aplicacion responde.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 375.37 Tm (- Usarse en monitoreo simple.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 350.87 Tm (6. Data) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 317.87 Tm (CrmDbContext.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 293.37 Tm (Es el DbContext de Entity Framework Core.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 270.87 Tm (Define:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 248.37 Tm (- Tablas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 232.87 Tm (- Llaves primarias.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 217.37 Tm (- Columnas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 201.87 Tm (- Relaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 186.37 Tm (- Indices.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 170.87 Tm (- Comportamiento de borrado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 150.37 Tm (DbSets:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 127.87 Tm (- Clientes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 112.37 Tm (- Conversaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 96.87 Tm (- Mensajes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 81.37 Tm (- Usuarios.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 65.87 Tm (- Etiquetas.) Tj ET
+endstream
+endobj
+17 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 16 0 R >>
+endobj
+18 0 obj
+<< /Length 2828 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- ClienteEtiquetas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- Oportunidades.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 759.87 Tm (- Tareas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 744.37 Tm (- NotasInternas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 728.87 Tm (- ActividadLogs.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 704.37 Tm (7. Models y base de datos) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 671.37 Tm (Cliente.cs / tabla crm_cliente) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 646.87 Tm (Representa un cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 624.37 Tm (Campos principales:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 601.87 Tm (- nCliente: identificador.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 586.37 Tm (- cNombre: nombre.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 570.87 Tm (- cTelefono: telefono o identificador principal.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 555.37 Tm (- cEmail: correo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 539.87 Tm (- cDocumento: documento.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 524.37 Tm (- cFotoPerfilUrl: foto de perfil.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 508.87 Tm (- cCanalOrigen: canal de origen.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 493.37 Tm (- dFechaRegistro: fecha de creacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 477.87 Tm (- cEstado: estado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 457.37 Tm (Relaciones:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 434.87 Tm (- Tiene muchas conversaciones.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 410.37 Tm (Conversacion.cs / tabla crm_conversacion) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 385.87 Tm (Representa un hilo de atencion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 363.37 Tm (Campos principales:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 340.87 Tm (- nConversacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 325.37 Tm (- nCliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 309.87 Tm (- nUsuarioAsignado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 294.37 Tm (- cEstado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 278.87 Tm (- cCanal.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 263.37 Tm (- cExternalThreadId.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 247.87 Tm (- cBotEstado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 232.37 Tm (- dFechaInicio.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 216.87 Tm (- dUltimoMensaje.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 201.37 Tm (- dUltimoMensajeCliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 185.87 Tm (- dBotPausadoDesde.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 170.37 Tm (- nBotPausadoPor.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 149.87 Tm (Relaciones:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 127.37 Tm (- Pertenece a un cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 111.87 Tm (- Puede estar asignada a un usuario.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 96.37 Tm (- Tiene muchos mensajes.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 71.87 Tm (Mensaje.cs / tabla crm_mensaje) Tj ET
+endstream
+endobj
+19 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 18 0 R >>
+endobj
+20 0 obj
+<< /Length 2631 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 51.02 790.87 Tm (Representa un mensaje entrante o saliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 768.37 Tm (Campos principales:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 745.87 Tm (- nMensaje.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 730.37 Tm (- nConversacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 714.87 Tm (- cWhatsappId.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 699.37 Tm (- cCanal.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 683.87 Tm (- cExternalId.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 668.37 Tm (- cDireccion: entrante o saliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 652.87 Tm (- cTipo: texto, imagen, documento, bot, comentario.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 637.37 Tm (- cMensaje.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 621.87 Tm (- cEstado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 606.37 Tm (- dFecha.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 581.87 Tm (CrmUsuario.cs / tabla crm_usuario) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 557.37 Tm (Representa usuario interno.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 534.87 Tm (Campos principales:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 512.37 Tm (- nUsuario.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 496.87 Tm (- cUsuario.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 481.37 Tm (- cNombre.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 465.87 Tm (- cPasswordHash.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 450.37 Tm (- cRol.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 434.87 Tm (- cEstado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 414.37 Tm (Roles:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 391.87 Tm (- Administrador.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 376.37 Tm (- Supervisor.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 360.87 Tm (- Asesor.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 336.37 Tm (Etiqueta.cs y ClienteEtiqueta) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 311.87 Tm (Representan segmentacion de clientes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 289.37 Tm (Tablas:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 266.87 Tm (- crm_etiqueta.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 251.37 Tm (- crm_cliente_etiqueta.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 230.87 Tm (Uso:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 208.37 Tm (- Etiquetar clientes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 192.87 Tm (- Buscar o clasificar clientes.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 168.37 Tm (Oportunidad.cs / tabla crm_oportunidad) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 143.87 Tm (Representa una venta potencial.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 121.37 Tm (Campos:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 98.87 Tm (- Cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 83.37 Tm (- Conversacion opcional.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 67.87 Tm (- Usuario asignado.) Tj ET
+endstream
+endobj
+21 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 20 0 R >>
+endobj
+22 0 obj
+<< /Length 2624 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Titulo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- Monto.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 759.87 Tm (- Moneda.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 744.37 Tm (- Etapa.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 728.87 Tm (- Probabilidad.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 713.37 Tm (- Fecha estimada.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 697.87 Tm (- Fecha real de cierre.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 682.37 Tm (- Motivo de perdida.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 657.87 Tm (Tarea.cs / tabla crm_tarea) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 633.37 Tm (Representa un seguimiento.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 610.87 Tm (Campos:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 588.37 Tm (- Cliente opcional.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 572.87 Tm (- Conversacion opcional.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 557.37 Tm (- Oportunidad opcional.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 541.87 Tm (- Titulo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 526.37 Tm (- Descripcion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 510.87 Tm (- Fecha de vencimiento.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 495.37 Tm (- Estado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 479.87 Tm (- Asignado a.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 464.37 Tm (- Creado por.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 439.87 Tm (NotaInterna.cs / tabla crm_nota_interna) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 415.37 Tm (Representa una nota privada del equipo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 392.87 Tm (Campos:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 370.37 Tm (- Cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 354.87 Tm (- Conversacion opcional.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 339.37 Tm (- Texto.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 323.87 Tm (- Usuario creador.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 308.37 Tm (- Fecha.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 283.87 Tm (ActividadLog.cs / tabla crm_actividad_log) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 259.37 Tm (Registra auditoria.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 236.87 Tm (Campos:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 214.37 Tm (- Entidad.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 198.87 Tm (- EntidadId.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 183.37 Tm (- Accion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 167.87 Tm (- Valor anterior.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 152.37 Tm (- Valor nuevo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 136.87 Tm (- Usuario.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 121.37 Tm (- Fecha.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 96.87 Tm (CanalSocial.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 72.37 Tm (Constantes y normalizacion de canales.) Tj ET
+endstream
+endobj
+23 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 22 0 R >>
+endobj
+24 0 obj
+<< /Length 2788 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 51.02 790.87 Tm (Canales:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 768.37 Tm (- WhatsApp.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 752.87 Tm (- Facebook.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 737.37 Tm (- Instagram.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 721.87 Tm (- TikTok.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 697.37 Tm (8. Services) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 664.37 Tm (WhatsAppService.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 639.87 Tm (Clase parcial base del servicio WhatsApp. Agrupa logica dividida en archivos parciales.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 613.37 Tm (WhatsAppService.Inbound.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 588.87 Tm (Procesa mensajes entrantes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 566.37 Tm (Flujo:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 543.87 Tm (- Recibe mensaje del webhook.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 528.37 Tm (- Evita duplicados.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 512.87 Tm (- Busca o crea cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 497.37 Tm (- Busca o crea conversacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 481.87 Tm (- Asigna automaticamente si aplica.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 466.37 Tm (- Guarda mensaje.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 450.87 Tm (- Actualiza fechas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 435.37 Tm (- Ejecuta bot si corresponde.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 410.87 Tm (WhatsAppService.Outgoing.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 386.37 Tm (Procesa mensajes salientes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 363.87 Tm (Flujo:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 341.37 Tm (- Valida conversacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 325.87 Tm (- Marca conversacion en atencion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 310.37 Tm (- Asigna usuario si responde.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 294.87 Tm (- Pausa bot.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 279.37 Tm (- Guarda mensaje.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 263.87 Tm (- Envia a Meta en segundo plano si el envio real esta activo.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 239.37 Tm (WhatsAppService.Queries.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 214.87 Tm (Consulta conversaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 192.37 Tm (Incluye:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 169.87 Tm (- Obtener una conversacion con cliente, asesor y mensajes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 154.37 Tm (- Obtener lista de conversaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 138.87 Tm (- Filtros opcionales por usuario asignado para asesores.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 114.37 Tm (WhatsAppService.Assignment.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 89.87 Tm (Maneja asignacion automatica y conversaciones pendientes.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 63.37 Tm (WhatsAppService.BotState.cs) Tj ET
+endstream
+endobj
+25 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 24 0 R >>
+endobj
+26 0 obj
+<< /Length 2702 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 51.02 790.87 Tm (Maneja pausa/activacion del bot por conversacion.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 764.37 Tm (WhatsAppService.Status.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 739.87 Tm (Maneja estados de mensajes o callbacks de entrega.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 713.37 Tm (WhatsAppService.Typing.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 688.87 Tm (Maneja indicador de escritura.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 662.37 Tm (WhatsAppCloudApiService.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 637.87 Tm (Cliente HTTP para WhatsApp Cloud API.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 615.37 Tm (Responsabilidades:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 592.87 Tm (- Enviar textos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 577.37 Tm (- Enviar archivos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 561.87 Tm (- Descargar media si aplica.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 546.37 Tm (- Validar si el envio real esta activo.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 521.87 Tm (MetaGraphApiService.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 497.37 Tm (Cliente HTTP para Graph API/Instagram Graph.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 474.87 Tm (Responsabilidades:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 452.37 Tm (- Consultar cuenta me.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 436.87 Tm (- Consultar conversaciones de Instagram.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 421.37 Tm (- Obtener perfil de contacto.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 405.87 Tm (- Diagnosticar respuestas de Meta.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 381.37 Tm (MetaMessagingService.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 356.87 Tm (Servicio de envio para Facebook/Instagram cuando hay permisos y tokens configurados.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 330.37 Tm (MetaWebhookService.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 305.87 Tm (Procesa webhooks de Meta para Facebook/Instagram.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 279.37 Tm (SocialInboundService.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 254.87 Tm (Normaliza mensajes sociales entrantes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 232.37 Tm (Responsabilidades:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 209.87 Tm (- Buscar o crear cliente social.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 194.37 Tm (- Buscar o crear conversacion social.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 178.87 Tm (- Guardar mensaje.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 163.37 Tm (- Ejecutar bot social si aplica.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 138.87 Tm (SocialIntegrationService.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 114.37 Tm (Maneja configuraciones de canales sociales.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 91.87 Tm (Lee y guarda:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 69.37 Tm (- WhatsApp.) Tj ET
+endstream
+endobj
+27 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 26 0 R >>
+endobj
+28 0 obj
+<< /Length 2644 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Instagram.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- Facebook.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 759.87 Tm (- TikTok.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 739.37 Tm (Archivo usado:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 716.87 Tm (- App_Data/social-integrations.json.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 692.37 Tm (BotSettingsService.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 667.87 Tm (Maneja configuracion del bot.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 645.37 Tm (Archivo usado:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 622.87 Tm (- App_Data/bot-whatsapp.json.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 598.37 Tm (QuickReplyTemplatesService.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 573.87 Tm (Maneja plantillas rapidas separadas del bot.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 551.37 Tm (Archivo usado:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 528.87 Tm (- App_Data/quick-replies.json.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 508.37 Tm (Regla:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 485.87 Tm (- El bot automatiza.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 470.37 Tm (- Las plantillas rapidas ayudan al asesor a responder manualmente.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 445.87 Tm (CloudinaryStorageService.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 421.37 Tm (Sube archivos a Cloudinary.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 398.87 Tm (Devuelve:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 376.37 Tm (- URL segura.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 360.87 Tm (- Public ID.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 345.37 Tm (- Tipo de recurso.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 320.87 Tm (AuditoriaService.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 296.37 Tm (Registra actividad en crm_actividad_log.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 269.87 Tm (CrmAccessService.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 245.37 Tm (Servicio central de permisos por pertenencia.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 222.87 Tm (Responsabilidades:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 200.37 Tm (- Saber usuario actual.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 184.87 Tm (- Saber si el usuario es asesor.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 169.37 Tm (- Saber si tiene acceso global.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 153.87 Tm (- Filtrar conversaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 138.37 Tm (- Filtrar clientes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 122.87 Tm (- Filtrar mensajes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 107.37 Tm (- Filtrar oportunidades.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 91.87 Tm (- Filtrar tareas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 76.37 Tm (- Validar acceso a conversacion, cliente, oportunidad y tarea.) Tj ET
+endstream
+endobj
+29 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 28 0 R >>
+endobj
+30 0 obj
+<< /Length 2627 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 51.02 790.87 Tm (Regla:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 768.37 Tm (- Administrador y supervisor tienen acceso global.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 752.87 Tm (- Asesor accede a lo asignado y a conversaciones nuevas sin asignar disponibles para tomar.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 728.37 Tm (9. DTOs) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 695.37 Tm (DTOs/Bot) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 670.87 Tm (Define objetos para configurar bot:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 648.37 Tm (- Opciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 632.87 Tm (- Respuestas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 617.37 Tm (- Mensaje inicial.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 601.87 Tm (- Configuracion general.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 577.37 Tm (DTOs/Social) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 552.87 Tm (Define objetos para integraciones sociales:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 530.37 Tm (- Pruebas inbound.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 514.87 Tm (- Guardado de configuracion.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 490.37 Tm (10. Extensions) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 457.37 Tm (ServiceCollectionExtensions.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 432.87 Tm (Registra servicios en DI.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 410.37 Tm (Incluye:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 387.87 Tm (- Base de datos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 372.37 Tm (- Servicios internos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 356.87 Tm (- HttpClients externos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 341.37 Tm (- Autenticacion por cookies.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 325.87 Tm (- Rate limiting.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 310.37 Tm (- CORS.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 285.87 Tm (ApplicationBuilderExtensions.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 261.37 Tm (Extension de pipeline de aplicacion.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 234.87 Tm (SecurityHeadersExtensions.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 210.37 Tm (Agrega headers de seguridad:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 187.87 Tm (- X-Content-Type-Options.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 172.37 Tm (- X-Frame-Options.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 156.87 Tm (- Referrer-Policy.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 141.37 Tm (- Permissions-Policy.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 125.87 Tm (- X-Permitted-Cross-Domain-Policies.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 110.37 Tm (- Content Security Policy.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 85.87 Tm (RequestSecurityExtensions.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 61.37 Tm (Protege solicitudes.) Tj ET
+endstream
+endobj
+31 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 30 0 R >>
+endobj
+32 0 obj
+<< /Length 2645 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 51.02 790.87 Tm (Incluye:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 768.37 Tm (- no-store para respuestas /api.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 752.87 Tm (- Bloqueo de peticiones cross-site peligrosas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 737.37 Tm (- Excepciones para webhooks externos.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 712.87 Tm (11. Startup) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 679.87 Tm (DatabaseInitializer.cs) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 655.37 Tm (Inicializa base de datos y datos necesarios.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 632.87 Tm (Puede:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 610.37 Tm (- Aplicar migraciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 594.87 Tm (- Crear usuario administrador inicial.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 579.37 Tm (- Crear datos base si no existen.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 554.87 Tm (12. Migrations) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 525.87 Tm (Carpeta con migraciones EF Core.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 503.37 Tm (Archivos:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 480.87 Tm (- 20260914235831_InicialCrm: base inicial.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 465.37 Tm (- 20260915093000_BotPorConversacion: estado de bot por conversacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 449.87 Tm (- 20260915103000_CanalesSociales: soporte multicanal.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 434.37 Tm (- 20260916153000_ClienteFotoPerfil: foto de perfil de cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 418.87 Tm (- CrmDbContextModelSnapshot: snapshot del modelo actual.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 394.37 Tm (13. wwwroot) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 365.37 Tm (Contiene frontend estatico.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 338.87 Tm (index.html) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 314.37 Tm (Pantalla principal del CRM.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 287.87 Tm (login.html) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 263.37 Tm (Pantalla de inicio de sesion.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 236.87 Tm (MaterializeReference.css) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 212.37 Tm (Estilos principales heredados/base.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 185.87 Tm (Script.js) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 161.37 Tm (Script historico o base.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 134.87 Tm (js/api-session.js) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 110.37 Tm (Maneja sesion del usuario, modulo inicial, navegacion por rol y cierre de sesion.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 83.87 Tm (js/module-router.js) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 59.37 Tm (Maneja navegacion interna y evita entrada visual a modulos no permitidos.) Tj ET
+endstream
+endobj
+33 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 32 0 R >>
+endobj
+34 0 obj
+<< /Length 2611 >>
+stream
+BT /F2 11.50 Tf 1 0 0 1 51.02 786.87 Tm (js/app.js) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 762.37 Tm (Arranque general del frontend.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 735.87 Tm (js/state.js) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 711.37 Tm (Estado compartido del frontend.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 684.87 Tm (js/utils.js) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 660.37 Tm (Funciones auxiliares.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 633.87 Tm (js/inbox.js) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 609.37 Tm (Interfaz de Comunicaciones: lista conversaciones, abre chats, renderiza mensajes, muestra plantillas) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 595.87 Tm (rapidas y envia respuestas.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 569.37 Tm (js/messaging-attachments.js) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 544.87 Tm (Maneja adjuntos: seleccion, validacion, envio y renderizado.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 518.37 Tm (js/contacts.js) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 493.87 Tm (Interfaz de Contactos: lista, busca, crea y abre ficha de cliente.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 467.37 Tm (js/customer-panel.js) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 442.87 Tm (Ficha 360 del cliente: datos, notas, tareas, oportunidades y etiquetas.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 416.37 Tm (js/tasks-sales.js) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 391.87 Tm (Modulo de tareas y ventas: seguimientos y oportunidades.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 365.37 Tm (js/pipeline.js) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 340.87 Tm (Vista de pipeline de conversaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 318.37 Tm (Para asesores, el Pipeline funciona como tablero filtrado: muestra sus conversaciones y las nuevas sin) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 304.87 Tm (asignar disponibles para tomar. Para administradores y supervisores funciona como tablero operativo) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 291.37 Tm (global con controles de asignacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 268.87 Tm (Incluye movimiento de tarjetas con drag and drop entre etapas.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 242.37 Tm (js/dashboard.js) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 217.87 Tm (Dashboard ejecutivo.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 191.37 Tm (js/activity-reports.js) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 166.87 Tm (Reportes, actividad y fallos.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 140.37 Tm (js/bot.js) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 115.87 Tm (Configuracion del bot.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 89.37 Tm (js/connections.js) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 64.87 Tm (Configuracion de integraciones.) Tj ET
+endstream
+endobj
+35 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 34 0 R >>
+endobj
+36 0 obj
+<< /Length 2497 >>
+stream
+BT /F2 11.50 Tf 1 0 0 1 51.02 786.87 Tm (js/users.js) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 762.37 Tm (Administracion de usuarios.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 735.87 Tm (js/layout-profile.js) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 711.37 Tm (Comportamiento visual del perfil/layout.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 684.87 Tm (js/quality-modules.js) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 660.37 Tm (Modulos de calidad operativa complementaria.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 633.87 Tm (14. App_Data) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 600.87 Tm (bot-whatsapp.json) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 576.37 Tm (Configuracion local del bot.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 553.87 Tm (Contiene:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 531.37 Tm (- Mensaje inicial.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 515.87 Tm (- Opciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 500.37 Tm (- Respuestas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 484.87 Tm (- Limites.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 460.37 Tm (quick-replies.json) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 435.87 Tm (Configuracion local de plantillas rapidas para asesores.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 413.37 Tm (Contiene:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 390.87 Tm (- Titulo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 375.37 Tm (- Mensaje.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 359.87 Tm (- Categoria.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 344.37 Tm (- Estado activo/inactivo.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 319.87 Tm (social-integrations.json) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 295.37 Tm (Configuracion local de integraciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 272.87 Tm (Puede contener:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 250.37 Tm (- App IDs.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 234.87 Tm (- Versiones de API.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 219.37 Tm (- Tokens.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 203.87 Tm (- Verify tokens.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 188.37 Tm (- IDs de cuenta/pagina.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 167.87 Tm (Recomendacion:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 145.37 Tm (- No subir este archivo con secretos reales.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 129.87 Tm (- Usar variables de entorno o secret manager en produccion.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 105.37 Tm (15. Flujo de autenticacion) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 76.37 Tm (1. Usuario entra a login.html.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 58.87 Tm (2. Frontend llama al endpoint de login.) Tj ET
+endstream
+endobj
+37 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 36 0 R >>
+endobj
+38 0 obj
+<< /Length 3113 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 51.02 790.87 Tm (3. Backend busca usuario activo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 773.37 Tm (4. Backend valida password con hash.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 755.87 Tm (5. Si es valido, genera cookie segura.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 738.37 Tm (6. Frontend consulta /api/auth/me.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 720.87 Tm (7. Se cargan modulos segun rol.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 698.37 Tm (Seguridad:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 675.87 Tm (- Cookie HttpOnly.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 660.37 Tm (- Cookie Secure.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 644.87 Tm (- SameSite=Lax.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 629.37 Tm (- Expiracion controlada.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 613.87 Tm (- Bloqueo por intentos fallidos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 598.37 Tm (- Rate limiting.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 573.87 Tm (16. Flujo de WhatsApp entrante) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 544.87 Tm (1. Cliente escribe por WhatsApp.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 527.37 Tm (2. Meta envia webhook al endpoint publico.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 509.87 Tm (3. ngrok o tunel reenvia al backend local.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 492.37 Tm (4. Backend valida y procesa payload.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 474.87 Tm (5. Busca o crea cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 457.37 Tm (6. Busca o crea conversacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 439.87 Tm (7. Guarda mensaje entrante.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 422.37 Tm (8. Actualiza ultimo mensaje.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 404.87 Tm (9. Asigna asesor si aplica.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 387.37 Tm (10. Ejecuta bot si corresponde.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 369.87 Tm (11. Frontend muestra la conversacion.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 343.37 Tm (17. Flujo de mensaje saliente) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 314.37 Tm (1. Asesor escribe desde Comunicaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 296.87 Tm (2. Frontend llama al endpoint de envio.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 279.37 Tm (3. Backend valida acceso a la conversacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 261.87 Tm (4. Backend pausa bot.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 244.37 Tm (5. Backend registra mensaje saliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 226.87 Tm (6. Si envio real esta activo, manda a Meta.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 209.37 Tm (7. Estado queda registrado.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 182.87 Tm (18. Flujo de archivos) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 153.87 Tm (1. Asesor selecciona archivo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 136.37 Tm (2. Frontend envia multipart al backend.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 118.87 Tm (3. Backend valida extension y tamano.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 101.37 Tm (4. Backend valida acceso a conversacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 83.87 Tm (5. Backend sube archivo a Cloudinary.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 66.37 Tm (6. Backend guarda mensaje de archivo.) Tj ET
+endstream
+endobj
+39 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 38 0 R >>
+endobj
+40 0 obj
+<< /Length 2820 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 51.02 790.87 Tm (7. Backend envia por canal si aplica.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 764.37 Tm (19. Flujo de Instagram/Facebook) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 735.37 Tm (Estado actual:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 712.87 Tm (- Configuracion preparada.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 697.37 Tm (- Webhook Meta preparado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 681.87 Tm (- Perfil de contacto preparado.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 666.37 Tm (- Instagram Login validado para cuenta profesional.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 645.87 Tm (Limitacion:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 623.37 Tm (- En modo desarrollador Meta no entrega DMs reales externos como produccion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 607.87 Tm (- Se requiere publicacion/capability/App Review para DMs reales y webhooks reales.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 583.37 Tm (20. Seguridad implementada) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 550.37 Tm (Autenticacion y roles) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 525.87 Tm (- Login obligatorio.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 510.37 Tm (- Roles: Administrador, Supervisor, Asesor.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 494.87 Tm (- Password hash.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 479.37 Tm (- Cookies endurecidas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 463.87 Tm (- Endpoints con [Authorize].) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 439.37 Tm (Rate limiting) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 414.87 Tm (- Login: limite por usuario/IP.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 399.37 Tm (- APIs internas: limite por usuario/IP.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 383.87 Tm (- Respuesta 429 JSON.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 359.37 Tm (Headers) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 334.87 Tm (- X-Content-Type-Options.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 319.37 Tm (- X-Frame-Options.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 303.87 Tm (- Referrer-Policy.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 288.37 Tm (- Permissions-Policy.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 272.87 Tm (- Content Security Policy basica.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 248.37 Tm (Proteccion cross-site) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 223.87 Tm (- Bloqueo de metodos peligrosos cross-site.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 208.37 Tm (- Excepciones para webhooks externos.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 183.87 Tm (Control por asesor) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 159.37 Tm (Implementado en backend con CrmAccessService.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 136.87 Tm (Protege:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 114.37 Tm (- Clientes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 98.87 Tm (- Conversaciones.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 83.37 Tm (- Mensajes.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 67.87 Tm (- Comentarios.) Tj ET
+endstream
+endobj
+41 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 40 0 R >>
+endobj
+42 0 obj
+<< /Length 3059 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Archivos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- Plantillas rapidas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 759.87 Tm (- Notas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 744.37 Tm (- Etiquetas por cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 728.87 Tm (- Tareas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 713.37 Tm (- Oportunidades.) Tj ET
+BT /F2 11.50 Tf 1 0 0 1 51.02 688.87 Tm (Cache) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 664.37 Tm (- Respuestas /api con no-store.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 639.87 Tm (21. Riesgos y recomendaciones de produccion) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 610.87 Tm (Riesgos:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 588.37 Tm (- Secretos en appsettings.json.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 572.87 Tm (- Tokens expuestos en capturas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 557.37 Tm (- ngrok como tunel temporal.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 541.87 Tm (- CRM conectado directamente al ERP con credenciales amplias.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 526.37 Tm (- Falta de 2FA.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 510.87 Tm (- Falta de backups probados.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 490.37 Tm (Recomendaciones:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 467.87 Tm (- Rotar secretos expuestos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 452.37 Tm (- Mover secretos a variables de entorno o secret manager.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 436.87 Tm (- Usar Cloudflare Tunnel o hosting formal.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 421.37 Tm (- Usar Cloudflare Access con 2FA.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 405.87 Tm (- Usar WAF y rate limiting externo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 390.37 Tm (- Separar CRM y ERP.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 374.87 Tm (- No conectar directo a la base del ERP.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 359.37 Tm (- Crear API puente para ERP con permisos minimos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 343.87 Tm (- Backups automaticos y prueba de restauracion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 328.37 Tm (- Monitoreo de logs y errores.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 303.87 Tm (22. Flujo seguro recomendado con ERP) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 274.87 Tm (No recomendado:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 252.37 Tm (- CRM expuesto con acceso directo amplio a la base del ERP.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 231.87 Tm (Recomendado:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 209.37 Tm (1. Usuario.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 191.87 Tm (2. Cloudflare Access/WAF/2FA.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 174.37 Tm (3. CRM Web.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 156.87 Tm (4. API del CRM.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 139.37 Tm (5. API puente ERP.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 121.87 Tm (6. Base de datos ERP en red privada.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 99.37 Tm (La API puente debe permitir solo operaciones controladas:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 76.87 Tm (- Consultar cliente.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 61.37 Tm (- Consultar stock.) Tj ET
+endstream
+endobj
+43 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 42 0 R >>
+endobj
+44 0 obj
+<< /Length 3247 >>
+stream
+BT /F1 10.50 Tf 1 0 0 1 61.02 790.87 Tm (- Consultar precios.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 775.37 Tm (- Crear cotizacion.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 759.87 Tm (- Crear pedido.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 744.37 Tm (- Consultar estado de pedido.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 723.87 Tm (No debe permitir:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 701.37 Tm (- Operaciones administrativas.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 685.87 Tm (- Borrados masivos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 670.37 Tm (- DROP.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 654.87 Tm (- ALTER.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 639.37 Tm (- Lectura libre de tablas sensibles.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 614.87 Tm (23. Validaciones tecnicas usadas) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 585.87 Tm (Comandos usados para validar:) Tj ET
+BT /F3 8.50 Tf 1 0 0 1 61.02 559.37 Tm (Get-ChildItem CRM.Data\\wwwroot\\js\\*.js | Sort-Object Name | ForEach-Object { node --check $_.FullName }) Tj ET
+BT /F3 8.50 Tf 1 0 0 1 61.02 546.87 Tm (dotnet build CRM.Data\\CRM.Data.csproj -o _codex_build_check\\crmdata) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 527.37 Tm (Resultado reciente:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 504.87 Tm (- JavaScript valido.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 489.37 Tm (- Build correcto.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 473.87 Tm (- 0 errores.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 458.37 Tm (- 0 advertencias.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 433.87 Tm (24. Pendientes tecnicos recomendados) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 404.87 Tm (- Mover secretos fuera de appsettings.json.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 389.37 Tm (- Rotar App Secret y tokens expuestos.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 373.87 Tm (- Agregar pruebas automatizadas de permisos por rol/pertenencia.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 358.37 Tm (- Implementar Cloudflare Tunnel o hosting formal.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 342.87 Tm (- Configurar Cloudflare Access/2FA.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 327.37 Tm (- Crear API puente ERP.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 311.87 Tm (- Mejorar exportaciones Excel/PDF.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 296.37 Tm (- Agregar monitoreo y logs consultables.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 280.87 Tm (- Definir politica de backups.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 265.37 Tm (- Completar publicacion/revision Meta para Instagram Messaging.) Tj ET
+BT /F2 14.00 Tf 1 0 0 1 51.02 240.87 Tm (25. Cierre) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 51.02 211.87 Tm (El CRM tiene una base funcional y mantenible:) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 189.37 Tm (- Backend ASP.NET Core.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 173.87 Tm (- Frontend modular.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 158.37 Tm (- Base de datos relacional.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 142.87 Tm (- Seguridad inicial aplicada.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 127.37 Tm (- Control de asesores desde backend.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 111.87 Tm (- WhatsApp operativo.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 96.37 Tm (- Canales sociales preparados segun limitaciones reales.) Tj ET
+BT /F1 10.50 Tf 1 0 0 1 61.02 80.87 Tm (- Documentacion separada para uso y mantenimiento.) Tj ET
+endstream
+endobj
+45 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 44 0 R >>
+endobj
+xref
+0 46
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000254 00000 n 
+0000000351 00000 n 
+0000000453 00000 n 
+0000000548 00000 n 
+0000004162 00000 n 
+0000004314 00000 n 
+0000007453 00000 n 
+0000007605 00000 n 
+0000010654 00000 n 
+0000010808 00000 n 
+0000014095 00000 n 
+0000014249 00000 n 
+0000017139 00000 n 
+0000017293 00000 n 
+0000020131 00000 n 
+0000020285 00000 n 
+0000023166 00000 n 
+0000023320 00000 n 
+0000026004 00000 n 
+0000026158 00000 n 
+0000028835 00000 n 
+0000028989 00000 n 
+0000031830 00000 n 
+0000031984 00000 n 
+0000034739 00000 n 
+0000034893 00000 n 
+0000037590 00000 n 
+0000037744 00000 n 
+0000040424 00000 n 
+0000040578 00000 n 
+0000043276 00000 n 
+0000043430 00000 n 
+0000046094 00000 n 
+0000046248 00000 n 
+0000048798 00000 n 
+0000048952 00000 n 
+0000052118 00000 n 
+0000052272 00000 n 
+0000055145 00000 n 
+0000055299 00000 n 
+0000058411 00000 n 
+0000058565 00000 n 
+0000061865 00000 n 
+trailer
+<< /Size 46 /Root 1 0 R >>
+startxref
+62019
+%%EOF

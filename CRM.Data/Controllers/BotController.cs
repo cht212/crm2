@@ -2,12 +2,14 @@ using CRM.Data.DTOs.Bot;
 using CRM.Data.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace CRM.Data.Controllers;
 
 [ApiController]
 [Route("api/bot")]
-[Authorize]
+[Authorize(Roles = "Administrador,Supervisor")]
+[EnableRateLimiting("api")]
 public sealed class BotController : ControllerBase
 {
     private readonly BotSettingsService _botSettings;

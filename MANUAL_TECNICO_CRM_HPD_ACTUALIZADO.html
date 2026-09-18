@@ -1,0 +1,653 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>MANUAL TECNICO CRM HPD</title>
+  <style>
+    @page { size: A4; margin: 18mm 16mm; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: #142531;
+      font-family: "Segoe UI", Arial, sans-serif;
+      font-size: 11.5pt;
+      line-height: 1.52;
+    }
+    h1 {
+      margin: 0 0 18px;
+      padding-bottom: 10px;
+      border-bottom: 3px solid #0ea5c6;
+      color: #0b465b;
+      font-size: 24pt;
+      line-height: 1.15;
+    }
+    h2 {
+      margin: 24px 0 8px;
+      color: #0b465b;
+      font-size: 16pt;
+      break-after: avoid;
+    }
+    h3 {
+      margin: 18px 0 6px;
+      color: #14394a;
+      font-size: 13pt;
+      break-after: avoid;
+    }
+    p { margin: 0 0 8px; }
+    ul { margin: 4px 0 10px 20px; padding: 0; }
+    li { margin: 3px 0; }
+    code {
+      padding: 1px 4px;
+      border-radius: 4px;
+      background: #eef6f9;
+      color: #0b465b;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 10pt;
+    }
+    pre {
+      margin: 10px 0 12px;
+      padding: 10px 12px;
+      border: 1px solid #d9e7ee;
+      border-radius: 8px;
+      background: #f7fbfd;
+      white-space: pre-wrap;
+      break-inside: avoid;
+    }
+    pre code {
+      padding: 0;
+      background: transparent;
+    }
+  </style>
+</head>
+<body>
+<h1>Manual operativo del CRM HPD</h1>
+<p>Fecha: 18 de septiembre de 2026</p>
+<h2>1. Objetivo del manual</h2>
+<p>Este manual esta pensado para el personal que va a entrar al CRM y necesita entender que hace cada seccion, para que sirve y cuando debe usarla.</p>
+<p>No es un manual de programacion. La documentacion tecnica completa del codigo, carpetas, base de datos, seguridad e integraciones esta en <code>DOCUMENTACION_TECNICA_COMPLETA_CRM_HPD.md</code>.</p>
+<h2>2. Que es el CRM HPD</h2>
+<p>El CRM HPD es una plataforma para centralizar la atencion de clientes, principalmente por WhatsApp. Permite trabajar con conversaciones, clientes, tareas, ventas, notas, etiquetas, reportes, usuarios, bot y conexiones con plataformas externas.</p>
+<p>La idea principal es que cada cliente tenga historial y seguimiento. No se atiende solo un mensaje aislado; se atiende una ficha completa con datos, conversacion, responsable, pendientes y oportunidades comerciales.</p>
+<h2>3. Roles de usuario</h2>
+<h3>Administrador</h3>
+<p>El administrador ve todo el sistema.</p>
+<p>Puede:</p>
+<ul>
+<li>Configurar conexiones.</li>
+<li>Crear usuarios.</li>
+<li>Revisar todos los clientes y conversaciones.</li>
+<li>Ver reportes.</li>
+<li>Revisar actividad y fallos.</li>
+<li>Configurar bot.</li>
+<li>Supervisar seguridad operativa.</li>
+</ul>
+<h3>Supervisor</h3>
+<p>El supervisor controla la operacion diaria sin administrar claves sensibles ni usuarios.</p>
+<p>Puede:</p>
+<ul>
+<li>Ver dashboard operativo.</li>
+<li>Revisar conversaciones.</li>
+<li>Asignar asesores.</li>
+<li>Ver contactos.</li>
+<li>Ver tareas.</li>
+<li>Revisar ventas.</li>
+<li>Revisar reportes.</li>
+<li>Revisar actividad y fallos.</li>
+<li>Configurar bot si tiene permiso.</li>
+</ul>
+<h3>Asesor</h3>
+<p>El asesor tiene una vista simple. Su trabajo principal es atender clientes y dar seguimiento.</p>
+<p>Puede:</p>
+<ul>
+<li>Ver conversaciones asignadas.</li>
+<li>Tomar conversaciones nuevas cuando esten disponibles para atencion.</li>
+<li>Responder mensajes.</li>
+<li>Ver o crear contactos permitidos.</li>
+<li>Crear notas internas.</li>
+<li>Crear tareas.</li>
+<li>Ver Pipeline con sus casos y los chats sin asignar disponibles para tomar.</li>
+<li>Registrar oportunidades de venta.</li>
+<li>Dar seguimiento a sus pendientes.</li>
+</ul>
+<p>El asesor no debe ver configuraciones tecnicas, usuarios, conexiones globales ni fallos del sistema.</p>
+<p>En un flujo CRM real, el asesor debe trabajar en una experiencia simple tipo "Mi trabajo": conversaciones, clientes, tareas, pipeline propio y ventas. Todo lo tecnico debe quedar para supervisor o administrador.</p>
+<h2>4. Inicio de sesion</h2>
+<p>El usuario entra desde la pantalla de login.</p>
+<p>Debe usar:</p>
+<ul>
+<li>Usuario asignado por el administrador.</li>
+<li>Contrasena asignada o actualizada.</li>
+</ul>
+<p>Si las credenciales son correctas, el sistema abre el CRM segun el rol.</p>
+<p>Si el usuario es asesor, el CRM lo lleva principalmente a Comunicaciones para atender clientes.</p>
+<h2>5. Dashboard</h2>
+<p>El Dashboard es la vista ejecutiva del CRM.</p>
+<p>Sirve para ver rapidamente:</p>
+<ul>
+<li>Salud operativa.</li>
+<li>Conversaciones activas.</li>
+<li>Tareas pendientes.</li>
+<li>Tareas vencidas.</li>
+<li>Oportunidades abiertas.</li>
+<li>Monto comercial abierto.</li>
+<li>Rendimiento por canal.</li>
+<li>Carga de asesores.</li>
+</ul>
+<p>Uso recomendado:</p>
+<ul>
+<li>Administrador: revision general del negocio.</li>
+<li>Supervisor: seguimiento diario del equipo.</li>
+<li>Asesor: no es su pantalla principal.</li>
+</ul>
+<h2>6. Comunicaciones</h2>
+<p>Comunicaciones es el inbox del CRM.</p>
+<p>Sirve para:</p>
+<ul>
+<li>Ver conversaciones.</li>
+<li>Abrir un chat.</li>
+<li>Leer historial.</li>
+<li>Responder al cliente.</li>
+<li>Ver si la conversacion requiere atencion.</li>
+<li>Ver el canal: WhatsApp, Facebook, Instagram u otro canal preparado.</li>
+<li>Pausar bot cuando interviene un asesor.</li>
+<li>Adjuntar archivos permitidos.</li>
+<li>Actualizar perfil si aplica para Meta.</li>
+</ul>
+<p>Estados comunes:</p>
+<ul>
+<li>NUEVO: conversacion nueva.</li>
+<li>ABIERTO: conversacion activa.</li>
+<li>EN_ATENCION: un asesor la esta atendiendo.</li>
+<li>ESPERANDO_CLIENTE: se espera respuesta del cliente.</li>
+<li>COTIZACION_ENVIADA: se envio propuesta.</li>
+<li>CERRADO: atencion terminada.</li>
+<li>PERDIDO: oportunidad o caso perdido.</li>
+<li>NO_RESPONDIO: el cliente no respondio.</li>
+</ul>
+<p>Para asesores:</p>
+<ul>
+<li>Solo deben aparecer conversaciones permitidas o asignadas.</li>
+<li>Las conversaciones nuevas disponibles pueden tomarse para empezar la atencion.</li>
+<li>Si responden una conversacion, queda pausado el bot para evitar respuestas automaticas fuera de contexto.</li>
+<li>Puede usar plantillas rapidas para acelerar mensajes frecuentes como saludo, catalogo, solicitud de datos, seguimiento o cierre.</li>
+</ul>
+<h2>7. Contactos</h2>
+<p>Contactos contiene la lista de clientes.</p>
+<p>Sirve para:</p>
+<ul>
+<li>Buscar clientes.</li>
+<li>Ver datos basicos.</li>
+<li>Ver telefono, documento, email y canal de origen.</li>
+<li>Abrir la ficha del cliente.</li>
+<li>Ver etiquetas.</li>
+<li>Ver ultima conversacion.</li>
+<li>Crear un contacto manual.</li>
+</ul>
+<p>Uso recomendado:</p>
+<ul>
+<li>Revisar si un cliente ya existe antes de crear uno nuevo.</li>
+<li>Mantener datos limpios.</li>
+<li>No duplicar clientes con el mismo telefono.</li>
+</ul>
+<p>Para asesores:</p>
+<ul>
+<li>El backend limita los contactos visibles segun sus conversaciones asignadas.</li>
+<li>Si un asesor crea un contacto nuevo, el sistema crea una conversacion inicial asignada a el.</li>
+</ul>
+<h2>8. Ficha del cliente</h2>
+<p>La ficha del cliente resume la informacion importante de un cliente en un solo lugar.</p>
+<p>Puede incluir:</p>
+<ul>
+<li>Datos principales.</li>
+<li>Conversaciones.</li>
+<li>Notas internas.</li>
+<li>Tareas.</li>
+<li>Oportunidades.</li>
+<li>Etiquetas.</li>
+<li>Actividad relacionada.</li>
+</ul>
+<p>Sirve para que el asesor entienda rapidamente el contexto antes de responder o vender, sin tener que buscar informacion en varias pantallas.</p>
+<h2>9. Notas internas</h2>
+<p>Las notas internas son comentarios privados del equipo.</p>
+<p>Sirven para:</p>
+<ul>
+<li>Registrar contexto.</li>
+<li>Dejar indicaciones para otro asesor.</li>
+<li>Registrar acuerdos no visibles para el cliente.</li>
+<li>Anotar detalles de seguimiento.</li>
+</ul>
+<p>Importante:</p>
+<ul>
+<li>No son mensajes enviados al cliente.</li>
+<li>No deben usarse para guardar claves, tokens o informacion sensible innecesaria.</li>
+</ul>
+<h2>10. Tareas</h2>
+<p>Tareas permite programar seguimientos.</p>
+<p>Ejemplos:</p>
+<ul>
+<li>Llamar manana.</li>
+<li>Enviar cotizacion.</li>
+<li>Confirmar pago.</li>
+<li>Revisar stock.</li>
+<li>Dar seguimiento a una oportunidad.</li>
+</ul>
+<p>Campos principales:</p>
+<ul>
+<li>Titulo.</li>
+<li>Descripcion.</li>
+<li>Fecha de vencimiento.</li>
+<li>Cliente relacionado.</li>
+<li>Conversacion relacionada.</li>
+<li>Oportunidad relacionada.</li>
+<li>Asesor asignado.</li>
+<li>Estado.</li>
+</ul>
+<p>Estados:</p>
+<ul>
+<li>PENDIENTE.</li>
+<li>VENCIDA, cuando ya paso su fecha.</li>
+<li>COMPLETADA.</li>
+<li>CANCELADA.</li>
+</ul>
+<p>Para asesores:</p>
+<ul>
+<li>Debe funcionar como lista diaria de pendientes.</li>
+<li>El backend limita las tareas a las que le pertenecen o estan vinculadas a sus clientes/conversaciones.</li>
+</ul>
+<h2>11. Ventas</h2>
+<p>Ventas maneja oportunidades comerciales.</p>
+<p>Sirve para:</p>
+<ul>
+<li>Crear oportunidades.</li>
+<li>Registrar monto.</li>
+<li>Asignar etapa.</li>
+<li>Estimar cierre.</li>
+<li>Marcar oportunidades ganadas o perdidas.</li>
+</ul>
+<p>Etapas:</p>
+<ul>
+<li>NUEVA.</li>
+<li>CALIFICADA.</li>
+<li>PROPUESTA.</li>
+<li>NEGOCIACION.</li>
+<li>GANADA.</li>
+<li>PERDIDA.</li>
+</ul>
+<p>Uso recomendado:</p>
+<ul>
+<li>Usar Ventas para oportunidades reales.</li>
+<li>No confundir Pipeline con Ventas: Pipeline muestra estados de atencion; Ventas muestra oportunidades comerciales.</li>
+</ul>
+<p>Para asesores:</p>
+<ul>
+<li>Pueden trabajar oportunidades relacionadas con sus clientes o conversaciones.</li>
+<li>Deben registrar una oportunidad cuando exista una posibilidad real de venta, no por cada mensaje recibido.</li>
+<li>Deben cerrar como GANADA o PERDIDA para que los reportes sean utiles.</li>
+</ul>
+<h2>12. Pipeline</h2>
+<p>Pipeline muestra el estado de las conversaciones y la atencion.</p>
+<p>Sirve para:</p>
+<ul>
+<li>Ver casos nuevos.</li>
+<li>Ver conversaciones en atencion.</li>
+<li>Identificar casos cerrados o perdidos.</li>
+<li>Mover tarjetas entre etapas con drag and drop.</li>
+<li>Supervisar asignaciones.</li>
+<li>Revisar la carga de trabajo.</li>
+</ul>
+<p>Uso recomendado:</p>
+<ul>
+<li>Supervisor y administrador lo usan para control operativo completo.</li>
+<li>El asesor puede usar Pipeline como tablero filtrado de sus casos y conversaciones nuevas sin asignar, no como vista global de toda la empresa.</li>
+</ul>
+<h2>13. Reportes</h2>
+<p>Reportes muestra informacion agregada del CRM.</p>
+<p>Permite responder:</p>
+<ul>
+<li>Cuantos clientes existen.</li>
+<li>Cuantas conversaciones entraron.</li>
+<li>Cuantos mensajes se enviaron o recibieron.</li>
+<li>Cuantas tareas estan pendientes.</li>
+<li>Cuantas oportunidades estan abiertas.</li>
+<li>Cuanto monto comercial hay.</li>
+<li>Que asesor tiene mas carga.</li>
+<li>Que canal genera mas actividad.</li>
+</ul>
+<p>Uso recomendado:</p>
+<ul>
+<li>Administrador: revision estrategica.</li>
+<li>Supervisor: seguimiento del equipo.</li>
+<li>Asesor: normalmente no requiere reportes generales.</li>
+</ul>
+<h2>14. Comentarios</h2>
+<p>Comentarios esta preparado para centralizar interacciones tipo comentario de redes sociales.</p>
+<p>Sirve para:</p>
+<ul>
+<li>Ver comentarios entrantes.</li>
+<li>Identificar de que canal vienen.</li>
+<li>Relacionarlos con cliente/conversacion.</li>
+</ul>
+<p>Estado actual:</p>
+<ul>
+<li>Preparado para Facebook/Instagram segun permisos y webhooks reales de Meta.</li>
+</ul>
+<h2>15. Actividad</h2>
+<p>Actividad muestra acciones realizadas dentro del sistema.</p>
+<p>Ejemplos:</p>
+<ul>
+<li>Creacion de cliente.</li>
+<li>Cambio de estado.</li>
+<li>Reasignacion de conversacion.</li>
+<li>Creacion de oportunidad.</li>
+<li>Eventos de integracion.</li>
+</ul>
+<p>Uso recomendado:</p>
+<ul>
+<li>Administrador y supervisor.</li>
+<li>Sirve para auditoria y trazabilidad.</li>
+</ul>
+<h2>16. Fallos</h2>
+<p>Fallos muestra problemas detectados en integraciones o mensajes.</p>
+<p>Puede mostrar:</p>
+<ul>
+<li>Mensajes no enviados.</li>
+<li>Errores de API.</li>
+<li>Eventos de webhook fallidos.</li>
+<li>Respuestas locales cuando el envio real no esta activo.</li>
+</ul>
+<p>Uso recomendado:</p>
+<ul>
+<li>Administrador y supervisor.</li>
+<li>No es una vista normal de asesor.</li>
+</ul>
+<h2>17. Plantillas rapidas</h2>
+<p>Las plantillas rapidas son respuestas manuales para asesores.</p>
+<p>Sirven para:</p>
+<ul>
+<li>Responder mas rapido.</li>
+<li>Mantener mensajes consistentes.</li>
+<li>Evitar escribir lo mismo muchas veces.</li>
+<li>Usar textos frecuentes sin que el bot los envie automaticamente.</li>
+</ul>
+<p>Ejemplos:</p>
+<ul>
+<li>Saludo.</li>
+<li>Envio de catalogo.</li>
+<li>Solicitud de datos para cotizar.</li>
+<li>Seguimiento.</li>
+<li>Cierre.</li>
+</ul>
+<p>Importante:</p>
+<ul>
+<li>Las plantillas rapidas no reemplazan al asesor.</li>
+<li>El asesor elige la plantilla, la revisa y luego envia el mensaje.</li>
+<li>Se administran desde Bot y derivaciones, pero son distintas a las plantillas del bot.</li>
+</ul>
+<h2>18. Bot</h2>
+<p>Bot permite configurar respuestas automaticas.</p>
+<p>Sirve para:</p>
+<ul>
+<li>Definir mensaje de bienvenida.</li>
+<li>Crear opciones.</li>
+<li>Definir respuestas.</li>
+<li>Derivar a asesor.</li>
+<li>Limitar respuestas automaticas.</li>
+</ul>
+<p>Regla importante:</p>
+<ul>
+<li>Cuando un asesor responde, el bot se pausa en esa conversacion.</li>
+<li>Esto evita que el cliente reciba respuestas automaticas despues de que una persona ya tomo el caso.</li>
+<li>Las plantillas del bot son para automatizacion. Las plantillas rapidas son para respuestas manuales del asesor.</li>
+</ul>
+<h2>19. Flujo recomendado para asesores</h2>
+<p>El flujo ideal para un asesor debe ser simple y repetible.</p>
+<h3>Paso 1: revisar conversaciones</h3>
+<p>El asesor entra a Comunicaciones y revisa:</p>
+<ul>
+<li>Chats asignados.</li>
+<li>Chats nuevos disponibles para tomar.</li>
+<li>Ultimo mensaje del cliente.</li>
+<li>Estado de la conversacion.</li>
+<li>Canal de origen.</li>
+</ul>
+<h3>Paso 2: abrir la ficha del cliente</h3>
+<p>Antes de responder, debe revisar:</p>
+<ul>
+<li>Nombre.</li>
+<li>Telefono.</li>
+<li>Canal.</li>
+<li>Etiquetas.</li>
+<li>Historial.</li>
+<li>Notas internas.</li>
+<li>Tareas pendientes.</li>
+<li>Oportunidades abiertas.</li>
+</ul>
+<h3>Paso 3: responder con contexto</h3>
+<p>Puede responder:</p>
+<ul>
+<li>Escribiendo manualmente.</li>
+<li>Usando plantillas rapidas.</li>
+<li>Adjuntando archivo.</li>
+<li>Enviando informacion comercial.</li>
+</ul>
+<h3>Paso 4: registrar seguimiento</h3>
+<p>Si el cliente no compra de inmediato, el asesor debe crear una tarea.</p>
+<p>Ejemplos:</p>
+<ul>
+<li>Llamar manana.</li>
+<li>Enviar cotizacion.</li>
+<li>Confirmar pago.</li>
+<li>Hacer seguimiento en 48 horas.</li>
+</ul>
+<h3>Paso 5: registrar venta</h3>
+<p>Si hay interes comercial real, debe crear o actualizar una oportunidad en Ventas.</p>
+<p>Debe registrar:</p>
+<ul>
+<li>Cliente.</li>
+<li>Monto estimado.</li>
+<li>Etapa.</li>
+<li>Probabilidad.</li>
+<li>Fecha estimada de cierre.</li>
+</ul>
+<h3>Paso 6: cerrar correctamente</h3>
+<p>Cuando termina la atencion:</p>
+<ul>
+<li>Cambiar estado de conversacion.</li>
+<li>Marcar tarea como completada si aplica.</li>
+<li>Marcar oportunidad como GANADA o PERDIDA si corresponde.</li>
+<li>Dejar nota interna si queda contexto importante.</li>
+</ul>
+<h2>20. Modulos que debe ver cada rol</h2>
+<h3>Asesor</h3>
+<p>Debe ver solo:</p>
+<ul>
+<li>Comunicaciones.</li>
+<li>Contactos.</li>
+<li>Tareas.</li>
+<li>Pipeline.</li>
+<li>Ventas.</li>
+</ul>
+<p>No debe ver:</p>
+<ul>
+<li>Conexiones.</li>
+<li>Usuarios.</li>
+<li>Fallos tecnicos.</li>
+<li>Actividad global.</li>
+<li>Configuracion global del bot.</li>
+<li>Reportes globales.</li>
+<li>Conversaciones de otros asesores.</li>
+</ul>
+<h3>Supervisor</h3>
+<p>Debe ver:</p>
+<ul>
+<li>Dashboard.</li>
+<li>Comunicaciones.</li>
+<li>Contactos.</li>
+<li>Pipeline.</li>
+<li>Tareas.</li>
+<li>Ventas.</li>
+<li>Reportes.</li>
+<li>Actividad.</li>
+<li>Fallos.</li>
+<li>Bot.</li>
+</ul>
+<h3>Administrador</h3>
+<p>Debe ver todo:</p>
+<ul>
+<li>Dashboard.</li>
+<li>Comunicaciones.</li>
+<li>Contactos.</li>
+<li>Tareas.</li>
+<li>Pipeline.</li>
+<li>Ventas.</li>
+<li>Reportes.</li>
+<li>Comentarios.</li>
+<li>Actividad.</li>
+<li>Fallos.</li>
+<li>Bot.</li>
+<li>Conexiones.</li>
+<li>Usuarios.</li>
+</ul>
+<h2>21. Conexiones</h2>
+<p>Conexiones permite configurar integraciones externas.</p>
+<p>Canales:</p>
+<ul>
+<li>WhatsApp.</li>
+<li>Instagram.</li>
+<li>Facebook.</li>
+<li>TikTok.</li>
+</ul>
+<p>Sirve para:</p>
+<ul>
+<li>Configurar tokens.</li>
+<li>Copiar webhooks.</li>
+<li>Validar datos.</li>
+<li>Sincronizar o diagnosticar integraciones.</li>
+</ul>
+<p>Uso recomendado:</p>
+<ul>
+<li>Solo administrador o personal tecnico.</li>
+<li>No debe manipularse durante atencion normal.</li>
+</ul>
+<h2>22. Usuarios</h2>
+<p>Usuarios permite administrar cuentas internas del CRM.</p>
+<p>Sirve para:</p>
+<ul>
+<li>Crear asesores.</li>
+<li>Crear supervisores.</li>
+<li>Cambiar contrasenas.</li>
+<li>Mantener usuarios activos.</li>
+</ul>
+<p>Uso recomendado:</p>
+<ul>
+<li>Solo administrador.</li>
+</ul>
+<h2>23. Canales</h2>
+<h3>WhatsApp</h3>
+<p>Es el canal principal operativo.</p>
+<p>Flujo:</p>
+<ul>
+<li>Cliente escribe por WhatsApp.</li>
+<li>Meta envia webhook.</li>
+<li>CRM crea o actualiza cliente.</li>
+<li>CRM crea o actualiza conversacion.</li>
+<li>Mensaje aparece en Comunicaciones.</li>
+<li>Asesor responde.</li>
+<li>CRM registra el mensaje y lo envia por WhatsApp Cloud API si el envio real esta activo.</li>
+</ul>
+<h3>Instagram</h3>
+<p>Estado actual:</p>
+<ul>
+<li>Cuenta profesional validada.</li>
+<li>Token de Instagram Login validado.</li>
+<li>El CRM consulta Graph API correctamente.</li>
+<li>En modo desarrollador Meta no entrega DMs reales externos ni webhooks reales de mensajes como produccion.</li>
+</ul>
+<p>Para recibir DMs reales se requiere publicacion/capability/aprobacion de Meta.</p>
+<h3>Facebook</h3>
+<p>Preparado para Messenger y Page Webhooks.</p>
+<p>Requiere:</p>
+<ul>
+<li>Pagina vinculada.</li>
+<li>Page Access Token.</li>
+<li>Permisos correctos.</li>
+<li>Webhook suscrito.</li>
+</ul>
+<h3>TikTok</h3>
+<p>Preparado como canal futuro de leads/campanas.</p>
+<p>No se debe prometer como inbox de DMs normales sin acceso oficial, partner o producto aprobado.</p>
+<h2>24. Seguridad visible para el usuario</h2>
+<p>El usuario debe entender estas reglas:</p>
+<ul>
+<li>No compartir usuario ni contrasena.</li>
+<li>No enviar tokens por capturas.</li>
+<li>No guardar claves en notas internas.</li>
+<li>Cerrar sesion en equipos compartidos.</li>
+<li>Reportar errores o mensajes sospechosos.</li>
+<li>El asesor solo debe trabajar sus clientes/conversaciones.</li>
+</ul>
+<p>Controles ya aplicados:</p>
+<ul>
+<li>Login obligatorio.</li>
+<li>Roles.</li>
+<li>Vista simplificada por rol.</li>
+<li>Restriccion backend por asignacion para asesores.</li>
+<li>Bot restringido a roles superiores.</li>
+<li>Endpoints protegidos.</li>
+<li>Rate limiting.</li>
+<li>Cookies endurecidas.</li>
+<li>Protecciones contra solicitudes externas indebidas.</li>
+</ul>
+<h2>25. Recomendacion de uso diario</h2>
+<p>Para asesores:</p>
+<p>1. Entrar al CRM.</p>
+<p>2. Ir a Comunicaciones.</p>
+<p>3. Revisar conversaciones pendientes.</p>
+<p>4. Responder al cliente.</p>
+<p>5. Actualizar datos del contacto si hace falta.</p>
+<p>6. Crear nota interna cuando haya contexto importante.</p>
+<p>7. Crear tarea si hay seguimiento.</p>
+<p>8. Crear oportunidad si hay venta real.</p>
+<p>9. Cerrar o cambiar estado cuando corresponda.</p>
+<p>Para supervisores:</p>
+<p>1. Revisar Dashboard.</p>
+<p>2. Revisar Pipeline.</p>
+<p>3. Validar conversaciones sin asignar.</p>
+<p>4. Revisar tareas vencidas.</p>
+<p>5. Revisar ventas abiertas.</p>
+<p>6. Revisar reportes y fallos.</p>
+<p>Para administradores:</p>
+<p>1. Revisar usuarios.</p>
+<p>2. Revisar conexiones.</p>
+<p>3. Revisar fallos.</p>
+<p>4. Revisar actividad.</p>
+<p>5. Mantener configuraciones y permisos.</p>
+<h2>26. Que hacer si algo no aparece</h2>
+<p>Si no aparece una conversacion:</p>
+<ul>
+<li>Revisar si esta asignada al usuario correcto.</li>
+<li>Revisar si el canal esta configurado.</li>
+<li>Revisar Fallos si eres supervisor/admin.</li>
+<li>Revisar si el webhook publico esta activo.</li>
+</ul>
+<p>Si no aparece Instagram:</p>
+<ul>
+<li>Recordar que en modo desarrollador Meta limita DMs reales.</li>
+<li>Probar con datos simulados o esperar aprobacion/publicacion.</li>
+</ul>
+<p>Si no se envia un mensaje:</p>
+<ul>
+<li>Revisar estado del canal.</li>
+<li>Revisar token.</li>
+<li>Revisar Fallos.</li>
+<li>Revisar si el envio real esta activo.</li>
+</ul>
+<h2>27. Cierre</h2>
+<p>El CRM ya esta preparado para operar como centro de atencion y seguimiento comercial. El uso correcto depende de separar bien responsabilidades:</p>
+<ul>
+<li>Asesor atiende y vende.</li>
+<li>Supervisor controla operacion.</li>
+<li>Administrador configura y audita.</li>
+</ul>
+</body>
+</html>

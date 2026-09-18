@@ -172,6 +172,16 @@ public sealed class IntegracionesController : ControllerBase
         return Ok(dashboard);
     }
 
+    [HttpGet("meta/estadisticas/diagnostico")]
+    [Authorize(Roles = "Administrador,Supervisor")]
+    public async Task<IActionResult> DiagnosticoEstadisticasMeta(
+        [FromQuery] DateTime? desde = null,
+        [FromQuery] DateTime? hasta = null)
+    {
+        var diagnostico = await _metaGraph.DiagnosticarInsightsAsync(desde, hasta);
+        return Ok(diagnostico);
+    }
+
     [HttpPost("instagram/sincronizar")]
     [Authorize(Roles = "Administrador,Supervisor")]
     public async Task<IActionResult> SincronizarInstagramLogin()

@@ -6,6 +6,7 @@ using CRM.Data.Models;
 using CRM.Data.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace CRM.Data.Controllers;
@@ -24,6 +25,7 @@ namespace CRM.Data.Controllers;
 [ApiController]
 [Route("api/oportunidades")]
 [Authorize(Roles = "Administrador,Supervisor,Asesor")]
+[EnableRateLimiting("api")]
 public class OportunidadesController : ControllerBase
 {
     private static readonly string[] EtapasValidas =
@@ -31,11 +33,13 @@ public class OportunidadesController : ControllerBase
 
     private readonly CrmDbContext _context;
     private readonly AuditoriaService _auditoria;
+    private readonly CrmAccessService _access;
 
-    public OportunidadesController(CrmDbContext context, AuditoriaService auditoria)
+    public OportunidadesController(CrmDbContext context, AuditoriaService auditoria, CrmAccessService access)
     {
         _context = context;
         _auditoria = auditoria;
+        _access = access;
     }
 
     private int? UsuarioActualId =>
@@ -52,7 +56,7 @@ public class OportunidadesController : ControllerBase
         page = page < 1 ? 1 : page;
         pageSize = pageSize is < 1 or > 200 ? 50 : pageSize;
 
-        var query = _context.Oportunidades.AsNoTracking().AsQueryable();
+        var query = _access.FiltrarOportunidades(_context.Oportunidades.AsNoTracking());
         if (clienteId.HasValue) query = query.Where(o => o.nCliente == clienteId.Value);
         if (conversacionId.HasValue) query = query.Where(o => o.nConversacion == conversacionId.Value);
         if (!string.IsNullOrWhiteSpace(etapa))
@@ -90,7 +94,7 @@ public class OportunidadesController : ControllerBase
     [HttpGet("exportar")]
     public async Task<IActionResult> Exportar([FromQuery] string? etapa = null)
     {
-        var query = _context.Oportunidades.AsNoTracking().AsQueryable();
+        var query = _access.FiltrarOportunidades(_context.Oportunidades.AsNoTracking());
         if (!string.IsNullOrWhiteSpace(etapa) && !etapa.Equals("TODAS", StringComparison.OrdinalIgnoreCase))
         {
             query = query.Where(o => o.cEtapa == etapa.Trim().ToUpperInvariant());
@@ -122,8 +126,7 @@ public class OportunidadesController : ControllerBase
     [HttpGet("resumen")]
     public async Task<IActionResult> Resumen()
     {
-        var resumen = await _context.Oportunidades
-            .AsNoTracking()
+        var resumen = await _access.FiltrarOportunidades(_context.Oportunidades.AsNoTracking())
             .GroupBy(o => o.cEtapa)
             .Select(g => new
             {
@@ -144,11 +147,22 @@ public class OportunidadesController : ControllerBase
         var clienteExiste = await _context.Clientes.AnyAsync(c => c.nCliente == dto.ClienteId);
         if (!clienteExiste) return BadRequest("El cliente no existe.");
 
+        if (!await _access.PuedeAccederClienteAsync(dto.ClienteId))
+        {
+            return Forbid();
+        }
+
+        if (dto.ConversacionId.HasValue &&
+            !await _access.PuedeAccederConversacionAsync(dto.ConversacionId.Value))
+        {
+            return Forbid();
+        }
+
         var oportunidad = new Oportunidad
         {
             nCliente = dto.ClienteId,
             nConversacion = dto.ConversacionId,
-            nUsuarioAsignado = dto.UsuarioAsignadoId,
+            nUsuarioAsignado = _access.EsAsesor ? UsuarioActualId : dto.UsuarioAsignadoId,
             cTitulo = dto.Titulo!.Trim(),
             nMonto = dto.Monto,
             cMoneda = string.IsNullOrWhiteSpace(dto.Moneda) ? "PEN" : dto.Moneda.Trim().ToUpperInvariant(),
@@ -176,6 +190,11 @@ public class OportunidadesController : ControllerBase
 
         var oportunidad = await _context.Oportunidades.FindAsync(id);
         if (oportunidad == null) return NotFound("Oportunidad no encontrada.");
+
+        if (!await _access.PuedeAccederOportunidadAsync(id))
+        {
+            return Forbid();
+        }
 
         if (etapa == "PERDIDA" && string.IsNullOrWhiteSpace(dto.MotivoPerdida))
         {

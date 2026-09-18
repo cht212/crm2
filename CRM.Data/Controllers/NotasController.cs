@@ -2,8 +2,10 @@
 using System.Security.Claims;
 using CRM.Data.Data;
 using CRM.Data.Models;
+using CRM.Data.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace CRM.Data.Controllers;
@@ -21,13 +23,16 @@ namespace CRM.Data.Controllers;
 [ApiController]
 [Route("api/clientes/{clienteId:long}/notas")]
 [Authorize(Roles = "Administrador,Supervisor,Asesor")]
+[EnableRateLimiting("api")]
 public class NotasController : ControllerBase
 {
     private readonly CrmDbContext _context;
+    private readonly CrmAccessService _access;
 
-    public NotasController(CrmDbContext context)
+    public NotasController(CrmDbContext context, CrmAccessService access)
     {
         _context = context;
+        _access = access;
     }
 
     private int? UsuarioActualId =>
@@ -36,6 +41,11 @@ public class NotasController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Listar(long clienteId)
     {
+        if (!await _access.PuedeAccederClienteAsync(clienteId))
+        {
+            return Forbid();
+        }
+
         var notas = await _context.NotasInternas
             .AsNoTracking()
             .Where(n => n.nCliente == clienteId)
@@ -60,6 +70,17 @@ public class NotasController : ControllerBase
 
         var clienteExiste = await _context.Clientes.AnyAsync(c => c.nCliente == clienteId);
         if (!clienteExiste) return NotFound("Cliente no encontrado.");
+
+        if (!await _access.PuedeAccederClienteAsync(clienteId))
+        {
+            return Forbid();
+        }
+
+        if (dto.ConversacionId.HasValue &&
+            !await _access.PuedeAccederConversacionAsync(dto.ConversacionId.Value))
+        {
+            return Forbid();
+        }
 
         var usuarioId = UsuarioActualId;
         if (usuarioId == null) return Unauthorized();

@@ -7,6 +7,7 @@ builder.Services.AddCrmDatabase(builder.Configuration);
 builder.Services.AddCrmApplicationServices();
 builder.Services.AddCrmCookieAuthentication();
 builder.Services.AddCrmCors(builder.Configuration);
+builder.Services.AddCrmRateLimiting();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -17,6 +18,13 @@ var app = builder.Build();
 await DatabaseInitializer.InitializeAsync(app.Services, builder.Configuration);
 
 app.UseCrmExceptionHandler();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
+
+app.UseCrmSecurityHeaders();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
@@ -27,6 +35,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("CRM");
+app.UseRateLimiter();
+app.UseCrmRequestSecurity();
 
 // En local/ngrok no redirigimos a HTTPS porque el tunel ya entra por HTTPS.
 if (!app.Environment.IsDevelopment())

@@ -5,6 +5,7 @@
             const [response, metaResponse, fallosResponse] = await Promise.all([
                 api("/api/crm/reportes/resumen"),
                 api("/api/integraciones/meta/estadisticas").catch(() => null),
+                api("/api/integraciones/meta/estadisticas/diagnostico").catch(() => null),
                 api("/api/crm/fallos?pageSize=5").catch(() => null)
             ]);
             if (!response.ok) throw new Error("Dashboard no disponible");
@@ -12,6 +13,15 @@
             if (metaResponse?.ok) {
                 reporte.meta = await metaResponse.json();
             }
+            if (fallosResponse?.ok) {
+                reporte.diagnosticoMeta = await fallosResponse.json();
+            }
+            const fallosApiResponse = arguments.length > 3 ? null : null;
+            if (Array.isArray(arguments)) {
+                // No-op: compatibilidad con navegadores antiguos.
+            }
+            renderDashboard(vista, reporte);
+        }
             if (fallosResponse?.ok) {
                 reporte.fallos = await fallosResponse.json();
             }
@@ -103,6 +113,64 @@
             });
         }
 
+        function obtenerDiagnosticoEstadisticas(reporte, canales) {
+            const metaCanales = reporte.meta?.canales || reporte.meta?.Canales || [];
+            const porCanal = new Map(metaCanales.map(item => [
+                (item.canal || item.Canal || "").toUpperCase(),
+                item
+            ]));
+
+            return canales.map(canal => {
+                const meta = porCanal.get(canal.canal);
+                if (canal.canal === "WHATSAPP") {
+                    return {
+                        ...canal,
+                        estadoAnalitica: "OPERATIVO",
+                        mensajeAnalitica: "Usa datos internos del CRM: mensajes, conversaciones, tareas y ventas.",
+                        faltantes: []
+                    };
+                }
+
+                if (canal.canal === "TIKTOK") {
+                    return {
+                        ...canal,
+                        estadoAnalitica: "PENDIENTE",
+                        mensajeAnalitica: "Aun no hay servicio de analiticas TikTok conectado. Falta implementar consulta a TikTok Business/Marketing API.",
+                        faltantes: ["TikTok:AdvertiserId", "TikTok:AccessToken", "Servicio de reportes TikTok"]
+                    };
+                }
+
+                if (!meta) {
+                    return {
+                        ...canal,
+                        estadoAnalitica: "SIN_RESPUESTA",
+                        mensajeAnalitica: "El endpoint de estadisticas no devolvio diagnostico para este canal.",
+                        faltantes: ["Revisar /api/integraciones/meta/estadisticas"]
+                    };
+                }
+
+                const estado = meta.estado || meta.Estado || (meta.configurado || meta.Configurado ? "CONFIGURADO" : "NO_CONFIGURADO");
+                const faltantes = meta.requisitosFaltantes || meta.RequisitosFaltantes || [];
+                const errors = meta.errors || meta.Errors || [];
+                const mensaje = meta.mensaje || meta.Mensaje || "Sin detalle.";
+
+                return {
+                    ...canal,
+                    estadoAnalitica: estado,
+                    mensajeAnalitica: errors.length ? `${mensaje} ${errors[0]}` : mensaje,
+                    faltantes,
+                    revisadoEn: meta.revisadoEn || meta.RevisadoEn
+                };
+            });
+        }
+
+        function claseEstadoAnalitica(estado) {
+            const normalizado = (estado || "").toUpperCase();
+            if (normalizado === "OPERATIVO") return "ok";
+            if (normalizado === "SIN_DATOS") return "warning";
+            return "danger";
+        }
+
         function calcularPorcentaje(parte, total) {
             if (!total) return 0;
             return Math.round((Number(parte || 0) / Number(total || 0)) * 100);
@@ -173,6 +241,7 @@
 
         function renderDashboard(vista, reporte) {
             const canales = obtenerCanalesDashboard(reporte);
+            const diagnosticoEstadisticas = obtenerDiagnosticoEstadisticas(reporte, canales);
             const canalesFiltrados = dashboardCanalActivo === "TODOS"
                 ? canales
                 : canales.filter(canal => canal.canal === dashboardCanalActivo);
@@ -362,6 +431,26 @@
                     <section class="dashboard-note">
                         <strong>${escapeHtml(tituloFiltro)}</strong>
                         <span>Facebook e Instagram pueden sumar datos de Graph API cuando sus tokens, páginas e Instagram Business ID estén configurados en Conexiones.</span>
+                    </section>
+
+                    <section class="meta-panel analytics-readiness">
+                        <div>
+                            <span class="panel-kicker">Analiticas reales</span>
+                            <h2>Que falta para ver estadisticas externas</h2>
+                        </div>
+                        <div class="analytics-status-grid">
+                            ${diagnosticoEstadisticas.map(item => `
+                                <article class="analytics-status ${claseEstadoAnalitica(item.estadoAnalitica)}">
+                                    <div class="analytics-status-head">
+                                        <span class="chart-label">${crearLogoRed(item.clase)} ${escapeHtml(item.nombre)}</span>
+                                        <strong>${escapeHtml(item.estadoAnalitica)}</strong>
+                                    </div>
+                                    <p>${escapeHtml(item.mensajeAnalitica)}</p>
+                                    ${item.faltantes?.length
+                                        ? `<ul>${item.faltantes.map(faltante => `<li>${escapeHtml(faltante)}</li>`).join("")}</ul>`
+                                        : `<small>Sin faltantes detectados.</small>`}
+                                </article>`).join("")}
+                        </div>
                     </section>
                 </div>`;
 

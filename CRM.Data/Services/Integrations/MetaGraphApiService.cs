@@ -40,6 +40,22 @@ public sealed class MetaGraphApiService
             canales.All(canal => canal.Errors.Count == 0));
     }
 
+    public async Task<MetaInsightsDiagnosticResult> DiagnosticarInsightsAsync(DateTime? desde, DateTime? hasta)
+    {
+        var since = new DateTimeOffset((desde ?? DateTime.Today.AddDays(-30)).Date).ToUnixTimeSeconds();
+        var until = new DateTimeOffset((hasta ?? DateTime.Today).Date.AddDays(1)).ToUnixTimeSeconds();
+        var pruebas = new List<MetaMetricDiagnostic>();
+
+        pruebas.AddRange(await DiagnosticarFacebookInsightsAsync(since, until));
+        pruebas.AddRange(await DiagnosticarInstagramInsightsAsync(since, until));
+
+        return new MetaInsightsDiagnosticResult(
+            desde?.Date ?? DateTime.Today.AddDays(-30),
+            hasta?.Date ?? DateTime.Today,
+            DateTimeOffset.UtcNow,
+            pruebas);
+    }
+
     public async Task<InstagramLoginSyncResult> SincronizarInstagramLoginAsync(SocialInboundService inbound)
     {
         var apiVersion = GetValue("Meta:ApiVersion") ??
@@ -414,58 +430,206 @@ public sealed class MetaGraphApiService
     {
         var pageId = GetValue("Meta:Facebook:PageId");
         var token = GetValue("Meta:Facebook:AccessToken");
+        var missing = new List<string>();
 
-        if (string.IsNullOrWhiteSpace(pageId) || string.IsNullOrWhiteSpace(token))
+        if (string.IsNullOrWhiteSpace(pageId))
         {
-            return MetaChannelInsight.NotConfigured(CanalSocial.Facebook, "Facebook");
+            missing.Add("Meta:Facebook:PageId");
         }
 
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            missing.Add("Meta:Facebook:AccessToken con permiso read_insights");
+        }
+
+        if (missing.Count > 0)
+        {
+            return MetaChannelInsight.NotConfigured(
+                CanalSocial.Facebook,
+                "Facebook",
+                "Faltan credenciales para leer Page Insights.",
+                missing);
+        }
+
+        var apiVersion = GetValue("Meta:ApiVersion") ??
+            _configuration["Meta:ApiVersion"] ??
+            "v25.0";
+        var insightsToken = await ResolvePageAccessTokenAsync(apiVersion, pageId!, token!);
+
         var metrics = await GetInsightsAsync(
-            pageId,
-            token,
-            "page_impressions,page_post_engagements,page_fans",
+            pageId!,
+            insightsToken,
+            "page_media_view,page_total_media_view_unique,page_post_engagements,page_follows",
             "day",
             since,
             until);
+
+        var hasErrors = metrics.Errors.Count > 0;
+        var impresiones = GetMetric(metrics, "page_media_view");
+        var alcance = GetMetric(metrics, "page_total_media_view_unique");
+        var interacciones = GetMetric(metrics, "page_post_engagements");
+        var seguidores = GetMetric(metrics, "page_follows");
 
         return new MetaChannelInsight(
             CanalSocial.Facebook,
             "Facebook",
             true,
-            GetMetric(metrics, "page_fans"),
-            GetMetric(metrics, "page_impressions"),
-            GetMetric(metrics, "page_post_engagements"),
-            0,
-            metrics.Errors);
+            hasErrors ? "ERROR" : (impresiones + interacciones + alcance + seguidores > 0 ? "OPERATIVO" : "SIN_DATOS"),
+            hasErrors
+                ? "Meta rechazo la consulta de Page Insights. Revisa token, pagina, permiso read_insights y metricas disponibles para tu pagina."
+                : (impresiones + interacciones + alcance + seguidores > 0
+                    ? "Estadisticas de Facebook leidas correctamente desde Graph API."
+                    : "Meta respondio correctamente, pero no devolvio valores para el rango consultado."),
+            GetInsightRequirements(metrics.Errors),
+            alcance,
+            impresiones,
+            interacciones,
+            seguidores,
+            metrics.Errors,
+            DateTimeOffset.UtcNow);
     }
 
     private async Task<MetaChannelInsight> ObtenerInstagramAsync(long since, long until)
     {
         var instagramId = GetValue("Meta:Instagram:InstagramBusinessAccountId");
         var token = GetValue("Meta:Instagram:AccessToken");
+        var missing = new List<string>();
 
-        if (string.IsNullOrWhiteSpace(instagramId) || string.IsNullOrWhiteSpace(token))
+        if (string.IsNullOrWhiteSpace(instagramId))
         {
-            return MetaChannelInsight.NotConfigured(CanalSocial.Instagram, "Instagram");
+            missing.Add("Meta:Instagram:InstagramBusinessAccountId");
+        }
+
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            missing.Add("Meta:Instagram:AccessToken/Page Access Token con permiso de insights");
+        }
+
+        if (missing.Count > 0)
+        {
+            return MetaChannelInsight.NotConfigured(
+                CanalSocial.Instagram,
+                "Instagram",
+                "Faltan credenciales de insights. El token de Instagram Login sirve para DMs, pero estas metricas usan el token de Page/Instagram profesional.",
+                missing);
         }
 
         var metrics = await GetInsightsAsync(
-            instagramId,
-            token,
+            instagramId!,
+            token!,
             "reach,profile_views,website_clicks",
             "day",
             since,
             until);
 
+        var hasErrors = metrics.Errors.Count > 0;
+        var alcance = GetMetric(metrics, "reach");
+        var visitasPerfil = GetMetric(metrics, "profile_views");
+        var clicksSitio = GetMetric(metrics, "website_clicks");
+
         return new MetaChannelInsight(
             CanalSocial.Instagram,
             "Instagram",
             true,
-            GetMetric(metrics, "reach"),
-            GetMetric(metrics, "reach"),
-            GetMetric(metrics, "profile_views") + GetMetric(metrics, "website_clicks"),
-            GetMetric(metrics, "profile_views"),
-            metrics.Errors);
+            hasErrors ? "ERROR" : (alcance + visitasPerfil + clicksSitio > 0 ? "OPERATIVO" : "SIN_DATOS"),
+            hasErrors
+                ? "Meta rechazo la consulta de Instagram Insights. Revisa Instagram profesional, token y permisos."
+                : (alcance + visitasPerfil + clicksSitio > 0
+                    ? "Estadisticas de Instagram leidas correctamente desde Graph API."
+                    : "Meta respondio correctamente, pero no devolvio valores para el rango consultado."),
+            [],
+            alcance,
+            alcance,
+            visitasPerfil + clicksSitio,
+            visitasPerfil,
+            metrics.Errors,
+            DateTimeOffset.UtcNow);
+    }
+
+    private async Task<IReadOnlyList<MetaMetricDiagnostic>> DiagnosticarFacebookInsightsAsync(long since, long until)
+    {
+        var pageId = GetValue("Meta:Facebook:PageId");
+        var token = GetValue("Meta:Facebook:AccessToken");
+        var metrics = new[]
+        {
+            ("page_media_view", "Vistas de contenido"),
+            ("page_total_media_view_unique", "Personas alcanzadas"),
+            ("page_post_engagements", "Interacciones con publicaciones"),
+            ("page_follows", "Seguidores")
+        };
+
+        if (string.IsNullOrWhiteSpace(pageId) || string.IsNullOrWhiteSpace(token))
+        {
+            return metrics.Select(metric => MetaMetricDiagnostic.NotConfigured(
+                CanalSocial.Facebook,
+                "Facebook",
+                metric.Item1,
+                metric.Item2,
+                "Falta Meta:Facebook:PageId o Meta:Facebook:AccessToken.")).ToArray();
+        }
+
+        var apiVersion = GetValue("Meta:ApiVersion") ??
+            _configuration["Meta:ApiVersion"] ??
+            "v25.0";
+        var insightsToken = await ResolvePageAccessTokenAsync(apiVersion, pageId, token);
+        return await DiagnosticarMetricasAsync(CanalSocial.Facebook, "Facebook", pageId, insightsToken, metrics, since, until);
+    }
+
+    private async Task<IReadOnlyList<MetaMetricDiagnostic>> DiagnosticarInstagramInsightsAsync(long since, long until)
+    {
+        var instagramId = GetValue("Meta:Instagram:InstagramBusinessAccountId");
+        var token = GetValue("Meta:Instagram:AccessToken");
+        var metrics = new[]
+        {
+            ("reach", "Alcance"),
+            ("profile_views", "Visitas al perfil"),
+            ("website_clicks", "Clicks al sitio web")
+        };
+
+        if (string.IsNullOrWhiteSpace(instagramId) || string.IsNullOrWhiteSpace(token))
+        {
+            return metrics.Select(metric => MetaMetricDiagnostic.NotConfigured(
+                CanalSocial.Instagram,
+                "Instagram",
+                metric.Item1,
+                metric.Item2,
+                "Falta Meta:Instagram:InstagramBusinessAccountId o Meta:Instagram:AccessToken.")).ToArray();
+        }
+
+        return await DiagnosticarMetricasAsync(CanalSocial.Instagram, "Instagram", instagramId, token, metrics, since, until);
+    }
+
+    private async Task<IReadOnlyList<MetaMetricDiagnostic>> DiagnosticarMetricasAsync(
+        string canal,
+        string nombre,
+        string objectId,
+        string token,
+        IReadOnlyList<(string Key, string Label)> metrics,
+        long since,
+        long until)
+    {
+        var result = new List<MetaMetricDiagnostic>();
+        foreach (var metric in metrics)
+        {
+            var response = await GetInsightsAsync(objectId, token, metric.Key, "day", since, until);
+            var ok = response.Errors.Count == 0;
+            var value = GetMetric(response, metric.Key);
+            result.Add(new MetaMetricDiagnostic(
+                canal,
+                nombre,
+                metric.Key,
+                metric.Label,
+                true,
+                ok,
+                ok ? (value > 0 ? "CON_DATOS" : "CERO") : "ERROR",
+                value,
+                ok
+                    ? (value > 0 ? "Meta devolvio valores para esta metrica." : "Meta acepto la metrica, pero devolvio 0 en el rango consultado.")
+                    : response.Errors[0],
+                response.Errors));
+        }
+
+        return result;
     }
 
     private async Task<MetaInsightMetrics> GetInsightsAsync(
@@ -501,7 +665,7 @@ public sealed class MetaGraphApiService
                     (int)response.StatusCode,
                     body);
 
-                return MetaInsightMetrics.WithError($"HTTP {(int)response.StatusCode}: {body}");
+                return MetaInsightMetrics.WithError($"HTTP {(int)response.StatusCode}: {BuildInsightError(body)}");
             }
 
             return ParseMetrics(body);
@@ -570,6 +734,55 @@ public sealed class MetaGraphApiService
 
     private static long GetMetric(MetaInsightMetrics metrics, string key) =>
         metrics.Values.TryGetValue(key, out var value) ? value : 0;
+
+    private static string BuildInsightError(string body)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(body);
+            if (document.RootElement.TryGetProperty("error", out var error) &&
+                error.TryGetProperty("message", out var message) &&
+                message.ValueKind == JsonValueKind.String)
+            {
+                return message.GetString() ?? "Meta no devolvio detalle del error.";
+            }
+        }
+        catch
+        {
+            // Si Meta no devuelve JSON valido, se muestra una version corta del cuerpo.
+        }
+
+        return body.Length > 220 ? $"{body[..220]}..." : body;
+    }
+
+    private static IReadOnlyList<string> GetInsightRequirements(IReadOnlyList<string> errors)
+    {
+        if (errors.Count == 0) return [];
+
+        var requirements = new List<string>();
+        foreach (var error in errors)
+        {
+            if (error.Contains("Page Access Token", StringComparison.OrdinalIgnoreCase))
+            {
+                requirements.Add("Usar Page Access Token de la misma pagina configurada.");
+            }
+
+            if (error.Contains("read_insights", StringComparison.OrdinalIgnoreCase) ||
+                error.Contains("permission", StringComparison.OrdinalIgnoreCase) ||
+                error.Contains("permissions", StringComparison.OrdinalIgnoreCase))
+            {
+                requirements.Add("Conceder permiso read_insights al token.");
+            }
+
+            if (error.Contains("valid insights metric", StringComparison.OrdinalIgnoreCase) ||
+                error.Contains("metric", StringComparison.OrdinalIgnoreCase))
+            {
+                requirements.Add("Revisar metricas disponibles para la pagina en la version actual de Meta.");
+            }
+        }
+
+        return requirements.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+    }
 
     private static string? ReadString(JsonElement root, string property) =>
         root.TryGetProperty(property, out var value) &&
@@ -647,18 +860,53 @@ public sealed record MetaDashboardResult(
     IReadOnlyList<MetaChannelInsight> Canales,
     bool Success);
 
+public sealed record MetaInsightsDiagnosticResult(
+    DateTime Desde,
+    DateTime Hasta,
+    DateTimeOffset RevisadoEn,
+    IReadOnlyList<MetaMetricDiagnostic> Pruebas);
+
+public sealed record MetaMetricDiagnostic(
+    string Canal,
+    string Nombre,
+    string Metrica,
+    string Etiqueta,
+    bool Configurado,
+    bool Ok,
+    string Estado,
+    long Valor,
+    string Mensaje,
+    IReadOnlyList<string> Errors)
+{
+    public static MetaMetricDiagnostic NotConfigured(
+        string canal,
+        string nombre,
+        string metrica,
+        string etiqueta,
+        string mensaje) =>
+        new(canal, nombre, metrica, etiqueta, false, false, "NO_CONFIGURADO", 0, mensaje, []);
+}
+
 public sealed record MetaChannelInsight(
     string Canal,
     string Nombre,
     bool Configurado,
+    string Estado,
+    string Mensaje,
+    IReadOnlyList<string> RequisitosFaltantes,
     long Alcance,
     long Impresiones,
     long Interacciones,
     long VisitasPerfil,
-    IReadOnlyList<string> Errors)
+    IReadOnlyList<string> Errors,
+    DateTimeOffset RevisadoEn)
 {
-    public static MetaChannelInsight NotConfigured(string canal, string nombre) =>
-        new(canal, nombre, false, 0, 0, 0, 0, []);
+    public static MetaChannelInsight NotConfigured(
+        string canal,
+        string nombre,
+        string mensaje,
+        IReadOnlyList<string> requisitosFaltantes) =>
+        new(canal, nombre, false, "NO_CONFIGURADO", mensaje, requisitosFaltantes, 0, 0, 0, 0, [], DateTimeOffset.UtcNow);
 }
 
 public sealed record MetaInsightMetrics(

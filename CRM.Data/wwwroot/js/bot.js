@@ -8,12 +8,20 @@
                 maxAutoReplies: 2,
                 options: []
             };
+            let plantillasRapidas = [];
             let aviso = "";
 
             try {
-                const response = await api("/api/bot/whatsapp");
-                if (!response.ok) throw new Error("Bot no disponible");
-                bot = await response.json();
+                const [botResponse, templatesResponse] = await Promise.all([
+                    api("/api/bot/whatsapp"),
+                    api("/api/plantillas-rapidas/admin")
+                ]);
+                if (!botResponse.ok) throw new Error("Bot no disponible");
+                bot = await botResponse.json();
+                if (templatesResponse.ok) {
+                    const templatesData = await templatesResponse.json();
+                    plantillasRapidas = Array.isArray(templatesData.templates) ? templatesData.templates : [];
+                }
             } catch (error) {
                 console.error(error);
                 aviso = '<div class="bot-warning">No se pudo leer la configuración actual del bot. Se muestran valores base.</div>';
@@ -76,6 +84,28 @@
                         <span>Deriva a asesor</span>
                     </label>
                     <button type="button" class="bot-template-remove" data-remove-template title="Quitar plantilla" aria-label="Quitar plantilla">
+                        <i data-lucide="trash-2"></i>
+                    </button>
+                </article>`;
+            const crearFilaPlantillaRapida = template => `
+                <article class="bot-template-row" data-quick-template-row>
+                    <label>
+                        <span>Título</span>
+                        <input type="text" data-quick-title value="${escapeAttribute(template.title || "")}" maxlength="80" placeholder="Saludo">
+                    </label>
+                    <label>
+                        <span>Categoría</span>
+                        <input type="text" data-quick-category value="${escapeAttribute(template.category || "General")}" maxlength="40" placeholder="Ventas">
+                    </label>
+                    <label class="bot-template-response">
+                        <span>Mensaje para insertar</span>
+                        <textarea data-quick-message rows="3" maxlength="1000" placeholder="Texto que usará el asesor">${escapeHtml(template.message || "")}</textarea>
+                    </label>
+                    <label class="bot-template-check">
+                        <input type="checkbox" data-quick-enabled ${template.enabled === false ? "" : "checked"}>
+                        <span>Activa</span>
+                    </label>
+                    <button type="button" class="bot-template-remove" data-remove-quick-template title="Quitar plantilla" aria-label="Quitar plantilla">
                         <i data-lucide="trash-2"></i>
                     </button>
                 </article>`;
@@ -161,6 +191,25 @@
                 </section>
                 <section class="bot-channel-section">
                     <div>
+                        <span class="panel-kicker">Plantillas rápidas</span>
+                        <h2>Respuestas manuales para asesores</h2>
+                        <p>Estas plantillas aparecen en Comunicaciones para que el asesor inserte respuestas frecuentes. No las envía el bot automáticamente.</p>
+                    </div>
+                    <div id="quickTemplatesList" class="bot-template-list">
+                        ${(plantillasRapidas.length ? plantillasRapidas : [
+                            { title: "Saludo", category: "Atencion", message: "Hola, gracias por escribirnos. Soy tu asesor, cuentame en que puedo ayudarte.", enabled: true }
+                        ]).map(crearFilaPlantillaRapida).join("")}
+                    </div>
+                    <div class="connection-actions-row">
+                        <button id="addQuickTemplate" type="button" class="bot-template-add">
+                            <i data-lucide="plus"></i>
+                            <span>Agregar respuesta rápida</span>
+                        </button>
+                        <button id="saveQuickTemplates" type="button" class="connection-action">Guardar respuestas rápidas</button>
+                    </div>
+                </section>
+                <section class="bot-channel-section">
+                    <div>
                         <span class="panel-kicker">Canales preparados</span>
                         <h2>Automatización por red</h2>
                     </div>
@@ -195,6 +244,15 @@
                     derivesToAdvisor: row.querySelector("[data-template-derives]").checked
                 }))
                 .filter(option => option.key && option.title && option.response);
+            const leerPlantillasRapidas = () => Array
+                .from(vista.querySelectorAll("[data-quick-template-row]"))
+                .map(row => ({
+                    title: row.querySelector("[data-quick-title]").value.trim(),
+                    category: row.querySelector("[data-quick-category]").value.trim(),
+                    message: row.querySelector("[data-quick-message]").value.trim(),
+                    enabled: row.querySelector("[data-quick-enabled]").checked
+                }))
+                .filter(template => template.title && template.message);
 
             vista.querySelector("#addBotTemplate").addEventListener("click", () => {
                 const lista = vista.querySelector("#botTemplatesList");
@@ -217,6 +275,42 @@
                     return;
                 }
                 botonQuitar.closest("[data-bot-template-row]")?.remove();
+            });
+            vista.querySelector("#addQuickTemplate").addEventListener("click", () => {
+                vista.querySelector("#quickTemplatesList").insertAdjacentHTML("beforeend", crearFilaPlantillaRapida({
+                    title: "Nueva respuesta",
+                    category: "General",
+                    message: "Gracias por escribirnos. Enseguida te ayudo con tu solicitud.",
+                    enabled: true
+                }));
+                if (window.lucide) window.lucide.createIcons();
+            });
+            vista.querySelector("#quickTemplatesList").addEventListener("click", event => {
+                const botonQuitar = event.target.closest("[data-remove-quick-template]");
+                if (!botonQuitar) return;
+                botonQuitar.closest("[data-quick-template-row]")?.remove();
+            });
+            vista.querySelector("#saveQuickTemplates").addEventListener("click", async () => {
+                const templates = leerPlantillasRapidas();
+                if (!templates.length) {
+                    notificar("Agrega al menos una respuesta rápida válida.", "error");
+                    return;
+                }
+
+                const guardar = await api("/api/plantillas-rapidas", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ templates })
+                });
+
+                if (!guardar.ok) {
+                    notificar("No se pudieron guardar las respuestas rápidas.", "error");
+                    return;
+                }
+
+                plantillasRapidasCache = null;
+                notificar("Respuestas rápidas guardadas.", "success");
+                await cargarModuloBot(vista);
             });
 
             vista.querySelector("#botSettingsForm").addEventListener("submit", async event => {

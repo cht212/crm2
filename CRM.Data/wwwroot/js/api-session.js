@@ -78,6 +78,7 @@
                 "inbox",
                 "contactos",
                 "tareas",
+                "pipeline",
                 "ventas"
             ]);
         }
