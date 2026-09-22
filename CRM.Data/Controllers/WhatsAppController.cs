@@ -501,7 +501,8 @@ namespace CRM.Data.Controllers
 
         private bool ValidarFirmaWebhook(string rawBody)
         {
-            var appSecret = _configuration["WhatsApp:AppSecret"];
+            var appSecret = _socialIntegrations.GetConfiguredValue("WhatsApp:AppSecret") ??
+                _configuration["WhatsApp:AppSecret"];
             if (string.IsNullOrWhiteSpace(appSecret))
             {
                 _logger.LogWarning("WhatsApp:AppSecret no estÃ¡ configurado; se omite la validaciÃ³n de firma para pruebas locales.");

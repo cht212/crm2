@@ -289,6 +289,7 @@ public class CrmManagementController : ControllerBase
             {
                 id = conversacion.nConversacion,
                 estado = conversacion.cEstado,
+                canal = conversacion.cCanal,
                 cliente = new
                 {
                     id = conversacion.Cliente.nCliente,

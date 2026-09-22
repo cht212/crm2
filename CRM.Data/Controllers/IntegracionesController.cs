@@ -172,6 +172,13 @@ public sealed class IntegracionesController : ControllerBase
         return Ok(dashboard);
     }
 
+    [HttpGet("meta/facebook/feed")]
+    [Authorize(Roles = "Administrador,Supervisor")]
+    public async Task<IActionResult> FeedFacebook([FromQuery] int limit = 10)
+    {
+        return Ok(await _metaGraph.ObtenerFacebookFeedAsync(limit));
+    }
+
     [HttpGet("meta/estadisticas/diagnostico")]
     [Authorize(Roles = "Administrador,Supervisor")]
     public async Task<IActionResult> DiagnosticoEstadisticasMeta(
@@ -180,6 +187,13 @@ public sealed class IntegracionesController : ControllerBase
     {
         var diagnostico = await _metaGraph.DiagnosticarInsightsAsync(desde, hasta);
         return Ok(diagnostico);
+    }
+
+    [HttpGet("meta/credenciales/diagnostico")]
+    [Authorize(Roles = "Administrador,Supervisor")]
+    public async Task<IActionResult> DiagnosticoCredencialesMeta()
+    {
+        return Ok(await _metaGraph.DiagnosticarCredencialesAsync());
     }
 
     [HttpPost("instagram/sincronizar")]

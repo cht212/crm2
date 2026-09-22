@@ -10,13 +10,13 @@
             const paginaPipeline = await response.json();
             const conversacionesPipeline = paginaPipeline.items || [];
             const puedeGestionarEquipo = rolActual === "Administrador" || rolActual === "Supervisor";
+            const etapas = estadosConversacionPorRol().map(etapa => etapa.id);
             let usuarios = [];
             if (puedeGestionarEquipo) {
                 const usuariosResponse = await api("/api/crm/usuarios");
                 if (!usuariosResponse.ok) throw new Error("Usuarios no disponibles");
                 usuarios = await usuariosResponse.json();
             }
-            const etapas = estadosConversacion().map(etapa => etapa.id);
 
             const iniciales = nombre => (nombre || "C")
                 .split(" ")
@@ -74,7 +74,12 @@
                                     <div class="stage-meta">${items.length} ${items.length === 1 ? "cliente potencial" : "clientes potenciales"}</div>
                                     <div class="stage-bar"></div>
                                 </div>
-                                ${items.map(item => `<div class="deal-card" data-conversation-id="${item.id}" draggable="true">
+                                ${items.map(item => {
+                                    const canal = String(item.canal || "WHATSAPP").toUpperCase();
+                                    const red = typeof obtenerRedPorCanal === "function"
+                                        ? obtenerRedPorCanal(canal)
+                                        : { nombre: canal, clase: canal.toLowerCase() };
+                                    return `<div class="deal-card" data-conversation-id="${item.id}" draggable="true">
                                 <div class="deal-card-top">
                                     <div class="deal-avatar">${escapeHtml(iniciales(item.cliente.nombre))}</div>
                                     <div class="deal-info">
@@ -84,13 +89,14 @@
                                     ${renderAsesor(item)}
                                 </div>
                                 <div class="deal-meta-row">
-                                    <span>${crearLogoRed("whatsapp")} ${escapeHtml(item.cliente.telefono)}</span>
+                                    <span>${crearLogoRed(red.clase || "whatsapp")} ${escapeHtml(red.nombre || "WhatsApp")} · ${escapeHtml(item.cliente.telefono)}</span>
                                     <span class="deal-stage-pill">${escapeHtml(item.estado)}</span>
                                 </div>
                                 <select class="stage-select" data-id="${item.id}">
                                     ${etapas.map(opcion => `<option value="${opcion}" ${opcion === item.estado ? "selected" : ""}>${opcion}</option>`).join("")}
                                 </select>
-                            </div>`).join("") || '<div class="empty">Sin conversaciones</div>'}
+                            </div>`;
+                                }).join("") || '<div class="empty">Sin conversaciones</div>'}
                             </div>`;
                         }).join("")}</div>`;
 

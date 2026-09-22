@@ -1,16 +1,14 @@
 # Documentacion Integral del Proyecto CRM
 
-Fecha: 18 de septiembre de 2026
+Fecha: 16 de septiembre de 2026
 
 ## 1. Resumen ejecutivo
 
-El proyecto es un CRM local enfocado en la atencion de clientes por WhatsApp y preparado para evolucionar a un centro multicanal con Facebook, Instagram y TikTok. La aplicacion permite centralizar conversaciones, registrar clientes, responder mensajes, organizar estados de atencion, asignar asesores, crear tareas de seguimiento, registrar oportunidades de venta, guardar notas internas, clasificar clientes con etiquetas, administrar bot de derivacion, configurar conexiones externas, consultar reportes operativos y aplicar controles iniciales de seguridad.
+El proyecto es un CRM local enfocado en la atencion de clientes por WhatsApp y preparado para evolucionar a un centro multicanal con Instagram, Facebook y TikTok. La aplicacion permite centralizar conversaciones, registrar clientes, responder mensajes, organizar estados de atencion, asignar asesores, crear tareas de seguimiento, registrar oportunidades de venta, guardar notas internas, clasificar clientes con etiquetas, administrar bot de derivacion, configurar conexiones externas y consultar reportes operativos.
 
-El sistema empezo como una integracion con WhatsApp Cloud API y fue creciendo hasta convertirse en una plataforma CRM funcional. Actualmente corre en la maquina local de desarrollo y utiliza ngrok para exponer temporalmente webhooks HTTPS publicos hacia Meta. A futuro, la idea es usar Cloudflare Tunnel para tener una conexion publica mas estable y controlada.
+El sistema empezo como una integracion con WhatsApp Cloud API y fue creciendo hasta convertirse en una plataforma CRM funcional. Actualmente corre en la maquina local de desarrollo y utiliza ngrok para exponer temporalmente un webhook HTTPS publico hacia WhatsApp. A futuro, la idea es usar Cloudflare Tunnel para tener una conexion publica mas estable y controlada.
 
-En una explicacion simple: el CRM vive localmente, los canales externos se comunican con el por un tunel seguro, la informacion se guarda en SQL Server y los archivos se publican mediante Cloudinary cuando se necesita una URL HTTPS.
-
-Para una etapa productiva con datos sensibles del ERP, el enfoque recomendado no es exponer el CRM directamente con acceso amplio a la base del ERP. El flujo seguro propuesto es: Cloudflare/Access/WAF, CRM, API del CRM, API puente del ERP y finalmente base de datos del ERP con permisos minimos.
+En una explicacion simple: el CRM vive localmente, los canales externos se comunican con el por un tunel seguro, la informacion se guarda en SQL Server y los archivos se publican mediante Cloudinary cuando se necesita una URL HTTPS. 
 
 ## 2. Objetivo del proyecto
 
@@ -19,7 +17,7 @@ El objetivo principal es convertir WhatsApp en un canal controlado de gestion co
 Objetivos especificos:
 
 - Centralizar conversaciones de WhatsApp en una bandeja CRM.
-- Dejar preparada la arquitectura para Facebook, Instagram y TikTok, respetando las limitaciones reales de cada plataforma.
+- Dejar preparada la arquitectura para Instagram, Facebook y TikTok.
 - Registrar automaticamente clientes que escriben por WhatsApp.
 - Permitir respuestas desde el CRM hacia WhatsApp.
 - Organizar conversaciones por estados de atencion.
@@ -56,15 +54,9 @@ El alcance actual incluye:
 - Auditoria.
 - Bot de derivacion con plantillas editables.
 - Modulo de conexiones para tokens, webhooks y OAuth.
-- Centro de notificaciones con avisos operativos.
-- Historial de fallos de integracion.
-- Dashboard ejecutivo.
-- Vista 360 del cliente.
-- Modo oscuro.
-- Seguridad inicial: cookies endurecidas, headers de seguridad, rate limiting y proteccion cross-site.
 - Configuracion local en `App_Data`.
 - Base de datos relacional.
-- Documentacion tecnica general en Markdown, HTML y PDF.
+- Documentacion y diagramas explicativos.
 
 ## 4. Arquitectura general
 
@@ -90,9 +82,8 @@ Flujo general:
 - El navegador consume endpoints del backend ASP.NET Core.
 - El backend lee y escribe en SQL Server usando Entity Framework Core.
 - WhatsApp Cloud API envia webhooks a una URL publica de ngrok.
-- Facebook usa el webhook Meta preparado para eventos de pagina/Messenger cuando la app y la pagina estan suscritas.
-- Instagram usa el mismo webhook Meta; el endpoint local ya esta validado, pero los DMs reales dependen de que Meta habilite la capacidad de Instagram Messaging.
-- TikTok mantiene un webhook preparado para futuros payloads de leads/campanas, no para DMs normales sin partner oficial.
+- Facebook e Instagram usaran el webhook Meta preparado para eventos sociales.
+- TikTok usara el webhook TikTok preparado.
 - ngrok reenvia la peticion hacia el backend local.
 - El backend procesa el mensaje, actualiza clientes/conversaciones/mensajes y lo muestra en el CRM.
 - Cuando se envia un archivo, Cloudinary genera una URL publica para que WhatsApp pueda acceder al contenido.
@@ -132,7 +123,6 @@ Cloudflare Tunnel como siguiente etapa:
 - Permite mejor control de acceso y seguridad.
 - Puede trabajar con un dominio propio.
 - Evita abrir puertos manualmente en el router.
-- Puede combinarse con Cloudflare Access para exigir autenticacion previa y 2FA antes de llegar al CRM.
 
 Forma correcta de explicar esto: el CRM es local, pero WhatsApp necesita una URL publica para entregar mensajes. ngrok es el puente actual; Cloudflare Tunnel seria el puente futuro mas estable.
 
@@ -159,8 +149,8 @@ Frontend:
 Servicios externos:
 
 - WhatsApp Cloud API.
-- Meta Graph API para Facebook e Instagram, con Instagram Messaging sujeto a App Review/capability de Meta.
-- TikTok Developers / Business API para leads, campanas o integraciones aprobadas.
+- Meta Graph API para Instagram/Facebook.
+- TikTok Developers / Business API.
 - Cloudinary.
 - ngrok.
 - Cloudflare Tunnel como proyeccion futura.
@@ -233,14 +223,6 @@ Roles actuales:
 - Supervisor: puede gestionar pipeline, asignaciones, etiquetas y reportes.
 - Asesor: puede atender conversaciones y trabajar con clientes asignados.
 
-Experiencia por rol:
-
-- Administrador: ve todos los modulos, incluyendo conexiones, bot, usuarios, actividad y fallos.
-- Supervisor: ve control operativo, reportes, actividad y fallos, pero no usuarios ni conexiones.
-- Asesor: ve una interfaz simplificada centrada en Comunicaciones, Contactos, Tareas y Ventas.
-
-Este ajuste reduce complejidad para el asesor y evita que vea opciones tecnicas que no necesita. La seguridad de backend tambien se reforzo: el asesor solo puede ver u operar clientes, conversaciones, mensajes, archivos, notas, etiquetas, tareas y oportunidades relacionadas con sus asignaciones.
-
 Funciones relacionadas:
 
 - Login.
@@ -257,7 +239,7 @@ Controlador principal:
 
 ### Comunicaciones / Inbox
 
-El inbox es la bandeja principal de conversaciones. Permite ver clientes que escribieron por WhatsApp y queda preparado para separar Instagram, Facebook y TikTok segun el canal de origen. Instagram puede probarse con webhook simulado mientras Meta habilita mensajes reales; TikTok se conserva como canal de leads/campanas salvo integracion partner.
+El inbox es la bandeja principal de conversaciones. Permite ver clientes que escribieron por WhatsApp y queda preparado para separar Instagram, Facebook y TikTok cuando se conecten.
 
 Funciones:
 
@@ -483,7 +465,6 @@ Funciones:
 - Quitar opciones.
 - Marcar si una opcion deriva a asesor.
 - Guardar configuracion en `App_Data/bot-whatsapp.json`.
-- Reutilizar el motor de respuesta automatica para Facebook e Instagram cuando esos canales reciban mensajes por webhook.
 
 Uso esperado:
 
@@ -575,79 +556,7 @@ El frontend muestra estados como:
 
 El estado local aparece cuando el archivo queda guardado en el CRM pero no se envia a WhatsApp porque no existe una URL HTTPS publica valida.
 
-## 12. Estado real de canales sociales
-
-Durante las pruebas se valido el estado real de cada canal para evitar que el CRM prometa integraciones que una plataforma externa todavia no permite.
-
-### WhatsApp
-
-Estado: operativo.
-
-WhatsApp Cloud API es el canal principal y ya permite:
-
-- Recibir mensajes reales por webhook.
-- Enviar respuestas desde el CRM.
-- Enviar y recibir imagenes/archivos con Cloudinary como URL publica.
-- Activar bot automatico.
-- Pausar el bot cuando responde un asesor.
-- Registrar clientes, conversaciones, mensajes, estados, tareas y oportunidades.
-
-### Facebook Messenger
-
-Estado: preparado para operacion real con Meta Graph API.
-
-El CRM ya tiene:
-
-- Webhook Meta compartido en `/api/integraciones/meta/webhook`.
-- Configuracion de Page ID y Page Access Token.
-- Resolucion de Page Access Token desde token de usuario/sistema cuando el token tiene acceso a `/me/accounts`.
-- Registro de mensajes entrantes como conversaciones Facebook.
-- Envio de respuestas de texto desde el CRM por Graph API.
-- Bot automatico para Facebook usando el mismo motor de respuestas configurado en el CRM.
-
-Para operar Facebook se necesita que la pagina este suscrita al webhook, que el token tenga permisos de pagina y que la app tenga los permisos de Messenger correspondientes.
-
-### Instagram
-
-Estado: validado tecnicamente por webhook simulado, bloqueado para mensajes reales por capacidad/revision de Meta.
-
-Pruebas realizadas:
-
-- La URL publica de ngrok responde correctamente al desafio de Meta.
-- `GET /api/integraciones/meta/webhook` devuelve el `hub.challenge` cuando el verify token coincide.
-- `POST /api/integraciones/meta/webhook` desde Postman procesa payload simulado de Instagram con `procesados: 1`.
-- Graph API confirma que la pagina `Sephpd` esta vinculada al Instagram profesional `seohpd`.
-- El Instagram Business Account ID validado es `17841423991337948`.
-- El Page ID vinculado validado es `1311354342063988`.
-
-Limitacion confirmada:
-
-- La llamada real a conversaciones de Instagram respondio `Application does not have the capability to make this API call`.
-- Esto confirma que el CRM y ngrok funcionan, pero la app de Meta aun no tiene la capacidad efectiva para usar conversaciones/mensajes reales de Instagram.
-- Meta solicita App Review, verificacion de empresa/verificacion de acceso o flujo de Tech Provider para habilitar esa capacidad en produccion.
-
-Uso actual:
-
-- Se puede probar Instagram en el CRM mediante Postman simulando webhooks.
-- No se deben considerar habilitados los DMs reales de Instagram hasta completar la aprobacion/capability de Meta.
-
-### TikTok
-
-Estado: preparado como modulo de configuracion, no como inbox directo de DMs.
-
-Conclusion tecnica:
-
-- TikTok no ofrece una API publica general equivalente a WhatsApp Cloud API o Messenger para recibir DMs normales de un perfil en cualquier CRM propio.
-- Plataformas como Kommo trabajan con TikTok Business Messaging porque actuan como partners o integraciones aprobadas por TikTok.
-- Para un CRM propio, el camino realista inicial es TikTok Lead Generation / Business API para recibir leads de formularios o campanas.
-
-Uso actual:
-
-- El CRM conserva TikTok como canal visual y de configuracion para leads/campanas.
-- El webhook `/api/integraciones/tiktok/webhook` esta preparado, pero aun no convierte payloads reales en conversaciones.
-- No se debe prometer lectura de DMs normales de TikTok sin aprobacion o partner oficial.
-
-## 13. Manejo de imagenes y archivos
+## 12. Manejo de imagenes y archivos
 
 WhatsApp necesita URLs publicas HTTPS para enviar archivos. Por eso el proyecto usa Cloudinary.
 
@@ -675,7 +584,7 @@ Correccion importante:
 - Si Cloudinary no responde, la aplicacion ya no se bloquea.
 - Existe fallback local en `wwwroot/uploads/whatsapp`.
 
-## 14. Cloudinary
+## 13. Cloudinary
 
 Cloudinary se usa para publicar archivos con URL HTTPS.
 
@@ -696,7 +605,7 @@ Fallback:
 - Si Cloudinary falla, el archivo se guarda localmente.
 - En ese caso el archivo puede quedar visible dentro del CRM local, pero no siempre se podra enviar por WhatsApp si Meta no puede acceder a una URL publica.
 
-## 15. Base de datos
+## 14. Base de datos
 
 La base de datos esta en SQL Server LocalDB.
 
@@ -800,7 +709,7 @@ Una forma simple:
 - Despues se explica seguimiento comercial: `crm_oportunidad`, `crm_tarea`, `crm_nota_interna` y etiquetas.
 - Finalmente se explica control interno: `crm_usuario` y `crm_actividad_log`.
 
-## 16. Backend y endpoints
+## 15. Backend y endpoints
 
 Controladores principales:
 
@@ -878,7 +787,7 @@ Endpoints minimos en `Program.cs`:
 - Cambiar etapa.
 - Asignar asesor.
 
-## 17. Servicios internos
+## 16. Servicios internos
 
 `WhatsAppService`
 
@@ -930,7 +839,7 @@ Endpoints minimos en `Program.cs`:
 - Guarda mensaje entrante con canal correspondiente.
 - Prepara el camino para Instagram, Facebook y TikTok.
 
-## 18. Frontend
+## 17. Frontend
 
 La interfaz esta en `wwwroot`.
 
@@ -980,7 +889,7 @@ Caracteristicas visuales:
 - Botones, modales, formularios y tarjetas pulidos visualmente.
 - Diseno preparado para operar como CRM administrativo, no como landing page.
 
-## 19. Flujos principales del negocio
+## 18. Flujos principales del negocio
 
 ### Nuevo cliente escribe por WhatsApp
 
@@ -1041,7 +950,7 @@ Caracteristicas visuales:
 - Supervisa reportes.
 - Revisa actividad.
 
-## 20. Reportes y medicion
+## 19. Reportes y medicion
 
 Los reportes dan una vista rapida del estado operativo.
 
@@ -1060,25 +969,17 @@ Permiten responder preguntas como:
 - Que carga tiene cada asesor.
 - Que canal origina interacciones.
 
-## 21. Seguridad y control
+## 20. Seguridad y control
 
 Medidas actuales:
 
 - Login obligatorio.
-- Cookies de autenticacion endurecidas con `HttpOnly`, `Secure`, `SameSite=Lax` y expiracion controlada.
+- Cookies de autenticacion.
 - Roles por usuario.
 - Hash de contrasenas.
 - Endpoints protegidos.
 - Restriccion de acciones administrativas.
 - Auditoria de cambios importantes.
-- Bloqueo basico por intentos fallidos de login.
-- Rate limiting para login y APIs internas.
-- Headers de seguridad: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` y Content Security Policy basica.
-- Proteccion contra peticiones cross-site en acciones sensibles (`POST`, `PUT`, `PATCH`, `DELETE`), manteniendo exentos los webhooks externos.
-- Cabeceras `no-store` para respuestas de API.
-- Configuracion global del bot restringida a administrador/supervisor.
-- Navegacion por rol para reducir superficie operativa.
-- Filtro backend por pertenencia para asesores en clientes, conversaciones, mensajes, comentarios, archivos, notas, etiquetas, tareas y oportunidades.
 
 Consideraciones:
 
@@ -1087,21 +988,8 @@ Consideraciones:
 - Cloudflare Tunnel o un despliegue formal ayudarian a mejorar seguridad y estabilidad.
 - Se recomienda usar variables de entorno para credenciales.
 - `App_Data/*.json` esta ignorado para evitar subir tokens locales.
-- Los secretos expuestos durante pruebas, como App Secret o tokens, deben regenerarse antes de cualquier uso real.
-- Para integracion con ERP sensible, el CRM no debe conectarse directamente a toda la base del ERP. Se recomienda una API puente con permisos minimos.
 
-Flujo seguro recomendado para produccion:
-
-- Internet.
-- Cloudflare, WAF, Access y 2FA.
-- CRM Web.
-- API del CRM.
-- API puente del ERP.
-- Base de datos del ERP.
-
-El ERP debe permanecer en red privada o detras de una API controlada. El usuario tecnico usado por esa API debe tener permisos reducidos y nunca permisos administrativos generales.
-
-## 22. Limpieza y mejoras realizadas
+## 21. Limpieza y mejoras realizadas
 
 Durante el avance se limpio el proyecto para dejarlo mas ordenado.
 
@@ -1123,17 +1011,8 @@ Acciones realizadas:
 - Campos de canal en cliente, conversacion y mensaje.
 - Envio saliente optimizado con respuesta visual inmediata.
 - Pulido visual general del CRM.
-- Modo oscuro.
-- Dashboard ejecutivo con salud operativa.
-- Centro de notificaciones con avisos de sistema.
-- Ficha 360 del cliente.
-- Historial de fallos visible para diagnostico.
-- Diagnostico de sincronizacion de Instagram dentro del CRM.
-- Navegacion simplificada por rol.
-- Endurecimiento inicial de seguridad: cookies, headers, rate limiting, proteccion cross-site y cache-control para APIs.
-- Restriccion backend para que asesores solo vean y operen informacion asignada.
 
-## 23. Estado actual del proyecto
+## 22. Estado actual del proyecto
 
 El sistema esta en una etapa funcional local. Ya permite demostrar un ciclo completo de WhatsApp y esta preparado para integrar canales sociales:
 
@@ -1151,42 +1030,30 @@ El sistema esta en una etapa funcional local. Ya permite demostrar un ciclo comp
 
 Esto permite presentar el proyecto como un CRM operativo para WhatsApp y como base multicanal, no solo como una prueba tecnica.
 
-Estado por canal:
-
-- WhatsApp: operativo para mensajes reales, archivos, bot, estados y CRM.
-- Facebook: preparado para Messenger real con Page ID, Page Access Token, permisos de pagina y webhook Meta suscrito.
-- Instagram: token `IGAA`, cuenta business y Professional User ID validados; el CRM consulta `graph.instagram.com` correctamente, pero Meta devuelve `data: []` y el asistente oficial no muestra destinatarios externos en modo desarrollador. Los DMs reales y webhooks reales de mensajes quedan pendientes de publicacion/capability/aprobacion de Meta.
-- TikTok: preparado como canal de leads/campanas; DMs normales no estan disponibles por API publica sin partner o aprobacion especifica.
-
-## 24. Pendientes recomendados
+## 23. Pendientes recomendados
 
 Pendientes tecnicos:
 
 - Pasar de ngrok a Cloudflare Tunnel.
 - Mover secretos a variables de entorno.
-- Regenerar App Secret y tokens expuestos durante pruebas.
-- Definir flujo seguro con ERP mediante API puente, no conexion directa amplia a la BD.
-- Agregar pruebas automatizadas que verifiquen permisos por pertenencia para asesores.
-- Agregar 2FA para administradores.
-- Preparar Cloudflare Access/WAF/rate limiting externo para despliegue.
 - Crear pruebas automatizadas.
 - Agregar logs mas consultables.
 - Preparar instalacion o despliegue controlado.
-- Completar intercambio real de OAuth code por token para Meta/TikTok si se decide usar OAuth en lugar de tokens configurados manualmente.
-- Documentar y automatizar pruebas de payload real de Facebook Messenger.
-- Mantener Instagram con pruebas simuladas hasta completar App Review/capability de Meta para Instagram Messaging.
-- Definir si TikTok se integrara por Lead Generation/Business API, por TikTok Shop o mediante partner oficial para Business Messaging.
+- Completar intercambio real de OAuth code por token para Meta/TikTok.
+- Parsear payload real de comentarios y mensajes de Instagram/Facebook.
 
 Pendientes funcionales:
 
-- Exportacion a Excel real y PDF con formato.
+- Busqueda avanzada.
+- Filtros por asesor, etiqueta, estado y fecha.
+- Exportacion a Excel o PDF.
+- Plantillas de respuesta rapida.
+- Notificaciones de tareas vencidas.
 - Mejor panel para administracion de etiquetas.
-- Reglas automaticas por canal y palabras clave.
-- Calendario de tareas.
-- Reintento manual de fallos de envio/webhook.
-- Permisos finos por modulo y accion.
+- Bandeja especifica para comentarios de publicaciones.
+- Pipeline comercial separado de pipeline de atencion si se desea seguir el modelo de otros CRM.
 
-## 25. Como presentar el proyecto
+## 24. Como presentar el proyecto
 
 Guion sugerido:
 
@@ -1198,28 +1065,24 @@ Guion sugerido:
 - Mostrar el pipeline: estados y asignacion de asesores.
 - Mostrar reportes: clientes, mensajes, tareas y oportunidades.
 - Explicar la base de datos: cliente como centro, conversaciones/mensajes como atencion, oportunidades/tareas/notas como gestion comercial, usuarios/auditoria como control.
-- Cerrar con siguientes pasos: Cloudflare Tunnel, OAuth real si aplica, Facebook Messenger, aprobacion de Instagram Messaging, TikTok Lead Generation o partner, exportaciones y automatizaciones.
+- Cerrar con siguientes pasos: Cloudflare Tunnel, OAuth real de Meta/TikTok, comentarios sociales, exportaciones y automatizaciones.
 
 Frase corta para explicarlo:
 
-Este CRM permite que una empresa atienda WhatsApp desde una plataforma ordenada, con clientes, historial, responsables, tareas, ventas, reportes, bot, conexiones y auditoria. Por ahora corre local con ngrok, y la siguiente etapa es estabilizar la exposicion con Cloudflare Tunnel, consolidar Facebook Messenger, completar la aprobacion de Instagram Messaging y definir TikTok como leads/campanas o integracion partner.
+Este CRM permite que una empresa atienda WhatsApp desde una plataforma ordenada, con clientes, historial, responsables, tareas, ventas, reportes, bot, conexiones y auditoria. Por ahora corre local con ngrok, y la siguiente etapa es estabilizar la exposicion con Cloudflare Tunnel y completar la conexion real de Instagram, Facebook y TikTok.
 
-## 26. Documentos generados
+## 25. Documentos e imagenes generadas
 
 Archivos generados:
 
 - `AVANCE_PROYECTO_CRM.md`: documentacion en Markdown.
-- `MANUAL_TECNICO_CRM_HPD.md`: manual operativo para personal que usara el CRM.
-- `MANUAL_TECNICO_CRM_HPD_ACTUALIZADO.html`: version navegable/imprimible del manual operativo.
-- `MANUAL_TECNICO_CRM_HPD.pdf`: version entregable del manual operativo.
-- `DOCUMENTACION_TECNICA_COMPLETA_CRM_HPD.md`: documentacion tecnica de carpetas, archivos, flujo, base de datos, seguridad e integraciones.
-- `DOCUMENTACION_TECNICA_COMPLETA_CRM_HPD.html`: version navegable/imprimible de la documentacion tecnica.
-- `DOCUMENTACION_TECNICA_COMPLETA_CRM_HPD.pdf`: version entregable de la documentacion tecnica.
-- `tools/markdown_to_html.js`: generador local de HTML desde Markdown.
-- `tools/markdown_to_pdf.js`: generador local de PDF desde Markdown.
+- `AVANCE_PROYECTO_CRM.docx`: documento Word para presentar.
+- `ARQUITECTURA_CRM.png`: imagen de arquitectura local con ngrok y futuro Cloudflare.
+- `MODELO_DATOS_CRM.png`: imagen explicativa del modelo de datos.
+- `tools/generar_documento_avance.ps1`: script para regenerar el Word y las imagenes.
 
-## 27. Conclusion
+## 26. Conclusion
 
-El proyecto ya cuenta con una base solida de CRM conectado a WhatsApp. Tiene atencion conversacional, gestion de clientes, pipeline, usuarios, roles, tareas, notas, oportunidades, etiquetas, reportes, auditoria, bot editable, modulo de conexiones, manejo de archivos, documentacion tecnica y una primera capa de seguridad general.
+El proyecto ya cuenta con una base solida de CRM conectado a WhatsApp. Tiene atencion conversacional, gestion de clientes, pipeline, usuarios, roles, tareas, notas, oportunidades, etiquetas, reportes, auditoria, bot editable, modulo de conexiones, manejo de archivos y documentacion tecnica.
 
-La arquitectura actual es adecuada para desarrollo y demostracion local: ASP.NET Core y SQL Server corren en la maquina local, ngrok expone webhooks, Cloudinary publica archivos y `App_Data` guarda configuracion local editable. Para una etapa productiva, especialmente si habra conexion con un ERP sensible, el siguiente paso no debe ser solo "subirlo a la nube"; debe definirse una arquitectura segura con Cloudflare/Access/WAF, secretos fuera del codigo, API puente hacia ERP, permisos minimos, backups, monitoreo y controles por rol tambien en backend.
+La arquitectura actual es adecuada para desarrollo y demostracion local: ASP.NET Core y SQL Server corren en la maquina local, ngrok expone webhooks, Cloudinary publica archivos y `App_Data` guarda configuracion local editable. El siguiente paso natural es reemplazar ngrok por Cloudflare Tunnel, completar OAuth real con Meta/TikTok y avanzar hacia un despliegue mas estable.

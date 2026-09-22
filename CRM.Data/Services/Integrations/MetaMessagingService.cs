@@ -80,10 +80,42 @@ public sealed class MetaMessagingService
                 (int)response.StatusCode,
                 normalized,
                 body);
-            throw new InvalidOperationException($"Meta rechazo el mensaje. HTTP {(int)response.StatusCode}: {body}");
+            throw new InvalidOperationException(BuildMetaMessagingError((int)response.StatusCode, body));
         }
 
         return ReadMessageId(body);
+    }
+
+    private static string BuildMetaMessagingError(int statusCode, string body)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(body);
+            if (document.RootElement.TryGetProperty("error", out var error))
+            {
+                var code = error.TryGetProperty("code", out var codeNode) ? codeNode.ToString() : null;
+                var subcode = error.TryGetProperty("error_subcode", out var subcodeNode) ? subcodeNode.ToString() : null;
+                var message = error.TryGetProperty("message", out var messageNode)
+                    ? messageNode.GetString()
+                    : null;
+
+                if (code == "10" && subcode == "2018278")
+                {
+                    return "Facebook rechazo el mensaje por la politica de Messenger: la conversacion esta fuera de la ventana de 24 horas. El cliente debe escribir nuevamente o se debe usar una modalidad de mensaje permitida por Meta. No es un error del token. Codigo 10, subcodigo 2018278.";
+                }
+
+                if (!string.IsNullOrWhiteSpace(message))
+                {
+                    return $"Meta rechazo el mensaje. HTTP {statusCode}: {message} (codigo {code ?? "desconocido"}, subcodigo {subcode ?? "desconocido"}).";
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            // Conserva un error util si Meta devuelve una respuesta no JSON.
+        }
+
+        return $"Meta rechazo el mensaje. HTTP {statusCode}: {body}";
     }
 
     private async Task<string> ResolvePageAccessTokenAsync(

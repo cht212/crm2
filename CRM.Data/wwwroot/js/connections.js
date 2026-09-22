@@ -91,6 +91,9 @@
                         <h1>Conexiones</h1>
                         <p>Canales externos que alimentan el CRM y sus estadísticas.</p>
                     </div>
+                    <div class="connection-actions">
+                        <button type="button" class="connection-action" data-diagnose-meta>Diagnosticar credenciales</button>
+                    </div>
                 </div>
                 <div class="connections-summary">
                     <article class="connection-status-card ${cloudinaryListo ? "ready" : "warning"}">
@@ -125,16 +128,37 @@
                                 ${canal.oauthStartUrl ? `<button type="button" class="connection-action" data-oauth-channel="${canal.clase}">Conectar</button>` : ""}
                                 ${canal.webhook ? `<button type="button" class="connection-action secondary" data-copy-webhook="${escapeAttribute(canal.webhookUrl || webhookUrl)}">Copiar webhook</button>` : ""}
                                 ${canal.clase === "instagram" ? `<button type="button" class="connection-action" data-sync-instagram>Sincronizar</button>` : ""}
+                                ${canal.clase === "facebook" ? `<button type="button" class="connection-action" data-diagnose-meta>Evaluar conexión</button>` : ""}
                                 ${!canal.oauthStartUrl && !canal.webhook ? `<button type="button" class="connection-action" disabled>${canal.accion}</button>` : ""}
                             </div>
                         </article>
                     `).join("")}
                 </div>
+                <section class="connection-note hidden" id="metaCredentialsDebug"></section>
                 <section class="connection-note">
                     <h2>Recomendación</h2>
                     <p>Este módulo controla la configuración y el estado de cada canal. WhatsApp opera con token y webhook; Instagram usa el flujo nuevo de Instagram Login con graph.instagram.com; Facebook usa Meta Graph API y webhooks de página; TikTok debe tratarse como leads/campañas o integración partner.</p>
                 </section>
                 <section class="connection-note hidden" id="instagramSyncDebug"></section>`;
+
+            vista.querySelectorAll("[data-diagnose-meta]").forEach(button => button.addEventListener("click", async event => {
+                const button = event.currentTarget;
+                button.disabled = true;
+                button.textContent = "Comprobando...";
+                try {
+                    const responseDiagnostic = await api("/api/integraciones/meta/credenciales/diagnostico");
+                    const data = await responseDiagnostic.json().catch(() => ({}));
+                    if (!responseDiagnostic.ok) {
+                        notificar(data.message || "No se pudo consultar el diagnóstico.", "error");
+                        return;
+                    }
+                    mostrarDiagnosticoCredenciales(vista, data);
+                    notificar("Diagnóstico de credenciales actualizado.", "success");
+                } finally {
+                    button.disabled = false;
+                    button.textContent = "Diagnosticar credenciales";
+                }
+            }));
 
             vista.querySelectorAll("[data-copy-webhook]").forEach(button => {
                 button.addEventListener("click", async () => {
@@ -271,4 +295,33 @@
                 ${data.error ? `<p class="text-danger">${escapeHtml(data.error)}</p>` : ""}
                 ${data.diagnostic ? `<pre class="integration-debug-output">${escapeHtml(data.diagnostic)}</pre>` : ""}
             `;
+        }
+
+        function mostrarDiagnosticoCredenciales(vista, data) {
+            const panel = vista.querySelector("#metaCredentialsDebug");
+            if (!panel) return;
+
+            const pruebas = data.pruebas || [];
+            panel.classList.remove("hidden");
+            panel.innerHTML = `
+                <div class="connection-diagnostic-head">
+                    <div>
+                        <h2>Diagnóstico de credenciales</h2>
+                        <p>Comprobación real contra Meta Graph API · ${escapeHtml(data.apiVersion || "")}</p>
+                    </div>
+                    <span class="connection-diagnostic-time">${escapeHtml(data.revisadoEn ? new Date(data.revisadoEn).toLocaleString() : "Ahora")}</span>
+                </div>
+                <div class="connection-diagnostic-list">
+                    ${pruebas.map(prueba => `
+                        <article class="credential-check ${prueba.ok ? "is-valid" : "is-invalid"}">
+                            <div class="credential-check-title">
+                                <strong>${escapeHtml(prueba.nombre || prueba.clave || "Credencial")}</strong>
+                                <span class="connection-badge ${prueba.ok ? "ok" : "pending"}">${escapeHtml(prueba.estado || "SIN_RESULTADO")}</span>
+                            </div>
+                            <p>${escapeHtml(prueba.mensaje || "Sin detalle.")}</p>
+                            ${prueba.tipoToken ? `<small>Tipo: ${escapeHtml(prueba.tipoToken)}</small>` : ""}
+                            ${prueba.expiraEn ? `<small>Expira: ${escapeHtml(new Date(prueba.expiraEn).toLocaleString())}</small>` : ""}
+                            ${prueba.permisos?.length ? `<small>Permisos: ${prueba.permisos.map(escapeHtml).join(", ")}</small>` : ""}
+                        </article>`).join("")}
+                </div>`;
         }

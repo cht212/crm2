@@ -304,6 +304,7 @@ public sealed class SocialIntegrationService
             _ =>
             [
                 new("WhatsApp:WebhookVerifyToken", "Webhook Verify Token", true, true),
+                new("WhatsApp:AppSecret", "Meta App Secret para firma del webhook", true, true),
                 new("WhatsApp:AccessToken", "Access Token", true, true),
                 new("WhatsApp:PhoneNumberId", "Phone Number ID", false, true),
                 new("WhatsApp:BusinessAccountId", "Business Account ID", false, true),

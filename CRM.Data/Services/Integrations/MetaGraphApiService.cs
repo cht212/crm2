@@ -56,6 +56,233 @@ public sealed class MetaGraphApiService
             pruebas);
     }
 
+    public async Task<MetaFacebookFeedResult> ObtenerFacebookFeedAsync(int limit = 10)
+    {
+        var pageId = GetValue("Meta:Facebook:PageId");
+        var token = GetValue("Meta:Facebook:AccessToken");
+        if (string.IsNullOrWhiteSpace(pageId) || string.IsNullOrWhiteSpace(token))
+        {
+            return MetaFacebookFeedResult.Failed(
+                "Falta Meta:Facebook:PageId o Meta:Facebook:AccessToken.",
+                ["Configura el Page ID y el Page Access Token en Conexiones > Facebook."]);
+        }
+
+        var apiVersion = GetValue("Meta:ApiVersion") ?? _configuration["Meta:ApiVersion"] ?? "v25.0";
+        var pageToken = await ResolvePageAccessTokenAsync(apiVersion, pageId, token);
+        var fields = "id,message,created_time,permalink_url,likes.limit(0).summary(true),comments.limit(0).summary(true),shares";
+        var url = $"https://graph.facebook.com/{apiVersion}/{Uri.EscapeDataString(pageId)}/feed?fields={fields}&limit={Math.Clamp(limit, 1, 25)}";
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", pageToken);
+
+        try
+        {
+            using var response = await _httpClient.SendAsync(request);
+            var body = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                var detail = BuildInsightError(body);
+                var requirements = GetFeedRequirements((int)response.StatusCode, detail);
+                return MetaFacebookFeedResult.Failed(
+                    $"Meta Graph API HTTP {(int)response.StatusCode}: {detail}",
+                    requirements);
+            }
+
+            using var document = JsonDocument.Parse(body);
+            if (!document.RootElement.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Array)
+            {
+                return new MetaFacebookFeedResult(true, [], null, []);
+            }
+
+            var posts = data.EnumerateArray().Select(ParseFacebookPost).ToArray();
+            return new MetaFacebookFeedResult(true, posts, null, []);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "No se pudo leer el feed de Facebook.");
+            return MetaFacebookFeedResult.Failed(
+                $"No se pudo consultar Facebook: {ex.Message}",
+                ["Comprueba que la aplicación esté ejecutándose y que el token de Facebook siga vigente."]);
+        }
+    }
+
+    private static IReadOnlyList<string> GetFeedRequirements(int statusCode, string detail)
+    {
+        if (detail.Contains("pages_read_engagement", StringComparison.OrdinalIgnoreCase) ||
+            detail.Contains("Page Public Content Access", StringComparison.OrdinalIgnoreCase))
+        {
+            return
+            [
+                "El Page Token debe incluir pages_read_engagement.",
+                "En Meta Developers solicita Page Public Content Access para la aplicación.",
+                "Mientras Meta no apruebe esa función, el CRM puede mostrar Insights agregados, pero no el feed completo.",
+                "Después de cambiar permisos, genera un token nuevo y guárdalo en Conexiones > Facebook."
+            ];
+        }
+
+        if (statusCode == 401 || detail.Contains("Invalid OAuth", StringComparison.OrdinalIgnoreCase))
+        {
+            return ["Genera un Page Access Token nuevo para la página configurada y guárdalo en Conexiones > Facebook."];
+        }
+
+        return ["Revisa el Page ID, el Page Access Token y los permisos aprobados en Meta Developers."];
+    }
+
+    private static MetaFacebookPost ParseFacebookPost(JsonElement post)
+    {
+        var likes = ReadSummaryCount(post, "likes");
+        var comments = ReadSummaryCount(post, "comments");
+        var shares = post.TryGetProperty("shares", out var sharesNode) &&
+                     sharesNode.TryGetProperty("count", out var sharesCount) &&
+                     sharesCount.TryGetInt32(out var shareTotal)
+            ? shareTotal
+            : 0;
+
+        return new MetaFacebookPost(
+            ReadString(post, "id") ?? string.Empty,
+            ReadString(post, "message") ?? "Publicación sin texto",
+            ReadString(post, "created_time"),
+            ReadString(post, "permalink_url"),
+            likes,
+            comments,
+            shares);
+    }
+
+    private static int ReadSummaryCount(JsonElement root, string property)
+    {
+        if (root.TryGetProperty(property, out var node) &&
+            node.TryGetProperty("summary", out var summary) &&
+            summary.TryGetProperty("total_count", out var count) &&
+            count.TryGetInt32(out var value))
+        {
+            return value;
+        }
+
+        return 0;
+    }
+
+    public async Task<MetaCredentialsDiagnosticResult> DiagnosticarCredencialesAsync()
+    {
+        var apiVersion = GetValue("Meta:ApiVersion") ?? _configuration["Meta:ApiVersion"] ?? "v25.0";
+        var appId = GetValue("Meta:AppId");
+        var appSecret = GetValue("Meta:AppSecret");
+        var checks = new List<MetaCredentialCheck>
+        {
+            await DiagnosticarGraphCredentialAsync(
+                "FACEBOOK_PAGE_TOKEN", "Page Token de Facebook",
+                GetValue("Meta:Facebook:PageId"), GetValue("Meta:Facebook:AccessToken"),
+                apiVersion, appId, appSecret, "page"),
+            await DiagnosticarGraphCredentialAsync(
+                "WHATSAPP_SYSTEM_USER_TOKEN", "Token de sistema de WhatsApp",
+                GetValue("WhatsApp:PhoneNumberId"), GetValue("WhatsApp:AccessToken"),
+                apiVersion, appId, appSecret, "phone")
+        };
+
+        return new MetaCredentialsDiagnosticResult(DateTimeOffset.UtcNow, apiVersion, checks);
+    }
+
+    private async Task<MetaCredentialCheck> DiagnosticarGraphCredentialAsync(
+        string key, string name, string? objectId, string? token, string apiVersion,
+        string? appId, string? appSecret, string objectType)
+    {
+        if (string.IsNullOrWhiteSpace(objectId) || string.IsNullOrWhiteSpace(token))
+        {
+            return MetaCredentialCheck.Fail(key, name, "NO_CONFIGURADO", "Falta el identificador o el token.");
+        }
+
+        var fields = objectType == "phone" ? "id,display_phone_number,verified_name" : "id,name";
+        var url = $"https://graph.facebook.com/{apiVersion}/{Uri.EscapeDataString(objectId)}?fields={fields}";
+
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            using var response = await _httpClient.SendAsync(request);
+            var body = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                return MetaCredentialCheck.Fail(key, name,
+                    ClassifyGraphError((int)response.StatusCode, body),
+                    BuildGraphCredentialMessage((int)response.StatusCode, body));
+            }
+
+            using var document = JsonDocument.Parse(body);
+            var returnedId = ReadString(document.RootElement, "id");
+            if (!string.Equals(returnedId, objectId, StringComparison.OrdinalIgnoreCase))
+            {
+                return MetaCredentialCheck.Fail(key, name, "ID_NO_COINCIDE",
+                    $"Meta respondió con el ID {returnedId ?? "vacío"}, pero está configurado {objectId}.");
+            }
+
+            var debug = await DebugTokenAsync(apiVersion, token, appId, appSecret);
+            return debug.Success
+                ? MetaCredentialCheck.Valid(key, name, "VALIDO",
+                    objectType == "phone"
+                        ? "El token puede consultar el Phone Number ID configurado."
+                        : "El token puede consultar la Page ID configurada.",
+                    debug.TokenType, debug.ExpiresAt, debug.Scopes)
+                : MetaCredentialCheck.Fail(key, name, debug.Status, debug.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "No se pudo diagnosticar la credencial {CredentialKey}.", key);
+            return MetaCredentialCheck.Fail(key, name, "ERROR_CONEXION", ex.Message);
+        }
+    }
+
+    private async Task<DebugTokenResult> DebugTokenAsync(
+        string apiVersion, string token, string? appId, string? appSecret)
+    {
+        if (string.IsNullOrWhiteSpace(appId) || string.IsNullOrWhiteSpace(appSecret))
+        {
+            return DebugTokenResult.Fail("APP_CREDENTIALS_FALTANTES",
+                "Faltan Meta:AppId o Meta:AppSecret para depurar el token.");
+        }
+
+        var appToken = Uri.EscapeDataString($"{appId}|{appSecret}");
+        var url = $"https://graph.facebook.com/{apiVersion}/debug_token?input_token={Uri.EscapeDataString(token)}&access_token={appToken}";
+        using var response = await _httpClient.GetAsync(url);
+        var body = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+        {
+            return DebugTokenResult.Fail(ClassifyGraphError((int)response.StatusCode, body),
+                BuildGraphCredentialMessage((int)response.StatusCode, body));
+        }
+
+        using var document = JsonDocument.Parse(body);
+        if (!document.RootElement.TryGetProperty("data", out var data) ||
+            !data.TryGetProperty("is_valid", out var valid) || valid.ValueKind != JsonValueKind.True)
+        {
+            return DebugTokenResult.Fail("TOKEN_INVALIDO", "Meta indicó que el token no es válido.");
+        }
+
+        var expiresAt = data.TryGetProperty("expires_at", out var expiresNode) &&
+                        expiresNode.TryGetInt64(out var expiresUnix) && expiresUnix > 0
+            ? DateTimeOffset.FromUnixTimeSeconds(expiresUnix)
+            : (DateTimeOffset?)null;
+        var scopes = data.TryGetProperty("scopes", out var scopesNode) &&
+                     scopesNode.ValueKind == JsonValueKind.Array
+            ? scopesNode.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String)
+                .Select(item => item.GetString()!).ToArray()
+            : [];
+        var tokenType = data.TryGetProperty("type", out var typeNode) && typeNode.ValueKind == JsonValueKind.String
+            ? typeNode.GetString() : null;
+
+        return DebugTokenResult.Ok(tokenType, expiresAt, scopes);
+    }
+
+    private static string ClassifyGraphError(int statusCode, string body)
+    {
+        var message = BuildGraphCredentialMessage(statusCode, body);
+        if (statusCode == 401 || message.Contains("invalid oauth", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("expired", StringComparison.OrdinalIgnoreCase)) return "TOKEN_INVALIDO";
+        if (statusCode == 403 || message.Contains("permission", StringComparison.OrdinalIgnoreCase)) return "SIN_PERMISOS";
+        return statusCode == 404 ? "ID_NO_ENCONTRADO" : "ERROR_META";
+    }
+
+    private static string BuildGraphCredentialMessage(int statusCode, string body) =>
+        $"Graph API HTTP {statusCode}: {BuildInsightError(body)}";
+
     public async Task<InstagramLoginSyncResult> SincronizarInstagramLoginAsync(SocialInboundService inbound)
     {
         var apiVersion = GetValue("Meta:ApiVersion") ??
@@ -865,6 +1092,72 @@ public sealed record MetaInsightsDiagnosticResult(
     DateTime Hasta,
     DateTimeOffset RevisadoEn,
     IReadOnlyList<MetaMetricDiagnostic> Pruebas);
+
+public sealed record MetaCredentialsDiagnosticResult(
+    DateTimeOffset RevisadoEn,
+    string ApiVersion,
+    IReadOnlyList<MetaCredentialCheck> Pruebas);
+
+public sealed record MetaFacebookFeedResult(
+    bool Success,
+    IReadOnlyList<MetaFacebookPost> Posts,
+    string? Error,
+    IReadOnlyList<string> Requirements)
+{
+    public static MetaFacebookFeedResult Failed(string error, IReadOnlyList<string> requirements) =>
+        new(false, [], error, requirements);
+}
+
+public sealed record MetaFacebookPost(
+    string Id,
+    string Message,
+    string? CreatedTime,
+    string? PermalinkUrl,
+    int Likes,
+    int Comments,
+    int Shares);
+
+public sealed record MetaCredentialCheck(
+    string Clave,
+    string Nombre,
+    string Estado,
+    bool Ok,
+    string Mensaje,
+    string? TipoToken,
+    DateTimeOffset? ExpiraEn,
+    IReadOnlyList<string> Permisos)
+{
+    public static MetaCredentialCheck Fail(string key, string name, string status, string message) =>
+        new(key, name, status, false, message, null, null, []);
+
+    public static MetaCredentialCheck Valid(
+        string key,
+        string name,
+        string status,
+        string message,
+        string? tokenType,
+        DateTimeOffset? expiresAt,
+        IReadOnlyList<string> scopes) =>
+        new(key, name, status, true, message, tokenType, expiresAt, scopes);
+}
+
+internal sealed record DebugTokenResult(
+    bool Success,
+    string Status,
+    string Message,
+    string? TokenType,
+    DateTimeOffset? ExpiresAt,
+    IReadOnlyList<string> Scopes)
+{
+    public static DebugTokenResult Fail(string status, string message) =>
+        new(false, status, message, null, null, []);
+
+    public static DebugTokenResult Ok(
+        string? tokenType,
+        DateTimeOffset? expiresAt,
+        IReadOnlyList<string> scopes) =>
+        new(true, "VALIDO", "Meta confirmó que el token es válido.", tokenType, expiresAt, scopes);
+}
 
 public sealed record MetaMetricDiagnostic(
     string Canal,

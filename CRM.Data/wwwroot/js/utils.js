@@ -288,3 +288,18 @@
                 { id: "NO_RESPONDIO", label: "No respondio" }
             ];
         }
+
+        function estadosConversacionPorRol() {
+            const base = estadosConversacion();
+            const rol = (rolActual || "").trim();
+
+            if (rol === "Asesor") {
+                return base.filter(etapa => ["NUEVO", "EN_ATENCION", "ESPERANDO_CLIENTE"].includes(etapa.id));
+            }
+
+            if (rol === "Supervisor") {
+                return base.filter(etapa => ["NUEVO", "ABIERTO", "EN_ATENCION", "ESPERANDO_CLIENTE", "COTIZACION_ENVIADA", "CERRADO"].includes(etapa.id));
+            }
+
+            return base;
+        }

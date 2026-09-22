@@ -2,10 +2,11 @@
 // Mantiene variables y funciones globales para compatibilidad con la vista actual.
 
         async function cargarModuloDashboard(vista) {
-            const [response, metaResponse, diagnosticoMetaResponse, fallosResponse] = await Promise.all([
+            const [response, metaResponse, diagnosticoMetaResponse, feedResponse, fallosResponse] = await Promise.all([
                 api("/api/crm/reportes/resumen"),
                 api("/api/integraciones/meta/estadisticas").catch(() => null),
                 api("/api/integraciones/meta/estadisticas/diagnostico").catch(() => null),
+                api("/api/integraciones/meta/facebook/feed?limit=8").catch(() => null),
                 api("/api/crm/fallos?pageSize=5").catch(() => null)
             ]);
             if (!response.ok) throw new Error("Dashboard no disponible");
@@ -15,6 +16,9 @@
             }
             if (diagnosticoMetaResponse?.ok) {
                 reporte.diagnosticoMeta = await diagnosticoMetaResponse.json();
+            }
+            if (feedResponse?.ok) {
+                reporte.facebookFeed = await feedResponse.json();
             }
             if (fallosResponse?.ok) {
                 reporte.fallos = await fallosResponse.json();
@@ -165,6 +169,11 @@
             return "danger";
         }
 
+        function etiquetaEstadoAnalitica(estado) {
+            const normalizado = (estado || "").toUpperCase();
+            return normalizado === "SIN_DATOS" ? "CONECTADO · SIN DATOS" : normalizado;
+        }
+
         function claseEstadoMetrica(estado) {
             const normalizado = (estado || "").toUpperCase();
             if (normalizado === "CON_DATOS") return "ok";
@@ -310,6 +319,8 @@
                 { nombre: "Leads / oportunidades", valor: resumen.oportunidades }
             ];
             const maxFunnel = Math.max(...funnel.map(item => item.valor), 1);
+            const facebookFeed = reporte.facebookFeed?.posts || reporte.facebookFeed?.Posts || [];
+            const facebookFeedError = reporte.facebookFeed?.error || reporte.facebookFeed?.Error;
 
             vista.innerHTML = `
                 <div class="meta-dashboard">
@@ -457,6 +468,40 @@
                         </div>
                     </section>
 
+                    <section class="meta-panel facebook-feed-panel">
+                        <div class="facebook-feed-heading">
+                            <div>
+                                <span class="panel-kicker">Contenido de la página</span>
+                                <h2>Actividad reciente de Facebook</h2>
+                            </div>
+                            <span class="facebook-feed-source">Sephpd · Graph API</span>
+                        </div>
+                        ${facebookFeedError
+                            ? `<div class="facebook-feed-error">
+                                <strong>No se pueden cargar las publicaciones todavía</strong>
+                                <p><strong>Respuesta de Meta:</strong> ${escapeHtml(facebookFeedError)}</p>
+                                ${(reporte.facebookFeed?.requirements || reporte.facebookFeed?.Requirements || []).length
+                                    ? `<div class="facebook-feed-recommendations"><strong>Qué recomienda hacer el CRM:</strong><ul>${(reporte.facebookFeed.requirements || reporte.facebookFeed.Requirements).map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul></div>`
+                                    : ""}
+                            </div>`
+                            : facebookFeed.length
+                                ? `<div class="facebook-post-grid">${facebookFeed.map(post => `
+                                    <article class="facebook-post-card">
+                                        <div class="facebook-post-meta">
+                                            <span>${escapeHtml(post.createdTime ? new Date(post.createdTime).toLocaleDateString() : "Fecha no disponible")}</span>
+                                            <span>Facebook</span>
+                                        </div>
+                                        <p>${escapeHtml(post.message || "Publicación sin texto")}</p>
+                                        <div class="facebook-post-stats">
+                                            <span>Me gusta <strong>${formatearNumero(post.likes || 0)}</strong></span>
+                                            <span>Comentarios <strong>${formatearNumero(post.comments || 0)}</strong></span>
+                                            <span>Compartidos <strong>${formatearNumero(post.shares || 0)}</strong></span>
+                                        </div>
+                                        ${post.permalinkUrl ? `<a href="${escapeAttribute(post.permalinkUrl)}" target="_blank" rel="noreferrer">Ver publicación</a>` : ""}
+                                    </article>`).join("")}</div>`
+                                : `<div class="empty">Facebook está conectado, pero no hay publicaciones recientes disponibles para este token o rango.</div>`}
+                    </section>
+
                     <section class="dashboard-note">
                         <strong>${escapeHtml(tituloFiltro)}</strong>
                         <span>Facebook e Instagram pueden sumar datos de Graph API cuando sus tokens, páginas e Instagram Business ID estén configurados en Conexiones.</span>
@@ -465,14 +510,14 @@
                     <section class="meta-panel analytics-readiness">
                         <div>
                             <span class="panel-kicker">Analiticas reales</span>
-                            <h2>Que falta para ver estadisticas externas</h2>
+                            <h2>Estado de estadisticas externas</h2>
                         </div>
                         <div class="analytics-status-grid">
                             ${diagnosticoEstadisticas.map(item => `
                                 <article class="analytics-status ${claseEstadoAnalitica(item.estadoAnalitica)}">
                                     <div class="analytics-status-head">
                                         <span class="chart-label">${crearLogoRed(item.clase)} ${escapeHtml(item.nombre)}</span>
-                                        <strong>${escapeHtml(item.estadoAnalitica)}</strong>
+                                        <strong>${escapeHtml(etiquetaEstadoAnalitica(item.estadoAnalitica))}</strong>
                                     </div>
                                     <p>${escapeHtml(item.mensajeAnalitica)}</p>
                                     ${item.faltantes?.length

@@ -3,28 +3,46 @@
    Unico CSS cargado por index.html para evitar reglas duplicadas.
    ========================================================= */
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
 * {
     box-sizing: border-box;
 }
 
 :root {
-    --green: #00a4df;
-    --green-dark: #007fae;
-    --green-soft: #dff9fd;
-    --accent: #c7df72;
-    --ink: #142a35;
-    --muted: #71828b;
-    --line: #e5edf1;
-    --panel: #ffffff;
-    --soft: #f5f9fb;
-    --canvas: #eef8f9;
-    --hpd-lime: #c7df72;
+    --primary: #007DC3;
+    --primary-darken-1: #0069A6;
+    --secondary: #B5D5F0;
+    --secondary-darken-1: #8FB9DA;
+    --success: #A8C96B;
+    --success-darken-1: #88AA4D;
+    --info: #007DC3;
+    --warning: #FDB528;
+    --error: #FF4D49;
+    --background: #F5F8FA;
+    --surface: #FFFFFF;
+    --on-background: #263238;
+    --on-surface: #263238;
+    --green: var(--primary);
+    --green-dark: var(--primary-darken-1);
+    --green-soft: rgba(0, 125, 195, 0.12);
+    --accent: var(--secondary);
+    --ink: var(--on-background);
+    --muted: #5c6d76;
+    --line: #dfeaf2;
+    --panel: var(--surface);
+    --soft: #f3f7fa;
+    --canvas: var(--background);
+    --hpd-lime: var(--success);
+    --hpd-blue: var(--primary);
+    --hpd-blue-dark: var(--primary-darken-1);
+    --hpd-ink: var(--on-background);
 }
 
 body {
     margin: 0;
     font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
-    background: radial-gradient(circle at top, #f5fbff 0%, #edf3f6 45%, #e7eef2 100%);
+    background: linear-gradient(180deg, #f5f8fa 0%, #edf4f8 100%);
     color: var(--ink);
     letter-spacing: 0;
 }
@@ -3200,6 +3218,68 @@ body {
     line-height: 1.6;
 }
 
+.connection-diagnostic-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.connection-diagnostic-head h2 {
+    margin: 0 0 4px;
+    font-size: 16px;
+}
+
+.connection-diagnostic-head p,
+.connection-diagnostic-time,
+.credential-check small {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.connection-diagnostic-head p {
+    margin: 0;
+}
+
+.connection-diagnostic-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 10px;
+}
+
+.credential-check {
+    display: grid;
+    gap: 7px;
+    padding: 13px;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--materialize-warning);
+    border-radius: 8px;
+    background: #fbfdfe;
+}
+
+.credential-check.is-valid {
+    border-left-color: var(--green);
+}
+
+.credential-check-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.credential-check-title strong {
+    color: var(--ink);
+    font-size: 14px;
+}
+
+.credential-check p {
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
 .integration-debug-output {
     margin: 12px 0 0;
     padding: 12px;
@@ -3212,6 +3292,106 @@ body {
     line-height: 1.55;
     white-space: pre-wrap;
     word-break: break-word;
+}
+
+.facebook-feed-panel {
+    margin-top: 18px;
+}
+
+.facebook-feed-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.facebook-feed-heading h2 {
+    margin: 2px 0 0;
+}
+
+.facebook-feed-source {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.facebook-post-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 12px;
+}
+
+.facebook-post-card {
+    display: flex;
+    min-height: 170px;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-top: 3px solid #1877f2;
+    border-radius: 8px;
+    background: #fbfdff;
+}
+
+.facebook-post-meta,
+.facebook-post-stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.facebook-post-card p {
+    display: -webkit-box;
+    overflow: hidden;
+    margin: 0;
+    color: var(--ink);
+    line-height: 1.5;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+}
+
+.facebook-post-stats strong {
+    color: var(--ink);
+}
+
+.facebook-post-card a {
+    margin-top: auto;
+    color: #1264c4;
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.facebook-feed-error {
+    padding: 16px;
+    border: 1px solid rgba(214, 69, 69, .25);
+    border-left: 4px solid #d64545;
+    border-radius: 8px;
+    background: #fff8f8;
+    color: var(--ink);
+}
+
+.facebook-feed-error p {
+    margin: 8px 0;
+    color: var(--muted);
+}
+
+.facebook-feed-recommendations {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(214, 69, 69, .18);
+}
+
+.facebook-feed-error ul {
+    display: grid;
+    gap: 6px;
+    margin: 10px 0 0;
+    padding-left: 20px;
+    color: var(--ink);
+    line-height: 1.45;
 }
 
 .integration-config-modal {
@@ -5581,24 +5761,34 @@ body {
 
 /* ===== Modo oscuro ===== */
 .theme-dark {
-    --green: #22a7d7;
-    --green-dark: #67d4f7;
-    --green-soft: rgba(34, 167, 215, .15);
-    --accent: #c7df72;
-    --ink: #e8f0f4;
-    --muted: #a7bac5;
-    --line: #24404f;
-    --panel: #10202a;
-    --soft: #0d1b24;
-    --canvas: #08141c;
-    --hpd-blue: #38bdf8;
-    --hpd-blue-dark: #7dd3fc;
-    --hpd-ink: #e5edf3;
+    --primary: #007DC3;
+    --primary-darken-1: #8FB9DA;
+    --secondary: #B5D5F0;
+    --secondary-darken-1: #8FB9DA;
+    --success: #A8C96B;
+    --success-darken-1: #88AA4D;
+    --warning: #FDB528;
+    --error: #FF4D49;
+    --background: #162B3A;
+    --surface: #203E52;
+    --on-background: #EAEAFF;
+    --on-surface: #EAEAFF;
+    --green: var(--primary);
+    --green-dark: var(--primary-darken-1);
+    --green-soft: rgba(0, 125, 195, 0.18);
+    --accent: var(--secondary);
+    --ink: var(--on-background);
+    --muted: #cfe0eb;
+    --line: #35576d;
+    --panel: var(--surface);
+    --soft: #193548;
+    --canvas: var(--background);
+    --hpd-ink: var(--on-background);
     color-scheme: dark;
 }
 
 .theme-dark body {
-    background: #08141c;
+    background: linear-gradient(180deg, #162B3A 0%, #0f1d2a 100%);
     color: var(--ink);
 }
 
