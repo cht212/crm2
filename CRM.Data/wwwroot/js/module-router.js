@@ -48,6 +48,10 @@
                 if (modulo === "tareas") await cargarModuloTareas(vista);
                 if (modulo === "pipeline") await cargarModuloPipeline(vista);
                 if (modulo === "ventas") await cargarModuloVentas(vista);
+                if (modulo === "campanas") await cargarModuloCampanas(vista);
+                if (modulo === "automatizacion") await cargarModuloAutomatizacion(vista);
+                if (modulo === "agenda") await cargarModuloAgenda(vista);
+                if (modulo === "alertas") await cargarModuloAlertas(vista);
                 if (modulo === "reportes") await cargarModuloReportes(vista);
                 if (modulo === "actividad") await cargarModuloActividad(vista);
                 if (modulo === "comentarios") await cargarModuloComentarios(vista);

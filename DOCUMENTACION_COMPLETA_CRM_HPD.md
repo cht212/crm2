@@ -6,7 +6,7 @@ Fecha: 18 de septiembre de 2026
 
 Este documento explica como esta construido el CRM HPD: carpetas, archivos, responsabilidades, flujo de datos, base de datos, seguridad, integraciones, despliegue recomendado y pendientes tecnicos.
 
-El manual para usuarios del CRM esta en `MANUAL_TECNICO_CRM_HPD.md`.
+El manual de uso del CRM esta en `MANUAL_USO_CRM_HPD.md`.
 
 ## 2. Resumen tecnico
 

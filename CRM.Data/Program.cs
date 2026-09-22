@@ -5,7 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCrmDatabase(builder.Configuration);
 builder.Services.AddCrmApplicationServices();
-builder.Services.AddCrmCookieAuthentication();
+builder.Services.AddCrmCookieAuthentication(builder.Environment);
 builder.Services.AddCrmCors(builder.Configuration);
 builder.Services.AddCrmRateLimiting();
 

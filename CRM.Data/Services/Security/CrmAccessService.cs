@@ -30,6 +30,40 @@ public sealed class CrmAccessService
         _httpContextAccessor.HttpContext?.User.IsInRole("Administrador") == true ||
         _httpContextAccessor.HttpContext?.User.IsInRole("Supervisor") == true;
 
+    public bool PuedeGestionarUsuarios =>
+        _httpContextAccessor.HttpContext?.User.IsInRole("Administrador") == true;
+
+    public bool PuedeVerDashboard =>
+        TieneAccesoGlobal || EsAsesor;
+
+    public bool PuedeAccederModulo(string modulo)
+    {
+        if (string.IsNullOrWhiteSpace(modulo))
+        {
+            return false;
+        }
+
+        var moduloNormalizado = modulo.Trim().ToLowerInvariant();
+
+        if (TieneAccesoGlobal)
+        {
+            return moduloNormalizado switch
+            {
+                "dashboard" or "inbox" or "contactos" or "tareas" or "pipeline" or "ventas" or
+                "campanas" or "automatizacion" or "agenda" or "alertas" or "reportes" or "comentarios" or
+                "actividad" or "fallos" or "bot" or "conexiones" => true,
+                "usuarios" => PuedeGestionarUsuarios,
+                _ => false
+            };
+        }
+
+        return moduloNormalizado switch
+        {
+            "inbox" or "contactos" or "tareas" or "pipeline" or "comentarios" => true,
+            _ => false
+        };
+    }
+
     public static bool EsConversacionDisponibleParaAsesor(Conversacion conversacion) =>
         !conversacion.nUsuarioAsignado.HasValue &&
         conversacion.cEstado is "NUEVO" or "ABIERTO" or "EN_ATENCION";

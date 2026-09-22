@@ -74,6 +74,16 @@
         }
 
         async function cargarModuloReportes(vista) {
+            if (normalizarRol(rolActual) === "asesor" && sesionActual?.id && !reportesFiltros.usuarioId) {
+                reportesFiltros.usuarioId = String(sesionActual.id);
+            }
+            if (asesorFiltroActivo && asesorFiltroActivo !== "unassigned" && !reportesFiltros.usuarioId) {
+                reportesFiltros.usuarioId = String(asesorFiltroActivo);
+            }
+            if (asesorFiltroActivo && asesorFiltroActivo !== "unassigned") {
+                reportesFiltros.usuarioId = String(asesorFiltroActivo);
+            }
+
             const params = new URLSearchParams();
             if (reportesFiltros.desde) params.set("desde", reportesFiltros.desde);
             if (reportesFiltros.hasta) params.set("hasta", reportesFiltros.hasta);

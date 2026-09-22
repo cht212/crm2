@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Threading.RateLimiting;
 
 namespace CRM.Data.Extensions;
@@ -15,7 +16,11 @@ public static class ServiceCollectionExtensions
         IConfiguration configuration)
     {
         services.AddDbContext<CrmDbContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+        {
+            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"));
+            options.ConfigureWarnings(warnings =>
+                warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
+        });
 
         return services;
     }
@@ -48,8 +53,10 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddCrmCookieAuthentication(this IServiceCollection services)
+    public static IServiceCollection AddCrmCookieAuthentication(this IServiceCollection services, IHostEnvironment environment)
     {
+        var useSecureCookies = !environment.IsDevelopment();
+
         services
             .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddCookie(options =>
@@ -58,7 +65,9 @@ public static class ServiceCollectionExtensions
                 options.Cookie.HttpOnly = true;
                 options.Cookie.IsEssential = true;
                 options.Cookie.SameSite = SameSiteMode.Lax;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                options.Cookie.SecurePolicy = useSecureCookies
+                    ? CookieSecurePolicy.Always
+                    : CookieSecurePolicy.SameAsRequest;
                 options.LoginPath = "/login.html";
                 options.AccessDeniedPath = "/login.html?error=acceso";
                 options.ExpireTimeSpan = TimeSpan.FromHours(8);
@@ -146,15 +155,27 @@ public static class ServiceCollectionExtensions
                         .AllowAnyHeader()
                         .AllowAnyMethod()
                         .AllowCredentials();
+                    return;
                 }
-                else
+
+                policy.SetIsOriginAllowed(origin =>
                 {
-                    policy
-                        .WithOrigins("https://crm-78n3.onrender.com")
-                        .AllowAnyHeader()
-                        .AllowAnyMethod()
-                        .AllowCredentials();
-                }
+                    if (string.IsNullOrWhiteSpace(origin))
+                    {
+                        return false;
+                    }
+
+                    if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+                    {
+                        return false;
+                    }
+
+                    var host = uri.Host.Trim();
+                    return host is "localhost" or "127.0.0.1" or "[::1]";
+                })
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
             });
         });
 

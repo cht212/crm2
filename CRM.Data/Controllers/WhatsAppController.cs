@@ -671,6 +671,21 @@ namespace CRM.Data.Controllers
 
             return Ok(new { success = true, estado = dto.Estado });
         }
+
+        [HttpPost("conversaciones/asignar-pendientes")]
+        [Authorize(Roles = "Administrador,Supervisor")]
+        public async Task<IActionResult> AsignarConversacionesPendientes()
+        {
+            var cantidad = await _whatsappService.AsignarConversacionesPendientesAsync();
+            return Ok(new
+            {
+                success = true,
+                asignadas = cantidad,
+                mensaje = cantidad > 0
+                    ? $"Se asignaron {cantidad} conversaciones pendientes."
+                    : "No había conversaciones pendientes por asignar."
+            });
+        }
     }
 
     public class EnviarMensajeDto

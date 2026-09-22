@@ -19,6 +19,11 @@ namespace CRM.Data.Data
         public DbSet<Tarea> Tareas { get; set; }
         public DbSet<NotaInterna> NotasInternas { get; set; }
         public DbSet<ActividadLog> ActividadLogs { get; set; }
+        public DbSet<Campana> Campanas { get; set; }
+        public DbSet<CampanaCliente> CampanasClientes { get; set; }
+        public DbSet<ReglaAutomatica> ReglasAutomaticas { get; set; }
+        public DbSet<KpiDashboard> KpisDashboard { get; set; }
+        public DbSet<ReporteExportacion> ReportesExportacion { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -241,6 +246,118 @@ namespace CRM.Data.Data
                 .HasOne(a => a.Usuario)
                 .WithMany()
                 .HasForeignKey(a => a.nUsuario)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // =====================================================
+            // CAMPAÑAS (marketing / prospección)
+            // =====================================================
+
+            modelBuilder.Entity<Campana>().ToTable("crm_campana");
+            modelBuilder.Entity<Campana>().HasKey(c => c.nCampana);
+            modelBuilder.Entity<Campana>().Property(c => c.nCampana).HasColumnName("n_campana");
+            modelBuilder.Entity<Campana>().Property(c => c.cNombre).HasColumnName("c_nombre");
+            modelBuilder.Entity<Campana>().Property(c => c.cDescripcion).HasColumnName("c_descripcion");
+            modelBuilder.Entity<Campana>().Property(c => c.cTipo).HasColumnName("c_tipo");
+            modelBuilder.Entity<Campana>().Property(c => c.cEstado).HasColumnName("c_estado");
+            modelBuilder.Entity<Campana>().Property(c => c.dFechaInicio).HasColumnName("d_fecha_inicio");
+            modelBuilder.Entity<Campana>().Property(c => c.dFechaFin).HasColumnName("d_fecha_fin");
+            modelBuilder.Entity<Campana>().Property(c => c.nAsignadoA).HasColumnName("n_asignado_a");
+            modelBuilder.Entity<Campana>().Property(c => c.nCreadoPor).HasColumnName("n_creado_por");
+            modelBuilder.Entity<Campana>().Property(c => c.dFechaCreacion).HasColumnName("d_fecha_creacion");
+
+            modelBuilder.Entity<Campana>()
+                .HasOne(c => c.AsignadoA)
+                .WithMany()
+                .HasForeignKey(c => c.nAsignadoA)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Campana>()
+                .HasOne(c => c.CreadoPor)
+                .WithMany()
+                .HasForeignKey(c => c.nCreadoPor)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CampanaCliente>().ToTable("crm_campana_cliente");
+            modelBuilder.Entity<CampanaCliente>().HasKey(cc => new { cc.nCampana, cc.nCliente });
+            modelBuilder.Entity<CampanaCliente>().Property(cc => cc.nCampana).HasColumnName("n_campana");
+            modelBuilder.Entity<CampanaCliente>().Property(cc => cc.nCliente).HasColumnName("n_cliente");
+            modelBuilder.Entity<CampanaCliente>().Property(cc => cc.dFechaAsignacion).HasColumnName("d_fecha_asignacion");
+            modelBuilder.Entity<CampanaCliente>().Property(cc => cc.cEstado).HasColumnName("c_estado");
+
+            modelBuilder.Entity<CampanaCliente>()
+                .HasOne(cc => cc.Campana)
+                .WithMany()
+                .HasForeignKey(cc => cc.nCampana)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<CampanaCliente>()
+                .HasOne(cc => cc.Cliente)
+                .WithMany()
+                .HasForeignKey(cc => cc.nCliente)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // =====================================================
+            // REGLAS AUTOMÁTICAS (automatización comercial)
+            // =====================================================
+
+            modelBuilder.Entity<ReglaAutomatica>().ToTable("crm_regla_automatica");
+            modelBuilder.Entity<ReglaAutomatica>().HasKey(r => r.nRegla);
+            modelBuilder.Entity<ReglaAutomatica>().Property(r => r.nRegla).HasColumnName("n_regla");
+            modelBuilder.Entity<ReglaAutomatica>().Property(r => r.cNombre).HasColumnName("c_nombre");
+            modelBuilder.Entity<ReglaAutomatica>().Property(r => r.cEntidad).HasColumnName("c_entidad");
+            modelBuilder.Entity<ReglaAutomatica>().Property(r => r.cEvento).HasColumnName("c_evento");
+            modelBuilder.Entity<ReglaAutomatica>().Property(r => r.cCondicion).HasColumnName("c_condicion");
+            modelBuilder.Entity<ReglaAutomatica>().Property(r => r.cAccion).HasColumnName("c_accion");
+            modelBuilder.Entity<ReglaAutomatica>().Property(r => r.cValorAccion).HasColumnName("c_valor_accion");
+            modelBuilder.Entity<ReglaAutomatica>().Property(r => r.nAsignadoA).HasColumnName("n_asignado_a");
+            modelBuilder.Entity<ReglaAutomatica>().Property(r => r.nCreadoPor).HasColumnName("n_creado_por");
+            modelBuilder.Entity<ReglaAutomatica>().Property(r => r.bActiva).HasColumnName("b_activa");
+            modelBuilder.Entity<ReglaAutomatica>().Property(r => r.dFechaCreacion).HasColumnName("d_fecha_creacion");
+
+            modelBuilder.Entity<ReglaAutomatica>()
+                .HasOne(r => r.AsignadoA)
+                .WithMany()
+                .HasForeignKey(r => r.nAsignadoA)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ReglaAutomatica>()
+                .HasOne(r => r.CreadoPor)
+                .WithMany()
+                .HasForeignKey(r => r.nCreadoPor)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // =====================================================
+            // KPI DASHBOARD EJECUTIVO
+            // =====================================================
+
+            modelBuilder.Entity<KpiDashboard>().ToTable("crm_kpi_dashboard");
+            modelBuilder.Entity<KpiDashboard>().HasKey(k => k.nKpi);
+            modelBuilder.Entity<KpiDashboard>().Property(k => k.nKpi).HasColumnName("n_kpi");
+            modelBuilder.Entity<KpiDashboard>().Property(k => k.cNombre).HasColumnName("c_nombre");
+            modelBuilder.Entity<KpiDashboard>().Property(k => k.cTipo).HasColumnName("c_tipo");
+            modelBuilder.Entity<KpiDashboard>().Property(k => k.cValor).HasColumnName("c_valor");
+            modelBuilder.Entity<KpiDashboard>().Property(k => k.cMeta).HasColumnName("c_meta");
+            modelBuilder.Entity<KpiDashboard>().Property(k => k.cPeriodo).HasColumnName("c_periodo");
+            modelBuilder.Entity<KpiDashboard>().Property(k => k.dFechaCreacion).HasColumnName("d_fecha_creacion");
+
+            // =====================================================
+            // HISTORIAL DE EXPORTACIONES
+            // =====================================================
+
+            modelBuilder.Entity<ReporteExportacion>().ToTable("crm_reporte_exportacion");
+            modelBuilder.Entity<ReporteExportacion>().HasKey(r => r.nReporte);
+            modelBuilder.Entity<ReporteExportacion>().Property(r => r.nReporte).HasColumnName("n_reporte");
+            modelBuilder.Entity<ReporteExportacion>().Property(r => r.cNombre).HasColumnName("c_nombre");
+            modelBuilder.Entity<ReporteExportacion>().Property(r => r.cTipo).HasColumnName("c_tipo");
+            modelBuilder.Entity<ReporteExportacion>().Property(r => r.cEntidad).HasColumnName("c_entidad");
+            modelBuilder.Entity<ReporteExportacion>().Property(r => r.cRuta).HasColumnName("c_ruta");
+            modelBuilder.Entity<ReporteExportacion>().Property(r => r.dFechaCreacion).HasColumnName("d_fecha_creacion");
+            modelBuilder.Entity<ReporteExportacion>().Property(r => r.nCreadoPor).HasColumnName("n_creado_por");
+
+            modelBuilder.Entity<ReporteExportacion>()
+                .HasOne(r => r.CreadoPor)
+                .WithMany()
+                .HasForeignKey(r => r.nCreadoPor)
                 .OnDelete(DeleteBehavior.SetNull);
         }
     }

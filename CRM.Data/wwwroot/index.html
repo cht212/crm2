@@ -106,6 +106,10 @@
                     <button class="nav-item" data-module="tareas" title="Tareas"><i data-lucide="list-checks"></i><span class="nav-label">Tareas</span></button>
                     <button class="nav-item" data-module="pipeline" title="Pipeline"><i data-lucide="kanban"></i><span class="nav-label">Pipeline</span></button>
                     <button class="nav-item" data-module="ventas" title="Ventas"><i data-lucide="badge-dollar-sign"></i><span class="nav-label">Ventas</span></button>
+                    <button class="nav-item" data-module="campanas" title="Campañas"><i data-lucide="megaphone"></i><span class="nav-label">Campañas</span></button>
+                    <button class="nav-item" data-module="automatizacion" title="Automatización"><i data-lucide="cpu"></i><span class="nav-label">Automatización</span></button>
+                    <button class="nav-item" data-module="agenda" title="Agenda"><i data-lucide="calendar-days"></i><span class="nav-label">Agenda</span></button>
+                    <button class="nav-item" data-module="alertas" title="Alertas"><i data-lucide="bell-ring"></i><span class="nav-label">Alertas</span></button>
                     <button class="nav-item" data-module="reportes" title="Reportes"><i data-lucide="chart-no-axes-combined"></i><span class="nav-label">Reportes</span></button>
                     <button class="nav-item" data-module="comentarios" title="Comentarios"><i data-lucide="message-circle-reply"></i><span class="nav-label">Comentarios</span></button>
                     <button id="activityNav" class="nav-item hidden" data-module="actividad" title="Actividad"><i data-lucide="history"></i><span class="nav-label">Actividad</span></button>
@@ -130,6 +134,23 @@
                         <button class="filter-button" data-filter="mine">Mis chats</button>
                         <button class="filter-button" data-filter="unassigned">Sin asesor</button>
                         <button class="filter-button" data-filter="pending">Pendientes</button>
+                    </div>
+                    <div class="inbox-assignee-menu">
+                        <button id="inboxAdvisorToggle" class="inbox-advisor-toggle" type="button" aria-label="Filtrar conversaciones por asesor" aria-expanded="false">
+                            <span id="inboxAdvisorAvatar" class="inbox-advisor-avatar">A</span>
+                            <span id="inboxAdvisorLabel" class="inbox-advisor-label">Sin filtro</span>
+                            <i data-lucide="chevron-down"></i>
+                        </button>
+                        <div id="inboxAdvisorMenu" class="inbox-advisor-menu hidden" role="menu" aria-label="Lista de asesores">
+                            <button class="inbox-advisor-item active" type="button" data-user-id="" data-user-label="Sin filtro">
+                                <span class="inbox-advisor-avatar mini">A</span>
+                                <span>Sin filtro</span>
+                            </button>
+                            <button class="inbox-advisor-item" type="button" data-user-id="unassigned" data-user-label="Sin asesor">
+                                <span class="inbox-advisor-avatar mini neutral">U</span>
+                                <span>Sin asesor</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div id="conversationList" class="conversation-list"></div>
@@ -188,6 +209,10 @@
     <script src="js/module-router.js"></script>
     <script src="js/contacts.js"></script>
     <script src="js/tasks-sales.js"></script>
+    <script src="js/campaigns.js"></script>
+    <script src="js/automation.js"></script>
+    <script src="js/agenda.js"></script>
+    <script src="js/alertas.js"></script>
     <script src="js/dashboard.js"></script>
     <script src="js/pipeline.js"></script>
     <script src="js/activity-reports.js"></script>

@@ -2,8 +2,13 @@
 // Mantiene variables y funciones globales para compatibilidad con la vista actual.
 
         async function cargarModuloDashboard(vista) {
+            const params = new URLSearchParams();
+            if (asesorFiltroActivo && asesorFiltroActivo !== "unassigned") {
+                params.set("usuarioId", asesorFiltroActivo);
+            }
+
             const [response, metaResponse, diagnosticoMetaResponse, feedResponse, fallosResponse] = await Promise.all([
-                api("/api/crm/reportes/resumen"),
+                api(`/api/crm/reportes/resumen${params.size ? `?${params.toString()}` : ""}`),
                 api("/api/integraciones/meta/estadisticas").catch(() => null),
                 api("/api/integraciones/meta/estadisticas/diagnostico").catch(() => null),
                 api("/api/integraciones/meta/facebook/feed?limit=8").catch(() => null),
@@ -451,6 +456,41 @@
                         </article>
                     </section>
 
+                    <section class="meta-panel">
+                        <div class="panel-heading-with-action">
+                            <div>
+                                <span class="panel-kicker">Carga</span>
+                                <h2>Distribución por asesor</h2>
+                            </div>
+                            ${(rolActual === "Administrador" || rolActual === "Supervisor") ? '<button type="button" id="dashboardRebalanceButton" class="secondary-btn">Repartir pendientes</button>' : ""}
+                        </div>
+                        <div class="table-wrap">
+                            <table class="module-table compact-table">
+                                <thead>
+                                    <tr>
+                                        <th>Asesor</th>
+                                        <th>Chats</th>
+                                        <th>Tareas</th>
+                                        <th>Vencidas</th>
+                                        <th>Ventas</th>
+                                        <th>Carga</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${(reporte.cargaAsesores || []).map(item => `
+                                        <tr>
+                                            <td><strong>${escapeHtml(item.nombre || "Usuario")}</strong><br><small>${escapeHtml(item.rol || "Asesor")}</small></td>
+                                            <td>${formatearNumero(item.conversacionesActivas || 0)}</td>
+                                            <td>${formatearNumero(item.tareasPendientes || 0)}</td>
+                                            <td>${formatearNumero(item.tareasVencidas || 0)}</td>
+                                            <td>${formatearNumero(item.oportunidadesAbiertas || 0)}</td>
+                                            <td>${formatearNumero(item.cargaTotal || 0)}</td>
+                                        </tr>`).join("") || '<tr><td colspan="6">Sin asesores activos.</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
                     <section class="meta-panel content-panel">
                         <div>
                             <span class="panel-kicker">Desglose</span>
@@ -540,5 +580,26 @@
                     dashboardCanalActivo = elemento.dataset.dashboardChannel;
                     renderDashboard(vista, reporte);
                 });
+            });
+
+            const rebalanceButton = vista.querySelector("#dashboardRebalanceButton");
+            rebalanceButton?.addEventListener("click", async () => {
+                rebalanceButton.disabled = true;
+                rebalanceButton.textContent = "Repartiendo...";
+                try {
+                    const response = await api("/api/crm/conversaciones/asignar-pendientes", { method: "POST" });
+                    if (!response.ok) throw new Error("No se pudo repartir");
+                    const resultado = await response.json();
+                    await cargarModuloDashboard(vista);
+                    notificar(resultado.asignadas > 0
+                        ? `Se reasignaron ${resultado.asignadas} conversaciones pendientes.`
+                        : "No había conversaciones pendientes por repartir.", "success");
+                } catch (error) {
+                    console.error(error);
+                    notificar("No se pudo repartir la carga de pendientes.", "error");
+                } finally {
+                    rebalanceButton.disabled = false;
+                    rebalanceButton.textContent = "Repartir pendientes";
+                }
             });
         }

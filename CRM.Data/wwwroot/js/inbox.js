@@ -1,6 +1,128 @@
 ﻿// Archivo generado desde Script.js para separar responsabilidades del CRM.
 // Mantiene variables y funciones globales para compatibilidad con la vista actual.
 
+        function actualizarLabelFiltroAsesor(valorSeleccionado) {
+            const valor = valorSeleccionado || "";
+            const toggle = document.getElementById("inboxAdvisorToggle");
+            const label = document.getElementById("inboxAdvisorLabel");
+            const avatar = document.getElementById("inboxAdvisorAvatar");
+            const menu = document.getElementById("inboxAdvisorMenu");
+
+            if (!toggle || !label || !avatar || !menu) return;
+
+            const itemActual = [...menu.querySelectorAll(".inbox-advisor-item")]
+                .find(item => item.dataset.userId === valor) ||
+                [...menu.querySelectorAll(".inbox-advisor-item")]
+                    .find(item => item.dataset.userId === "");
+
+            const texto = itemActual?.dataset.userLabel || "Sin filtro";
+            const inicial = texto.trim().charAt(0)?.toUpperCase() || "A";
+
+            label.textContent = texto;
+            avatar.textContent = inicial;
+            menu.querySelectorAll(".inbox-advisor-item").forEach(item => {
+                const activo = item.dataset.userId === valor;
+                item.classList.toggle("active", activo);
+            });
+            toggle.setAttribute("aria-expanded", "false");
+            menu.classList.add("hidden");
+        }
+
+        function alternarMenuAsesor() {
+            const toggle = document.getElementById("inboxAdvisorToggle");
+            const menu = document.getElementById("inboxAdvisorMenu");
+            if (!toggle || !menu) return;
+
+            const abierto = menu.classList.contains("hidden");
+            menu.classList.toggle("hidden", !abierto);
+            toggle.setAttribute("aria-expanded", String(abierto));
+        }
+
+        async function cargarUsuariosInbox() {
+            try {
+                const response = await api("/api/crm/usuarios");
+                if (!response.ok) return;
+                const usuarios = await response.json();
+                const menu = document.getElementById("inboxAdvisorMenu");
+                if (normalizarRol(rolActual) === "asesor" && sesionActual?.id && !asesorFiltroActivo) {
+                    asesorFiltroActivo = String(sesionActual.id);
+                }
+                const valorActual = asesorFiltroActivo || "";
+                if (!menu) return;
+
+                const opciones = [
+                    { id: "", label: "Sin filtro", avatar: "A", neutral: false },
+                    { id: "unassigned", label: "Sin asesor", avatar: "U", neutral: true }
+                ];
+
+                if (normalizarRol(rolActual) === "asesor" && sesionActual?.id) {
+                    opciones.splice(0, 1);
+                }
+
+                usuarios.forEach(usuario => {
+                    opciones.push({
+                        id: String(usuario.id),
+                        label: usuario.nombre || usuario.usuario || `Usuario ${usuario.id}`,
+                        avatar: (usuario.nombre || usuario.usuario || `Usuario ${usuario.id}`).trim().charAt(0).toUpperCase() || "U",
+                        neutral: false
+                    });
+                });
+
+                menu.innerHTML = opciones.map(opcion => `
+                    <button class="inbox-advisor-item ${opcion.id === valorActual ? "active" : ""}" type="button" data-user-id="${opcion.id}" data-user-label="${escapeHtml(opcion.label)}">
+                        <span class="inbox-advisor-avatar mini ${opcion.neutral ? "neutral" : ""}">${escapeHtml(opcion.avatar)}</span>
+                        <span>${escapeHtml(opcion.label)}</span>
+                    </button>
+                `).join("");
+
+                menu.querySelectorAll(".inbox-advisor-item").forEach(item => {
+                    item.addEventListener("click", () => {
+                        const nuevoValor = item.dataset.userId || "";
+                        if (normalizarRol(rolActual) === "asesor") {
+                            asesorFiltroActivo = String(sesionActual?.id || "");
+                        } else {
+                            asesorFiltroActivo = nuevoValor === "unassigned" ? "unassigned" : nuevoValor;
+                        }
+                        sincronizarFiltroReportesDesdeAsesor();
+                        actualizarLabelFiltroAsesor(asesorFiltroActivo);
+                        mostrarConversaciones();
+                        if (typeof cargarModuloDashboard === "function" && moduloActual === "dashboard") {
+                            const vista = document.querySelector("#moduleView .module-content") || document.getElementById("moduleView");
+                            if (vista) cargarModuloDashboard(vista);
+                        }
+                        if (moduloActual === "reportes") {
+                            const vista = document.querySelector("#moduleView .module-content") || document.getElementById("moduleView");
+                            if (vista && typeof cargarModuloReportes === "function") {
+                                cargarModuloReportes(vista);
+                            }
+                        }
+                    });
+                });
+
+                actualizarLabelFiltroAsesor(valorActual);
+            } catch (error) {
+                console.error("No se pudieron cargar los usuarios para el filtro del inbox", error);
+            }
+        }
+
+        document.addEventListener("click", event => {
+            const toggle = document.getElementById("inboxAdvisorToggle");
+            const menu = document.getElementById("inboxAdvisorMenu");
+
+            if (!toggle || !menu) return;
+            const clicFuera = !toggle.contains(event.target) && !menu.contains(event.target);
+            if (clicFuera) {
+                menu.classList.add("hidden");
+                toggle.setAttribute("aria-expanded", "false");
+            }
+        });
+
+        document.getElementById("inboxAdvisorToggle")?.addEventListener("click", event => {
+            event.preventDefault();
+            event.stopPropagation();
+            alternarMenuAsesor();
+        });
+
         async function cargarConversaciones() {
             const response = await api("/api/whatsapp/conversaciones");
             if (!response.ok) throw new Error("No se pudieron cargar las conversaciones");
@@ -10,6 +132,7 @@
             document.getElementById("conversationCount").textContent =
                 `${conversaciones.length} ${conversaciones.length === 1 ? "chat" : "chats"}`;
             actualizarNotificacionesComunicaciones();
+            await cargarUsuariosInbox();
             mostrarConversaciones();
         }
 
@@ -166,6 +289,14 @@
             badge.classList.toggle("hidden", pendientes === 0);
         }
 
+        function sincronizarFiltroReportesDesdeAsesor() {
+            if (!asesorFiltroActivo || asesorFiltroActivo === "unassigned") {
+                reportesFiltros.usuarioId = "";
+                return;
+            }
+            reportesFiltros.usuarioId = String(asesorFiltroActivo);
+        }
+
         function mostrarConversaciones() {
             const filtro = document.getElementById("searchInput").value.toLowerCase().trim();
             const resultado = conversaciones.filter(c => {
@@ -177,10 +308,13 @@
                     (filtroActivo === "mine" && sesionActual?.id && Number(c.usuarioAsignadoId) === Number(sesionActual.id)) ||
                     (filtroActivo === "unassigned" && !c.usuarioAsignadoId) ||
                     (filtroActivo === "pending" && c.requiereAtencion);
+                const coincideAsesor = asesorFiltroActivo === "" ||
+                    (asesorFiltroActivo === "unassigned" && !c.usuarioAsignadoId) ||
+                    (asesorFiltroActivo && Number(c.usuarioAsignadoId) === Number(asesorFiltroActivo));
                 const coincideBusqueda =
                     (c.nombre || "").toLowerCase().includes(filtro) ||
                     (c.telefono || "").includes(filtro);
-                return coincideCanal && coincideEstado && coincideBusqueda;
+                return coincideCanal && coincideEstado && coincideAsesor && coincideBusqueda;
             });
 
             lista.innerHTML = "";

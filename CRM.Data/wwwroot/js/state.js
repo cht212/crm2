@@ -1,11 +1,12 @@
 ﻿// Archivo generado desde Script.js para separar responsabilidades del CRM.
 // Mantiene variables y funciones globales para compatibilidad con la vista actual.
 
-const POLLING_MS = 3000;
+const POLLING_MS = 15000;
         let conversaciones = [];
         let conversacionSeleccionada = null;
         let actualizacionEnCurso = false;
         let filtroActivo = "all";
+        let asesorFiltroActivo = "";
         let rolActual = "";
         let sesionActual = null;
         let fichaTabActiva = "datos";

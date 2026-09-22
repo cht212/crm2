@@ -4,6 +4,13 @@
 async function actualizarCRM() {
     if (actualizacionEnCurso) return;
     if (document.activeElement?.closest("#details")) return;
+
+    const requiereInbox = moduloActual === "inbox" || moduloActual === "dashboard";
+    if (!requiereInbox) {
+        estado.textContent = "API conectada";
+        return;
+    }
+
     actualizacionEnCurso = true;
     try {
         const id = conversacionSeleccionada ? conversacionSeleccionada.id : null;

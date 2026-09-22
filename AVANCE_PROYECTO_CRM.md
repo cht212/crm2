@@ -1075,11 +1075,11 @@ Este CRM permite que una empresa atienda WhatsApp desde una plataforma ordenada,
 
 Archivos generados:
 
-- `AVANCE_PROYECTO_CRM.md`: documentacion en Markdown.
-- `AVANCE_PROYECTO_CRM.docx`: documento Word para presentar.
+- `AVANCE_PROYECTO_CRM.md`: documentacion del avance del proyecto.
 - `ARQUITECTURA_CRM.png`: imagen de arquitectura local con ngrok y futuro Cloudflare.
 - `MODELO_DATOS_CRM.png`: imagen explicativa del modelo de datos.
-- `tools/generar_documento_avance.ps1`: script para regenerar el Word y las imagenes.
+- `MANUAL_USO_CRM_HPD.md`: manual operativo para uso del sistema.
+- `DOCUMENTACION_COMPLETA_CRM_HPD.md`: documentacion tecnica completa del proyecto.
 
 ## 26. Conclusion
 

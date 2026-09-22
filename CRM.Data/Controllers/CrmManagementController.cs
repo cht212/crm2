@@ -780,6 +780,82 @@ public class CrmManagementController : ControllerBase
         var items = await query.OrderByDescending(item => item.fecha).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
         return Ok(new { total, page, pageSize, items });
     }
+
+    [HttpGet("actividad/historial")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor")]
+    public async Task<IActionResult> HistorialActividad(
+        [FromQuery] long? clienteId = null,
+        [FromQuery] long? conversacionId = null,
+        [FromQuery] int? usuarioId = null,
+        [FromQuery] string? entidad = null,
+        [FromQuery] DateTime? desde = null,
+        [FromQuery] DateTime? hasta = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50)
+    {
+        page = page < 1 ? 1 : page;
+        pageSize = pageSize is < 1 or > 200 ? 50 : pageSize;
+
+        var query = _context.ActividadLogs
+            .AsNoTracking()
+            .Include(log => log.Usuario)
+            .AsQueryable();
+
+        if (clienteId.HasValue)
+        {
+            query = query.Where(log => log.cEntidad == "Cliente" && log.nEntidadId == clienteId.Value);
+        }
+
+        if (conversacionId.HasValue)
+        {
+            query = query.Where(log => log.cEntidad == "Conversacion" && log.nEntidadId == conversacionId.Value);
+        }
+
+        if (usuarioId.HasValue)
+        {
+            query = query.Where(log => log.nUsuario == usuarioId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(entidad))
+        {
+            var entidadNormalizada = entidad.Trim();
+            query = query.Where(log => log.cEntidad == entidadNormalizada);
+        }
+
+        if (desde.HasValue)
+        {
+            query = query.Where(log => log.dFecha >= desde.Value.Date);
+        }
+
+        if (hasta.HasValue)
+        {
+            var hastaProxima = hasta.Value.Date.AddDays(1);
+            query = query.Where(log => log.dFecha < hastaProxima);
+        }
+
+        var total = await query.CountAsync();
+
+        var items = await query
+            .OrderByDescending(log => log.dFecha)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(log => new
+            {
+                id = log.nActividad,
+                entidad = log.cEntidad,
+                entidadId = log.nEntidadId,
+                accion = log.cAccion,
+                valorAnterior = log.cValorAnterior,
+                valorNuevo = log.cValorNuevo,
+                usuarioId = log.nUsuario,
+                usuarioNombre = log.Usuario != null ? log.Usuario.cNombre : null,
+                fecha = log.dFecha
+            })
+            .ToListAsync();
+
+        return Ok(new { total, page, pageSize, items });
+    }
+
     [HttpGet("reportes/resumen")]
     [Authorize(Roles = "Administrador,Supervisor")]
     public async Task<IActionResult> ReporteResumen(
@@ -1009,6 +1085,110 @@ public class CrmManagementController : ControllerBase
                 montoGanado = ventasGanadas,
                 porEtapa = oportunidadesPorEtapa
             }
+        });
+    }
+
+    [HttpGet("reportes/asesores")]
+    [Authorize(Roles = "Administrador,Supervisor")]
+    public async Task<IActionResult> ReportePorAsesor(
+        [FromQuery] DateTime? desde = null,
+        [FromQuery] DateTime? hasta = null)
+    {
+        var fechaDesde = desde?.Date;
+        var fechaHastaExclusiva = hasta?.Date.AddDays(1);
+
+        var usuarios = await _context.Usuarios
+            .AsNoTracking()
+            .Where(usuario => usuario.cEstado == 'A')
+            .OrderBy(usuario => usuario.cNombre)
+            .Select(usuario => new
+            {
+                usuarioId = usuario.nUsuario,
+                usuario = usuario.cNombre,
+                rol = usuario.cRol,
+                conversaciones = _context.Conversaciones
+                    .AsNoTracking()
+                    .Count(conversacion => conversacion.nUsuarioAsignado == usuario.nUsuario &&
+                        (!fechaDesde.HasValue || conversacion.dFechaInicio >= fechaDesde.Value) &&
+                        (!fechaHastaExclusiva.HasValue || conversacion.dFechaInicio < fechaHastaExclusiva.Value)),
+                conversacionesActivas = _context.Conversaciones
+                    .AsNoTracking()
+                    .Count(conversacion => conversacion.nUsuarioAsignado == usuario.nUsuario &&
+                        conversacion.cEstado != "CERRADO" && conversacion.cEstado != "PERDIDO" && conversacion.cEstado != "NO_RESPONDIO" &&
+                        (!fechaDesde.HasValue || conversacion.dFechaInicio >= fechaDesde.Value) &&
+                        (!fechaHastaExclusiva.HasValue || conversacion.dFechaInicio < fechaHastaExclusiva.Value)),
+                tareasPendientes = _context.Tareas
+                    .AsNoTracking()
+                    .Count(tarea => tarea.nAsignadoA == usuario.nUsuario && tarea.cEstado == "PENDIENTE" &&
+                        (!fechaDesde.HasValue || tarea.dFechaCreacion >= fechaDesde.Value) &&
+                        (!fechaHastaExclusiva.HasValue || tarea.dFechaCreacion < fechaHastaExclusiva.Value)),
+                tareasVencidas = _context.Tareas
+                    .AsNoTracking()
+                    .Count(tarea => tarea.nAsignadoA == usuario.nUsuario && tarea.cEstado == "PENDIENTE" &&
+                        tarea.dFechaVencimiento < DateTime.Now &&
+                        (!fechaDesde.HasValue || tarea.dFechaCreacion >= fechaDesde.Value) &&
+                        (!fechaHastaExclusiva.HasValue || tarea.dFechaCreacion < fechaHastaExclusiva.Value)),
+                oportunidadesAbiertas = _context.Oportunidades
+                    .AsNoTracking()
+                    .Count(oportunidad => oportunidad.nUsuarioAsignado == usuario.nUsuario &&
+                        oportunidad.cEtapa != "GANADA" && oportunidad.cEtapa != "PERDIDA" &&
+                        (!fechaDesde.HasValue || oportunidad.dFechaCreacion >= fechaDesde.Value) &&
+                        (!fechaHastaExclusiva.HasValue || oportunidad.dFechaCreacion < fechaHastaExclusiva.Value)),
+                oportunidadesGanadas = _context.Oportunidades
+                    .AsNoTracking()
+                    .Count(oportunidad => oportunidad.nUsuarioAsignado == usuario.nUsuario &&
+                        oportunidad.cEtapa == "GANADA" &&
+                        (!fechaDesde.HasValue || oportunidad.dFechaCreacion >= fechaDesde.Value) &&
+                        (!fechaHastaExclusiva.HasValue || oportunidad.dFechaCreacion < fechaHastaExclusiva.Value)),
+                montoGanado = _context.Oportunidades
+                    .AsNoTracking()
+                    .Where(oportunidad => oportunidad.nUsuarioAsignado == usuario.nUsuario && oportunidad.cEtapa == "GANADA" &&
+                        (!fechaDesde.HasValue || oportunidad.dFechaCreacion >= fechaDesde.Value) &&
+                        (!fechaHastaExclusiva.HasValue || oportunidad.dFechaCreacion < fechaHastaExclusiva.Value))
+                    .Sum(oportunidad => (decimal?)oportunidad.nMonto) ?? 0m
+            })
+            .ToListAsync();
+
+        return Ok(new
+        {
+            filtros = new { desde = fechaDesde, hasta = hasta },
+            data = usuarios
+        });
+    }
+
+    [HttpGet("reportes/canales")]
+    [Authorize(Roles = "Administrador,Supervisor")]
+    public async Task<IActionResult> ReportePorCanal(
+        [FromQuery] DateTime? desde = null,
+        [FromQuery] DateTime? hasta = null)
+    {
+        var fechaDesde = desde?.Date;
+        var fechaHastaExclusiva = hasta?.Date.AddDays(1);
+
+        var canales = await _context.Conversaciones
+            .AsNoTracking()
+            .Where(conversacion =>
+                (!fechaDesde.HasValue || conversacion.dFechaInicio >= fechaDesde.Value) &&
+                (!fechaHastaExclusiva.HasValue || conversacion.dFechaInicio < fechaHastaExclusiva.Value))
+            .GroupBy(conversacion => conversacion.cCanal)
+            .Select(grupo => new
+            {
+                canal = grupo.Key,
+                conversaciones = grupo.Count(),
+                activas = grupo.Count(conversacion => conversacion.cEstado != "CERRADO" && conversacion.cEstado != "PERDIDO" && conversacion.cEstado != "NO_RESPONDIO"),
+                cerradas = grupo.Count(conversacion => conversacion.cEstado == "CERRADO" || conversacion.cEstado == "PERDIDO"),
+                clientes = _context.Clientes
+                    .AsNoTracking()
+                    .Count(cliente => cliente.cCanalOrigen == grupo.Key || cliente.Conversaciones.Any(conversacionCliente => conversacionCliente.cCanal == grupo.Key) &&
+                        (!fechaDesde.HasValue || cliente.dFechaRegistro >= fechaDesde.Value) &&
+                        (!fechaHastaExclusiva.HasValue || cliente.dFechaRegistro < fechaHastaExclusiva.Value))
+            })
+            .ToListAsync();
+
+        return Ok(new
+        {
+            filtros = new { desde = fechaDesde, hasta = hasta },
+            data = canales
         });
     }
 

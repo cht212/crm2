@@ -90,6 +90,79 @@ public class TareasController : ControllerBase
         return Ok(new { total, page, pageSize, items });
     }
 
+    [HttpGet("alertas")]
+    public async Task<IActionResult> Alertas(
+        [FromQuery] int dias = 3,
+        [FromQuery] int? usuarioId = null)
+    {
+        var ahora = DateTime.Now;
+        var fechaLimite = ahora.AddDays(dias);
+
+        var query = _context.Tareas
+            .AsNoTracking()
+            .Where(tarea => tarea.cEstado == "PENDIENTE" && tarea.dFechaVencimiento <= fechaLimite)
+            .AsQueryable();
+
+        if (usuarioId.HasValue && _access.TieneAccesoGlobal)
+        {
+            query = query.Where(tarea => tarea.nAsignadoA == usuarioId.Value);
+        }
+        else if (!_access.TieneAccesoGlobal && _access.UsuarioActualId.HasValue)
+        {
+            query = query.Where(tarea => tarea.nAsignadoA == _access.UsuarioActualId.Value || tarea.nCreadoPor == _access.UsuarioActualId.Value);
+        }
+
+        var items = await query
+            .Include(tarea => tarea.Cliente)
+            .Include(tarea => tarea.AsignadoA)
+            .OrderBy(tarea => tarea.dFechaVencimiento)
+            .Select(tarea => new
+            {
+                id = tarea.nTarea,
+                titulo = tarea.cTitulo,
+                descripcion = tarea.cDescripcion,
+                vence = tarea.dFechaVencimiento,
+                vencida = tarea.dFechaVencimiento < ahora,
+                cliente = tarea.Cliente == null ? null : new { id = tarea.Cliente.nCliente, nombre = tarea.Cliente.cNombre },
+                asignadoA = tarea.AsignadoA == null ? null : tarea.AsignadoA.cNombre,
+                asignadoAId = tarea.nAsignadoA,
+                prioridad = tarea.dFechaVencimiento < ahora ? "URGENTE" : tarea.dFechaVencimiento <= ahora.AddDays(1) ? "ALTA" : "MEDIA"
+            })
+            .ToListAsync();
+
+        return Ok(new
+        {
+            ahora,
+            dias,
+            total = items.Count,
+            urgentes = items.Count(item => item.vencida),
+            items
+        });
+    }
+
+    [HttpPost("revisar-vencidas")]
+    public async Task<IActionResult> RevisarVencidas()
+    {
+        var ahora = DateTime.Now;
+        var tareasVencidas = await _context.Tareas
+            .Where(tarea => tarea.cEstado == "PENDIENTE" && tarea.dFechaVencimiento < ahora)
+            .ToListAsync();
+
+        foreach (var tarea in tareasVencidas)
+        {
+            tarea.cEstado = "VENCIDA";
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            success = true,
+            actualizadas = tareasVencidas.Count,
+            items = tareasVencidas.Select(tarea => new { id = tarea.nTarea, titulo = tarea.cTitulo })
+        });
+    }
+
     [HttpPost]
     public async Task<IActionResult> Crear([FromBody] CrearTareaDto dto)
     {

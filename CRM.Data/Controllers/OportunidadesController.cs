@@ -139,6 +139,63 @@ public class OportunidadesController : ControllerBase
         return Ok(resumen);
     }
 
+    [HttpGet("pipeline")]
+    public async Task<IActionResult> PipelineResumen()
+    {
+        var oportunidades = await _access.FiltrarOportunidades(
+                _context.Oportunidades
+                    .AsNoTracking()
+                    .Include(o => o.UsuarioAsignado)
+                    .Include(o => o.Cliente))
+            .ToListAsync();
+
+        var porEtapa = oportunidades
+            .GroupBy(o => o.cEtapa)
+            .Select(grupo => new
+            {
+                etapa = grupo.Key,
+                cantidad = grupo.Count(),
+                montoTotal = grupo.Sum(o => o.nMonto),
+                promedio = grupo.Count() == 0 ? 0m : grupo.Average(o => o.nMonto),
+                probabilidadPromedio = grupo.Count() == 0 ? 0 : (int)Math.Round(grupo.Average(o => o.nProbabilidad))
+            })
+            .OrderBy(item => new[] { "NUEVA", "CALIFICADA", "PROPUESTA", "NEGOCIACION", "GANADA", "PERDIDA" }
+                .ToList().IndexOf(item.etapa))
+            .ToList();
+
+        var porAsesor = oportunidades
+            .Where(o => o.nUsuarioAsignado.HasValue)
+            .GroupBy(o => o.nUsuarioAsignado!.Value)
+            .Select(grupo => new
+            {
+                asesorId = grupo.Key,
+                asesor = grupo.First().UsuarioAsignado?.cNombre ?? "Sin nombre",
+                cantidad = grupo.Count(),
+                montoTotal = grupo.Sum(o => o.nMonto),
+                ganadas = grupo.Count(o => o.cEtapa == "GANADA"),
+                perdidas = grupo.Count(o => o.cEtapa == "PERDIDA"),
+                abiertas = grupo.Count(o => o.cEtapa != "GANADA" && o.cEtapa != "PERDIDA")
+            })
+            .OrderByDescending(item => item.montoTotal)
+            .ToList();
+
+        var resumenGeneral = new
+        {
+            total = oportunidades.Count,
+            montoTotal = oportunidades.Sum(o => o.nMonto),
+            ganado = oportunidades.Where(o => o.cEtapa == "GANADA").Sum(o => o.nMonto),
+            perdido = oportunidades.Where(o => o.cEtapa == "PERDIDA").Sum(o => o.nMonto),
+            abiertas = oportunidades.Count(o => o.cEtapa != "GANADA" && o.cEtapa != "PERDIDA")
+        };
+
+        return Ok(new
+        {
+            resumen = resumenGeneral,
+            porEtapa,
+            porAsesor
+        });
+    }
+
     [HttpPost]
     public async Task<IActionResult> Crear([FromBody] CrearOportunidadDto dto)
     {

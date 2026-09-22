@@ -6,7 +6,7 @@ Fecha: 18 de septiembre de 2026
 
 Este manual esta pensado para el personal que va a entrar al CRM y necesita entender que hace cada seccion, para que sirve y cuando debe usarla.
 
-No es un manual de programacion. La documentacion tecnica completa del codigo, carpetas, base de datos, seguridad e integraciones esta en `DOCUMENTACION_TECNICA_COMPLETA_CRM_HPD.md`.
+No es un manual de programacion. La documentacion completa del codigo, carpetas, base de datos, seguridad e integraciones esta en `DOCUMENTACION_COMPLETA_CRM_HPD.md`.
 
 ## 2. Que es el CRM HPD
 

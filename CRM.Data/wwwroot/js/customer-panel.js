@@ -514,7 +514,7 @@
 
         async function cargarUsuarios() {
             if (usuariosCache) return usuariosCache;
-            const response = await api("/api/usuarios");
+            const response = await api("/api/crm/usuarios");
             usuariosCache = response.ok ? await response.json() : [];
             return usuariosCache;
         }
