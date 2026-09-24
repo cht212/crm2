@@ -1,5 +1,6 @@
 ﻿using CRM.Data.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 using System.Text.Json;
 
 namespace CRM.Data.Services;
@@ -21,6 +22,8 @@ public partial class WhatsAppService
 
 public async Task<int> AsignarConversacionesPendientesAsync()
 {
+    await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+
     var pendientes = await _context.Conversaciones
         .Where(c =>
             !c.nUsuarioAsignado.HasValue &&
@@ -63,6 +66,7 @@ public async Task<int> AsignarConversacionesPendientesAsync()
     }
 
     await _context.SaveChangesAsync();
+    await transaction.CommitAsync();
 
     _logger.LogInformation(
         "Asignación automática de pendientes ejecutada. " +
@@ -87,6 +91,8 @@ public async Task<int> AsignarConversacionesPendientesAsync()
 private async Task AsignarAutomaticamenteAsync(
     Conversacion conversacion)
 {
+    await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+
     var asesoresActivos = await ObtenerAsesoresActivosAsync();
 
     if (asesoresActivos.Count == 0)
@@ -106,6 +112,9 @@ private async Task AsignarAutomaticamenteAsync(
     int asesorElegido = ElegirAsesorConMenosCarga(asesoresActivos, cargaPorAsesor);
 
     conversacion.nUsuarioAsignado = asesorElegido;
+
+    await _context.SaveChangesAsync();
+    await transaction.CommitAsync();
 
     _logger.LogInformation(
         "Conversación {ConversacionId} asignada automáticamente al asesor {UsuarioId}.",

@@ -44,7 +44,7 @@ async function cargarModuloComentarios(vista, canal = "TODOS") {
 }
 
 async function cargarModuloFallos(vista) {
-    if (rolActual !== "Administrador" && rolActual !== "Supervisor") {
+    if (!puedeGestionarEquipoCRM()) {
         vista.innerHTML = '<div class="error">Solo administradores y supervisores pueden ver fallos.</div>';
         return;
     }

@@ -215,6 +215,20 @@ public class OportunidadesController : ControllerBase
             return Forbid();
         }
 
+        if (dto.ConversacionId.HasValue)
+        {
+            var conversacionClienteId = await _context.Conversaciones
+                .AsNoTracking()
+                .Where(conversacion => conversacion.nConversacion == dto.ConversacionId.Value)
+                .Select(conversacion => (long?)conversacion.nCliente)
+                .FirstOrDefaultAsync();
+
+            if (conversacionClienteId != dto.ClienteId)
+            {
+                return BadRequest("La conversación no pertenece al cliente indicado.");
+            }
+        }
+
         var oportunidad = new Oportunidad
         {
             nCliente = dto.ClienteId,

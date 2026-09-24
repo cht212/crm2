@@ -141,6 +141,7 @@ public class TareasController : ControllerBase
     }
 
     [HttpPost("revisar-vencidas")]
+    [Authorize(Roles = "Administrador,Supervisor")]
     public async Task<IActionResult> RevisarVencidas()
     {
         var ahora = DateTime.Now;
@@ -183,9 +184,47 @@ public class TareasController : ControllerBase
             return Forbid();
         }
 
+        long? clienteRelacionadoId = dto.ClienteId;
+
+        if (dto.ConversacionId.HasValue)
+        {
+            var conversacionClienteId = await _context.Conversaciones
+                .AsNoTracking()
+                .Where(conversacion => conversacion.nConversacion == dto.ConversacionId.Value)
+                .Select(conversacion => (long?)conversacion.nCliente)
+                .FirstOrDefaultAsync();
+
+            if (!clienteRelacionadoId.HasValue)
+            {
+                clienteRelacionadoId = conversacionClienteId;
+            }
+            else if (clienteRelacionadoId != conversacionClienteId)
+            {
+                return BadRequest("La conversación no pertenece al cliente indicado.");
+            }
+        }
+
+        if (dto.OportunidadId.HasValue)
+        {
+            var oportunidadClienteId = await _context.Oportunidades
+                .AsNoTracking()
+                .Where(oportunidad => oportunidad.nOportunidad == dto.OportunidadId.Value)
+                .Select(oportunidad => (long?)oportunidad.nCliente)
+                .FirstOrDefaultAsync();
+
+            if (!clienteRelacionadoId.HasValue)
+            {
+                clienteRelacionadoId = oportunidadClienteId;
+            }
+            else if (clienteRelacionadoId != oportunidadClienteId)
+            {
+                return BadRequest("La oportunidad no pertenece al cliente indicado.");
+            }
+        }
+
         var tarea = new Tarea
         {
-            nCliente = dto.ClienteId,
+            nCliente = clienteRelacionadoId,
             nConversacion = dto.ConversacionId,
             nOportunidad = dto.OportunidadId,
             cTitulo = dto.Titulo!.Trim(),

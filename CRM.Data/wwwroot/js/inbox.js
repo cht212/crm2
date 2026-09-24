@@ -50,23 +50,24 @@
                 const valorActual = asesorFiltroActivo || "";
                 if (!menu) return;
 
-                const opciones = [
-                    { id: "", label: "Sin filtro", avatar: "A", neutral: false },
-                    { id: "unassigned", label: "Sin asesor", avatar: "U", neutral: true }
-                ];
+                const esAsesor = esRol("asesor");
+                const opciones = esAsesor
+                    ? []
+                    : [
+                        { id: "", label: "Sin filtro", avatar: "A", neutral: false },
+                        { id: "unassigned", label: "Sin asesor", avatar: "U", neutral: true }
+                    ];
 
-                if (normalizarRol(rolActual) === "asesor" && sesionActual?.id) {
-                    opciones.splice(0, 1);
-                }
-
-                usuarios.forEach(usuario => {
-                    opciones.push({
-                        id: String(usuario.id),
-                        label: usuario.nombre || usuario.usuario || `Usuario ${usuario.id}`,
-                        avatar: (usuario.nombre || usuario.usuario || `Usuario ${usuario.id}`).trim().charAt(0).toUpperCase() || "U",
-                        neutral: false
+                usuarios
+                    .filter(usuario => !esAsesor || Number(usuario.id) === Number(sesionActual?.id || 0))
+                    .forEach(usuario => {
+                        opciones.push({
+                            id: String(usuario.id),
+                            label: usuario.nombre || usuario.usuario || `Usuario ${usuario.id}`,
+                            avatar: (usuario.nombre || usuario.usuario || `Usuario ${usuario.id}`).trim().charAt(0).toUpperCase() || "U",
+                            neutral: false
+                        });
                     });
-                });
 
                 menu.innerHTML = opciones.map(opcion => `
                     <button class="inbox-advisor-item ${opcion.id === valorActual ? "active" : ""}" type="button" data-user-id="${opcion.id}" data-user-label="${escapeHtml(opcion.label)}">
@@ -78,12 +79,11 @@
                 menu.querySelectorAll(".inbox-advisor-item").forEach(item => {
                     item.addEventListener("click", () => {
                         const nuevoValor = item.dataset.userId || "";
-                        if (normalizarRol(rolActual) === "asesor") {
+                        if (esRol("asesor")) {
                             asesorFiltroActivo = String(sesionActual?.id || "");
                         } else {
                             asesorFiltroActivo = nuevoValor === "unassigned" ? "unassigned" : nuevoValor;
                         }
-                        sincronizarFiltroReportesDesdeAsesor();
                         actualizarLabelFiltroAsesor(asesorFiltroActivo);
                         mostrarConversaciones();
                         if (typeof cargarModuloDashboard === "function" && moduloActual === "dashboard") {
@@ -290,6 +290,7 @@
         }
 
         function sincronizarFiltroReportesDesdeAsesor() {
+            if (!esRol("asesor")) return;
             if (!asesorFiltroActivo || asesorFiltroActivo === "unassigned") {
                 reportesFiltros.usuarioId = "";
                 return;
@@ -315,6 +316,17 @@
                     (c.nombre || "").toLowerCase().includes(filtro) ||
                     (c.telefono || "").includes(filtro);
                 return coincideCanal && coincideEstado && coincideAsesor && coincideBusqueda;
+            }).sort((a, b) => {
+                const atencionA = a.requiereAtencion ? 1 : 0;
+                const atencionB = b.requiereAtencion ? 1 : 0;
+                if (atencionA !== atencionB) return atencionB - atencionA;
+
+                if (a.requiereAtencion && b.requiereAtencion) {
+                    return obtenerTiempo(a.ultimoMensajeCliente || a.ultimoMensaje) -
+                        obtenerTiempo(b.ultimoMensajeCliente || b.ultimoMensaje);
+                }
+
+                return obtenerTiempo(b.ultimoMensaje) - obtenerTiempo(a.ultimoMensaje);
             });
 
             lista.innerHTML = "";

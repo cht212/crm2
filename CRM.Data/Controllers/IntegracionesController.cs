@@ -3,6 +3,10 @@ using CRM.Data.Models;
 using CRM.Data.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Security.Claims;
+using System.Text;
 
 namespace CRM.Data.Controllers;
 
@@ -93,8 +97,30 @@ public sealed class IntegracionesController : ControllerBase
 
     [HttpGet("{canal}/configuracion")]
     [Authorize(Roles = "Administrador,Supervisor")]
-    public IActionResult Configuracion(string canal, [FromQuery] bool revealSecrets = false)
+    public async Task<IActionResult> Configuracion(string canal, [FromQuery] bool revealSecrets = false)
     {
+        if (revealSecrets && !User.IsInRole("Administrador"))
+        {
+            return Forbid();
+        }
+
+        if (revealSecrets)
+        {
+            int? usuarioId = int.TryParse(
+                User.FindFirstValue(ClaimTypes.NameIdentifier),
+                out var parsedUsuarioId)
+                ? parsedUsuarioId
+                : null;
+
+            await _auditoria.RegistrarAsync(
+                "Integracion",
+                0,
+                "LECTURA_SECRETOS",
+                null,
+                CanalSocial.Normalizar(canal),
+                usuarioId);
+        }
+
         return Ok(_socialIntegrations.GetConfiguration(canal, revealSecrets));
     }
 
@@ -174,9 +200,12 @@ public sealed class IntegracionesController : ControllerBase
 
     [HttpGet("meta/facebook/feed")]
     [Authorize(Roles = "Administrador,Supervisor")]
-    public async Task<IActionResult> FeedFacebook([FromQuery] int limit = 10)
+    public async Task<IActionResult> FeedFacebook(
+        [FromQuery] DateTime? desde = null,
+        [FromQuery] DateTime? hasta = null,
+        [FromQuery] int limit = 10)
     {
-        return Ok(await _metaGraph.ObtenerFacebookFeedAsync(limit));
+        return Ok(await _metaGraph.ObtenerFacebookFeedAsync(desde, hasta, limit));
     }
 
     [HttpGet("meta/estadisticas/diagnostico")]
@@ -223,22 +252,38 @@ public sealed class IntegracionesController : ControllerBase
     {
         using var reader = new StreamReader(Request.Body);
         var payload = await reader.ReadToEndAsync();
+
+        if (!ValidarFirmaMeta(payload))
+        {
+            return Unauthorized();
+        }
+
         try
         {
             var procesados = await _metaWebhook.ProcesarAsync(payload);
 
             _logger.LogInformation(
-                "Webhook Meta recibido para Instagram/Facebook. Eventos procesados: {Procesados}. Payload: {Payload}",
-                procesados,
-                payload);
+                "Webhook Meta recibido para Instagram/Facebook. Eventos procesados: {Procesados}.",
+                procesados);
 
             return Ok(new { success = true, received = true, procesados });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error procesando webhook Meta. Payload: {Payload}", payload);
-            await _auditoria.RegistrarAsync("Integracion", 0, "WEBHOOK_META_ERROR", payload, ex.Message, null);
-            return Ok(new { success = false, received = true, error = ex.Message });
+            _logger.LogError(ex, "Error procesando webhook Meta.");
+            await _auditoria.RegistrarAsync(
+                "Integracion",
+                0,
+                "WEBHOOK_META_ERROR",
+                null,
+                "Error interno al procesar el webhook Meta.",
+                null);
+            return Ok(new
+            {
+                success = false,
+                received = true,
+                error = "Error interno al procesar el webhook."
+            });
         }
     }
 
@@ -259,14 +304,110 @@ public sealed class IntegracionesController : ControllerBase
     {
         using var reader = new StreamReader(Request.Body);
         var payload = await reader.ReadToEndAsync();
-        _logger.LogInformation("Webhook TikTok recibido. Payload: {Payload}", payload);
-        await _auditoria.RegistrarAsync("Integracion", 0, "WEBHOOK_TIKTOK_RECIBIDO", payload, "Pendiente de parser TikTok", null);
+
+        if (!ValidarFirmaTikTok(payload))
+        {
+            return Unauthorized();
+        }
+
+        _logger.LogInformation("Webhook TikTok recibido. Longitud: {PayloadLength}", payload.Length);
+        await _auditoria.RegistrarAsync("Integracion", 0, "WEBHOOK_TIKTOK_RECIBIDO", null, "Pendiente de parser TikTok", null);
 
         return Ok(new { success = true, received = true });
     }
 
+    private bool ValidarFirmaMeta(string payload)
+    {
+        var secret = _socialIntegrations.GetConfiguredValue("Meta:AppSecret") ??
+            _configuration["Meta:AppSecret"];
+        var signature = Request.Headers["X-Hub-Signature-256"].FirstOrDefault();
+
+        return ValidarHmac(payload, secret, signature, "sha256=");
+    }
+
+    private bool ValidarFirmaTikTok(string payload)
+    {
+        var secret = _socialIntegrations.GetConfiguredValue("TikTok:WebhookSecret") ??
+            _configuration["TikTok:WebhookSecret"];
+        var signature = Request.Headers["TikTok-Signature"].FirstOrDefault() ??
+            Request.Headers["X-Tt-Signature"].FirstOrDefault();
+
+        if (string.IsNullOrWhiteSpace(secret) || string.IsNullOrWhiteSpace(signature))
+        {
+            return false;
+        }
+
+        var timestamp = ExtractSignatureValue(signature, "t");
+        var signedValue = ExtractSignatureValue(signature, "s") ??
+            RemoveSignaturePrefix(signature);
+        var payloadToSign = payload;
+
+        if (!string.IsNullOrWhiteSpace(timestamp))
+        {
+            if (!long.TryParse(timestamp, NumberStyles.Integer, CultureInfo.InvariantCulture, out var unixTimestamp))
+            {
+                return false;
+            }
+
+            var age = Math.Abs(DateTimeOffset.UtcNow.ToUnixTimeSeconds() - unixTimestamp);
+            if (age > TimeSpan.FromMinutes(5).TotalSeconds)
+            {
+                return false;
+            }
+
+            payloadToSign = $"{timestamp}.{payload}";
+        }
+
+        return ValidarHmac(payloadToSign, secret, signedValue, null);
+    }
+
+    private static bool ValidarHmac(string payload, string? secret, string? signature, string? requiredPrefix)
+    {
+        if (string.IsNullOrWhiteSpace(secret) || string.IsNullOrWhiteSpace(signature))
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(requiredPrefix) &&
+            !signature.StartsWith(requiredPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var received = RemoveSignaturePrefix(signature);
+        if (received.Length != 64 || !received.All(Uri.IsHexDigit))
+        {
+            return false;
+        }
+
+        using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
+        var expected = Convert.ToHexString(hmac.ComputeHash(Encoding.UTF8.GetBytes(payload)));
+
+        return CryptographicOperations.FixedTimeEquals(
+            Encoding.ASCII.GetBytes(expected),
+            Encoding.ASCII.GetBytes(received.ToUpperInvariant()));
+    }
+
+    private static string RemoveSignaturePrefix(string signature)
+    {
+        var value = signature.Trim();
+        return value.StartsWith("sha256=", StringComparison.OrdinalIgnoreCase)
+            ? value[7..]
+            : value;
+    }
+
+    private static string? ExtractSignatureValue(string signature, string key)
+    {
+        return signature
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(part => part.Split('=', 2, StringSplitOptions.TrimEntries))
+            .Where(parts => parts.Length == 2 && parts[0].Equals(key, StringComparison.OrdinalIgnoreCase))
+            .Select(parts => parts[1])
+            .FirstOrDefault();
+    }
+
     [HttpPost("{canal}/mensajes/prueba")]
-    [Authorize]
+    [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> MensajePrueba(string canal, SocialInboundTestDto dto)
     {
         var conversacionId = await _inbound.RegistrarMensajeEntranteAsync(new SocialInboundMessage(

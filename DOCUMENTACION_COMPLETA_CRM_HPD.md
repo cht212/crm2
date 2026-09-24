@@ -1,263 +1,153 @@
-# Documentacion tecnica completa del CRM HPD
+# Documentación técnica del CRM HPD
 
-Fecha: 18 de septiembre de 2026
+Fecha: 24 de septiembre de 2026
 
-## 1. Objetivo
+## 1. Propósito de esta guía
 
-Este documento explica como esta construido el CRM HPD: carpetas, archivos, responsabilidades, flujo de datos, base de datos, seguridad, integraciones, despliegue recomendado y pendientes tecnicos.
+Esta guía es una versión técnica resumida del CRM HPD.
 
-El manual de uso del CRM esta en `MANUAL_USO_CRM_HPD.md`.
+Su objetivo no es reemplazar el uso operativo del sistema, sino dar una referencia útil para administradores y desarrolladores sobre la estructura real del proyecto y los puntos que conviene revisar cuando hay fallos o cambios de configuración.
 
-## 2. Resumen tecnico
+La guía de operación diaria está en [MANUAL_USO_CRM_HPD.md](MANUAL_USO_CRM_HPD.md).
 
-El proyecto es una aplicacion ASP.NET Core con frontend estatico en `wwwroot`, backend por controladores API, Entity Framework Core para SQL Server, integraciones con Meta/WhatsApp/Instagram/Facebook, almacenamiento de archivos con Cloudinary y configuracion local editable en `App_Data`.
+## 2. Resumen del sistema
 
-Componentes principales:
+El CRM está construido sobre ASP.NET Core con frontend estático y base de datos relacional.
 
-- ASP.NET Core: servidor web, APIs, autenticacion y middleware.
-- Entity Framework Core: acceso a SQL Server.
-- SQL Server LocalDB: base local del CRM.
-- Frontend HTML/CSS/JS: interfaz del usuario.
-- App_Data: configuracion local de bot e integraciones.
-- ngrok: tunel de desarrollo para webhooks publicos.
-- Cloudinary: almacenamiento externo de archivos.
-- Meta Graph API: WhatsApp, Facebook e Instagram.
+Sus componentes principales son:
 
-## 3. Estructura general de carpetas
+- backend ASP.NET Core
+- autenticación por cookies
+- controladores API
+- Entity Framework Core
+- SQL Server LocalDB
+- frontend HTML, CSS y JavaScript
+- subida de archivos con Cloudinary
+- integración con WhatsApp y APIs externas
+- configuración local en App_Data y appsettings.json
 
-### `CRM.Data/`
+## 3. Estructura principal del proyecto
 
-Proyecto principal ASP.NET Core.
+### Proyecto
 
-Contiene:
+- CRM.Data: proyecto principal
+- Controllers: endpoints del sistema
+- Data: DbContext y acceso a datos
+- Models: entidades del negocio
+- Services: lógica de WhatsApp, bot, auditoría y conexiones
+- wwwroot: frontend estático
+- App_Data: configuración local y JSON operativos
+- Migrations: migraciones de base de datos
+- Properties: configuración de ejecución local
 
-- `Program.cs`: arranque de la aplicacion.
-- `appsettings.json`: configuracion base local.
-- `Controllers/`: endpoints HTTP.
-- `Data/`: DbContext.
-- `Models/`: entidades de base de datos.
-- `Services/`: logica de negocio e integraciones.
-- `DTOs/`: objetos de entrada/salida.
-- `Extensions/`: configuracion de servicios, middleware y seguridad.
-- `Migrations/`: migraciones de Entity Framework.
-- `Startup/`: inicializacion de base y datos iniciales.
-- `wwwroot/`: interfaz web.
-- `App_Data/`: archivos JSON locales de configuracion.
+### Archivos clave
 
-### `tools/`
+- Program.cs: arranque de la aplicación
+- appsettings.json: configuración general
+- CrmDbContext.cs: contexto de base de datos
+- index.html: vista principal del CRM
+- login.html: acceso del sistema
 
-Herramientas locales para generar documentacion:
+## 4. Qué es realmente importante técnicamente
 
-- `markdown_to_html.js`: convierte Markdown a HTML.
-- `markdown_to_pdf.js`: convierte Markdown a PDF.
+Para trabajar con el sistema, los puntos que más importan son:
 
-### Documentos raiz
+- conexión a SQL Server
+- configuración de autenticación
+- roles y permisos
+- configuración de WhatsApp
+- token y webhook de integraciones
+- estado del bot
+- manejo de errores y alertas
+- seguridad de configuración local
 
-- `AVANCE_PROYECTO_CRM.md`: avance general del proyecto.
-- `MANUAL_TECNICO_CRM_HPD.md`: manual operativo para personal.
-- `DOCUMENTACION_TECNICA_COMPLETA_CRM_HPD.md`: este documento.
+El resto de la arquitectura interna es útil para mantenimiento, pero no para el uso diario.
 
-## 4. Archivos de arranque y configuracion
+## 5. Configuración relevante
 
-### `CRM.Data/Program.cs`
+### appsettings.json
 
-Archivo de entrada de ASP.NET Core.
+Debe contener los valores mínimos necesarios para que el sistema funcione:
 
-Responsabilidades:
+- cadena de conexión a base de datos
+- usuario administrador inicial
+- token y webhook de WhatsApp
+- Cloudinary para archivos
+- flags de envío real
+- configuración del bot
 
-- Crear el builder.
-- Registrar servicios.
-- Registrar base de datos.
-- Registrar autenticacion por cookies.
-- Registrar rate limiting.
-- Configurar CORS.
-- Configurar headers de seguridad.
-- Inicializar base de datos.
-- Publicar archivos estaticos.
-- Activar autenticacion y autorizacion.
-- Mapear controladores.
-- Mapear fallback hacia `index.html`.
+### App_Data
 
-### `CRM.Data/appsettings.json`
+Aquí se guardan configuraciones operativas locales, como:
 
-Configuracion local del proyecto.
+- bot de WhatsApp
+- integraciones externas
+- archivos de configuración del sistema
 
-Puede incluir:
+Estas rutas no deben usarse como almacenamiento de trabajo diario, sino como parte de la configuración de operación.
 
-- Connection string.
-- Versiones de API.
-- Tokens de integracion.
-- App IDs.
-- Flags de envio real.
-- Configuracion Cloudinary.
+## 6. Seguridad básica
 
-Recomendacion de seguridad:
+Lo relevante para administración es esto:
 
-- No usar secretos reales en repositorios.
-- En produccion usar variables de entorno o secret manager.
-- Regenerar tokens o secretos que hayan sido expuestos en capturas o chats.
+- usar roles bien definidos
+- no exponer secretos reales en repositorio
+- guardar claves en variables de entorno o servicio seguro
+- usar permisos por rol
+- limitar acceso de asesores a su propio alcance
+- monitorizar fallos y actividad
 
-### `CRM.Data/Properties/launchSettings.json`
+## 7. Integraciones externas
 
-Configuracion de ejecucion local en Visual Studio.
+Las integraciones se usan para conectar:
 
-Define:
+- WhatsApp
+- Facebook/Instagram
+- TikTok como canal futuro
+- Cloudinary para archivos públicos
+- webhook para notificaciones de entrada/salida
 
-- Perfiles de arranque.
-- URLs locales.
-- Variables de entorno de desarrollo.
+Lo importante en operación no es saber cada endpoint del proyecto, sino saber si:
 
-## 5. Controllers
+- el canal está activo
+- la conexión está autorizada
+- el token es válido
+- el webhook responde
+- hay fallos o mensajes no enviados
 
-Los controladores son los endpoints HTTP que consume el frontend o los webhooks externos.
+## 8. Qué debe quedar fuera de la guía operativa
 
-### `AuthenticationController.cs`
+Los detalles de:
 
-Maneja autenticacion.
+- estructura de carpetas
+- nombre de cada controlador
+- flujo exacto de cada endpoint
+- explicación exhaustiva de servicios
+- roadmap técnico
+- diagramas de infraestructura
 
-Endpoints principales:
+no son necesarios para la operación diaria y hacen que la documentación se vuelva más pesada que útil.
 
-- Login.
-- Logout.
-- Usuario actual.
+## 9. Visión recomendada
 
-Seguridad:
+La documentación de proyecto debe dividirse en dos capas:
 
-- Usa cookies.
-- Hashea contrasenas.
-- Aplica bloqueo por intentos fallidos.
-- Aplica rate limiting al login.
+1. Operativa: para equipo de negocio, supervisor y asesor
+2. Técnica: para administración del sistema, soporte y desarrollo
 
-### `CrmManagementController.cs`
+Así se mantiene clara la prioridad real del negocio:
 
-Controlador central del CRM.
+- atender bien al cliente
+- gestionar tareas y oportunidades
+- controlar flujo y rendimiento
+- mantener el sistema correcto sin perder tiempo en detalles de implementación
 
-Responsabilidades:
+## 10. Cierre
 
-- Contactos.
-- Pipeline.
-- Usuarios.
-- Estados de conversacion.
-- Tomar conversacion.
-- Asignar conversacion.
-- Actualizar perfil Meta.
-- Actividad.
-- Exportar contactos.
-- Comentarios.
-- Fallos.
-- Reportes.
+El CRM es útil cuando la operación cotidiana está clara, ordenada y enfocada en el cliente.
 
-Seguridad:
+La parte técnica debe apoyar eso, no competir con la productividad del equipo.
 
-- Requiere rol `Administrador`, `Supervisor` o `Asesor`.
-- Usa `CrmAccessService` para filtrar clientes, conversaciones y mensajes cuando el usuario es asesor.
-- Admin/supervisor ven todo.
-- Asesor ve lo asignado y las conversaciones nuevas sin asignar que puede tomar; no ve conversaciones de otros asesores.
-
-### `WhatsAppController.cs`
-
-Maneja WhatsApp y endpoints de conversaciones.
-
-Responsabilidades:
-
-- Verificacion de webhook.
-- Recepcion de webhooks de WhatsApp.
-- Consulta de conversaciones.
-- Consulta de una conversacion.
-- Envio de mensajes.
-- Indicador de escritura.
-- Cambiar estado del bot por conversacion.
-
-Seguridad:
-
-- Webhook de Meta permite acceso anonimo solo para verificacion/recepcion.
-- Conversaciones y envio requieren autenticacion.
-- Asesor puede operar conversaciones asignadas y tomar conversaciones nuevas sin asignar; no puede operar conversaciones de otros asesores.
-
-### `WhatsAppAttachmentsController.cs`
-
-Maneja envio de archivos desde conversaciones.
-
-Responsabilidades:
-
-- Validar tamano maximo.
-- Validar extension permitida.
-- Subir archivo a Cloudinary.
-- Registrar mensaje de archivo.
-- Enviar archivo por el canal cuando aplique.
-
-Seguridad:
-
-- Requiere autenticacion.
-- Valida acceso a la conversacion.
-- Limita tipos de archivo.
-- Limita tamano a 15 MB.
-
-### `OportunidadesController.cs`
-
-Maneja oportunidades de venta.
-
-Responsabilidades:
-
-- Listar oportunidades.
-- Exportar oportunidades.
-- Resumen por etapa.
-- Crear oportunidad.
-- Cambiar etapa.
-- Asignar oportunidad.
-
-Seguridad:
-
-- Admin/supervisor ven todo.
-- Asesor solo ve oportunidades propias o vinculadas a clientes/conversaciones asignadas.
-- Asesor no puede forzar asignacion a otro usuario al crear.
-
-### `TareasController.cs`
-
-Maneja tareas de seguimiento.
-
-Responsabilidades:
-
-- Listar tareas.
-- Crear tarea.
-- Completar tarea.
-- Cancelar tarea.
-
-Seguridad:
-
-- Admin/supervisor ven todo.
-- Asesor solo ve tareas propias o relacionadas con sus clientes/conversaciones.
-- Asesor no puede crear tareas asignadas a otro usuario.
-
-### `NotasController.cs`
-
-Maneja notas internas por cliente.
-
-Responsabilidades:
-
-- Listar notas.
-- Crear notas.
-
-Seguridad:
-
-- El asesor solo puede ver o crear notas de clientes permitidos.
-- Si la nota referencia una conversacion, tambien se valida acceso a esa conversacion.
-
-### `EtiquetasController.cs`
-
-Maneja etiquetas.
-
-Responsabilidades:
-
-- Listar etiquetas.
-- Crear etiquetas.
-- Asignar etiqueta a cliente.
-- Quitar etiqueta de cliente.
-- Ver etiquetas de un cliente.
-
-Seguridad:
-
-- Crear etiquetas queda para admin/supervisor.
 - Asignar o quitar etiquetas valida acceso al cliente.
 
 ### `BotController.cs`

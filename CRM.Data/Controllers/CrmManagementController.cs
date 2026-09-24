@@ -165,7 +165,7 @@ public class CrmManagementController : ControllerBase
             cTelefono = telefono,
             cEmail = dto.Email,
             cDocumento = dto.Documento,
-            cCanalOrigen = CanalSocial.WhatsApp,
+            cCanalOrigen = CanalSocial.Normalizar(dto.CanalOrigen),
             dFechaRegistro = DateTime.Now,
             cEstado = 'A'
         };
@@ -181,7 +181,7 @@ public class CrmManagementController : ControllerBase
                 nCliente = clienteNuevo.nCliente,
                 nUsuarioAsignado = UsuarioActualId.Value,
                 cEstado = "EN_ATENCION",
-                cCanal = CanalSocial.WhatsApp,
+                cCanal = clienteNuevo.cCanalOrigen,
                 cExternalThreadId = clienteNuevo.cTelefono,
                 cBotEstado = "PAUSADO",
                 dFechaInicio = DateTime.Now,
@@ -311,9 +311,21 @@ public class CrmManagementController : ControllerBase
     [HttpGet("usuarios")]
     public async Task<IActionResult> Usuarios()
     {
-        var result = await _context.Usuarios
+        if (!_access.TieneAccesoGlobal && !UsuarioActualId.HasValue)
+        {
+            return Forbid();
+        }
+
+        var query = _context.Usuarios
             .AsNoTracking()
-            .Where(usuario => usuario.cEstado == 'A')
+            .Where(usuario => usuario.cEstado == 'A');
+
+        if (!_access.TieneAccesoGlobal)
+        {
+            query = query.Where(usuario => usuario.nUsuario == UsuarioActualId!.Value);
+        }
+
+        var result = await query
             .OrderBy(usuario => usuario.cNombre)
             .Select(usuario => new
             {
@@ -356,7 +368,7 @@ public class CrmManagementController : ControllerBase
             cUsuario = usuario,
             cNombre = nombre,
             cEstado = 'A',
-            cRol = rol.Equals("Supervisor", StringComparison.OrdinalIgnoreCase) ? "Supervisor" : "Asesor"
+            cRol = CrmRoles.Normalize(rol)
         };
         nuevoUsuario.cPasswordHash = _hasher.HashPassword(nuevoUsuario, dto.Password);
         _context.Usuarios.Add(nuevoUsuario);
@@ -411,6 +423,30 @@ public class CrmManagementController : ControllerBase
         if (!await _access.PuedeAccederConversacionAsync(id))
         {
             return Forbid();
+        }
+
+        if (estado == "CERRADO")
+        {
+            var tieneTareasAbiertas = await _context.Tareas
+                .AsNoTracking()
+                .AnyAsync(tarea =>
+                    tarea.nConversacion == id &&
+                    tarea.cEstado != "COMPLETADA" &&
+                    tarea.cEstado != "CANCELADA");
+
+            var tieneOportunidadesAbiertas = await _context.Oportunidades
+                .AsNoTracking()
+                .AnyAsync(oportunidad =>
+                    oportunidad.nConversacion == id &&
+                    oportunidad.cEtapa != "GANADA" &&
+                    oportunidad.cEtapa != "PERDIDA");
+
+            if (tieneTareasAbiertas || tieneOportunidadesAbiertas)
+            {
+                return BadRequest(
+                    "No se puede cerrar la conversación mientras tenga tareas u oportunidades abiertas. " +
+                    "Completa o reprograma la próxima acción antes de cerrarla.");
+            }
         }
 
         var estadoAnterior = conversacion.cEstado;
@@ -616,7 +652,7 @@ public class CrmManagementController : ControllerBase
     }
 
     [HttpGet("actividad")]
-    [Authorize(Roles = "Administrador,Supervisor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor")]
     public async Task<IActionResult> Actividad(
         [FromQuery] string? entidad = null,
         [FromQuery] long? entidadId = null,
@@ -627,6 +663,20 @@ public class CrmManagementController : ControllerBase
         pageSize = pageSize is < 1 or > 200 ? 50 : pageSize;
 
         var query = _context.ActividadLogs.AsNoTracking().AsQueryable();
+        if (!_access.TieneAccesoGlobal)
+        {
+            var conversacionesAccesibles = _access
+                .FiltrarConversaciones(_context.Conversaciones.AsNoTracking())
+                .Select(conversacion => conversacion.nConversacion);
+            var clientesAccesibles = _access
+                .FiltrarClientes(_context.Clientes.AsNoTracking())
+                .Select(cliente => cliente.nCliente);
+
+            query = query.Where(log =>
+                (log.cEntidad == "Conversacion" && conversacionesAccesibles.Contains(log.nEntidadId)) ||
+                (log.cEntidad == "Cliente" && clientesAccesibles.Contains(log.nEntidadId)));
+        }
+
         if (!string.IsNullOrWhiteSpace(entidad)) query = query.Where(a => a.cEntidad == entidad);
         if (entidadId.HasValue) query = query.Where(a => a.nEntidadId == entidadId.Value);
 
@@ -697,7 +747,7 @@ public class CrmManagementController : ControllerBase
     }
 
     [HttpGet("comentarios")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor")]
+    [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> Comentarios([FromQuery] string? canal = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 100)
     {
         page = page < 1 ? 1 : page;
@@ -740,7 +790,7 @@ public class CrmManagementController : ControllerBase
     }
 
     [HttpGet("fallos")]
-    [Authorize(Roles = "Administrador,Supervisor")]
+    [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> Fallos([FromQuery] int page = 1, [FromQuery] int pageSize = 100)
     {
         page = page < 1 ? 1 : page;
@@ -857,12 +907,27 @@ public class CrmManagementController : ControllerBase
     }
 
     [HttpGet("reportes/resumen")]
-    [Authorize(Roles = "Administrador,Supervisor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor")]
     public async Task<IActionResult> ReporteResumen(
         [FromQuery] DateTime? desde = null,
         [FromQuery] DateTime? hasta = null,
         [FromQuery] int? usuarioId = null)
     {
+        if (!_access.TieneAccesoGlobal)
+        {
+            if (!UsuarioActualId.HasValue)
+            {
+                return Forbid();
+            }
+
+            if (usuarioId.HasValue && usuarioId.Value != UsuarioActualId.Value)
+            {
+                return Forbid();
+            }
+
+            usuarioId = UsuarioActualId.Value;
+        }
+
         var fechaDesde = desde?.Date;
         var fechaHasta = hasta?.Date;
         var fechaHastaExclusiva = fechaHasta?.AddDays(1);
@@ -930,9 +995,15 @@ public class CrmManagementController : ControllerBase
             .Where(item => item.etapa == "PERDIDA")
             .Sum(item => item.cantidad);
 
-        var usuarios = await _context.Usuarios
+        var usuariosQuery = _context.Usuarios
             .AsNoTracking()
-            .Where(usuario => usuario.cEstado == 'A')
+            .Where(usuario => usuario.cEstado == 'A');
+        if (usuarioId.HasValue)
+        {
+            usuariosQuery = usuariosQuery.Where(usuario => usuario.nUsuario == usuarioId.Value);
+        }
+
+        var usuarios = await usuariosQuery
             .Select(usuario => new
             {
                 usuarioId = usuario.nUsuario,
@@ -941,20 +1012,32 @@ public class CrmManagementController : ControllerBase
             })
             .ToListAsync();
 
-        var conversacionesActivasPorAsesor = await _context.Conversaciones
+        var conversacionesActivasQuery = _context.Conversaciones
             .AsNoTracking()
             .Where(conversacion =>
                 conversacion.nUsuarioAsignado.HasValue &&
                 conversacion.cEstado != "CERRADO" &&
                 conversacion.cEstado != "PERDIDO" &&
-                conversacion.cEstado != "NO_RESPONDIO")
+                conversacion.cEstado != "NO_RESPONDIO");
+        if (usuarioId.HasValue)
+        {
+            conversacionesActivasQuery = conversacionesActivasQuery.Where(conversacion => conversacion.nUsuarioAsignado == usuarioId.Value);
+        }
+
+        var conversacionesActivasPorAsesor = await conversacionesActivasQuery
             .GroupBy(conversacion => conversacion.nUsuarioAsignado!.Value)
             .Select(grupo => new { usuarioId = grupo.Key, conversacionesActivas = grupo.Count() })
             .ToListAsync();
 
-        var tareasPorAsesor = await _context.Tareas
+        var tareasPorAsesorQuery = _context.Tareas
             .AsNoTracking()
-            .Where(tarea => tarea.nAsignadoA.HasValue && tarea.cEstado == "PENDIENTE")
+            .Where(tarea => tarea.nAsignadoA.HasValue && tarea.cEstado == "PENDIENTE");
+        if (usuarioId.HasValue)
+        {
+            tareasPorAsesorQuery = tareasPorAsesorQuery.Where(tarea => tarea.nAsignadoA == usuarioId.Value);
+        }
+
+        var tareasPorAsesor = await tareasPorAsesorQuery
             .GroupBy(tarea => tarea.nAsignadoA!.Value)
             .Select(grupo => new
             {
@@ -964,12 +1047,18 @@ public class CrmManagementController : ControllerBase
             })
             .ToListAsync();
 
-        var oportunidadesPorAsesor = await _context.Oportunidades
+        var oportunidadesPorAsesorQuery = _context.Oportunidades
             .AsNoTracking()
             .Where(oportunidad =>
                 oportunidad.nUsuarioAsignado.HasValue &&
                 oportunidad.cEtapa != "GANADA" &&
-                oportunidad.cEtapa != "PERDIDA")
+                oportunidad.cEtapa != "PERDIDA");
+        if (usuarioId.HasValue)
+        {
+            oportunidadesPorAsesorQuery = oportunidadesPorAsesorQuery.Where(oportunidad => oportunidad.nUsuarioAsignado == usuarioId.Value);
+        }
+
+        var oportunidadesPorAsesor = await oportunidadesPorAsesorQuery
             .GroupBy(oportunidad => oportunidad.nUsuarioAsignado!.Value)
             .Select(grupo => new
             {
@@ -1290,6 +1379,8 @@ public sealed class ContactoDto
         get => _documento;
         set => _documento = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
+
+    public string? CanalOrigen { get; set; } = CanalSocial.WhatsApp;
 }
 
 public sealed class CrearUsuarioDto

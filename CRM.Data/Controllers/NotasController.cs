@@ -82,6 +82,20 @@ public class NotasController : ControllerBase
             return Forbid();
         }
 
+        if (dto.ConversacionId.HasValue)
+        {
+            var conversacionClienteId = await _context.Conversaciones
+                .AsNoTracking()
+                .Where(conversacion => conversacion.nConversacion == dto.ConversacionId.Value)
+                .Select(conversacion => (long?)conversacion.nCliente)
+                .FirstOrDefaultAsync();
+
+            if (conversacionClienteId != clienteId)
+            {
+                return BadRequest("La conversación no pertenece al cliente indicado.");
+            }
+        }
+
         var usuarioId = UsuarioActualId;
         if (usuarioId == null) return Unauthorized();
 

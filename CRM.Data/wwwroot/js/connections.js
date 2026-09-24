@@ -2,13 +2,18 @@
 // Mantiene variables y funciones globales para compatibilidad con la vista actual.
 
         async function cargarModuloConexiones(vista) {
-            const response = await api("/api/integraciones/estado");
+            const [response, resumenResponse] = await Promise.all([
+                api("/api/integraciones/estado"),
+                api("/api/crm/reportes/resumen")
+            ]);
             if (!response.ok) throw new Error("Conexiones no disponibles");
             const estadoIntegraciones = await response.json();
+            const resumenCrm = resumenResponse.ok ? await resumenResponse.json() : {};
             const whatsapp = estadoIntegraciones.whatsapp || {};
             const cloudinary = estadoIntegraciones.cloudinary || {};
             const bot = estadoIntegraciones.bot || {};
             const canalesIntegracion = estadoIntegraciones.canales || [];
+            const metricasPorCanal = resumenCrm.canales || [];
             const webhookUrl = `${window.location.origin}/api/whatsapp/webhook`;
             const whatsappListo = Boolean(
                 whatsapp.verifyToken &&
@@ -66,12 +71,25 @@
             const canales = canalesBase.map(canal => {
                 const estadoCanal = canalesIntegracion.find(item =>
                     String(item.canal || "").toUpperCase() === canal.clase.toUpperCase());
-                if (!estadoCanal) return canal;
+                const metricas = metricasPorCanal.find(item =>
+                    String(item.canal || "").toUpperCase() === canal.clase.toUpperCase()) || {};
+                const canalConMetricas = {
+                    ...canal,
+                    metricas: {
+                        contactos: Number(metricas.clientes || 0),
+                        conversaciones: Number(metricas.conversaciones || 0),
+                        entrantes: Number(metricas.entrantes || 0),
+                        salientes: Number(metricas.salientes || 0),
+                        interacciones: Number(metricas.interacciones || 0),
+                        oportunidades: Number(metricas.oportunidades || 0)
+                    }
+                };
+                if (!estadoCanal) return canalConMetricas;
                 const faltantes = (estadoCanal.requiredConfig || [])
                     .filter(item => !item.configured)
                     .map(item => item.key);
                 return {
-                    ...canal,
+                    ...canalConMetricas,
                     estado: estadoCanal.connected ? "Conectado" : "Pendiente",
                     detalle: estadoCanal.connected
                         ? `${estadoCanal.provider} configurado`
@@ -123,6 +141,12 @@
                             <p>${canal.descripcion}</p>
                             <small>${canal.detalle}</small>
                             ${canal.allowList?.length ? `<small>Permitir red: ${canal.allowList.map(escapeHtml).join(", ")}</small>` : ""}
+                            <div class="connection-channel-metrics">
+                                <span><strong>${formatearNumero(canal.metricas.contactos)}</strong> contactos</span>
+                                <span><strong>${formatearNumero(canal.metricas.conversaciones)}</strong> conversaciones</span>
+                                <span><strong>${formatearNumero(canal.metricas.interacciones)}</strong> interacciones</span>
+                                <span><strong>${formatearNumero(canal.metricas.oportunidades)}</strong> oportunidades</span>
+                            </div>
                             <div class="connection-actions">
                                 <button type="button" class="connection-action secondary" data-config-channel="${canal.clase}">Configurar</button>
                                 ${canal.oauthStartUrl ? `<button type="button" class="connection-action" data-oauth-channel="${canal.clase}">Conectar</button>` : ""}

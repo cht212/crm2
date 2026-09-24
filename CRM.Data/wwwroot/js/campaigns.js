@@ -2,7 +2,7 @@
 // Gestiona campañas de prospección y activación comercial del CRM.
 
         async function cargarModuloCampanas(vista) {
-            const puedeGestionarEquipo = rolActual === "Administrador" || rolActual === "Supervisor";
+            const puedeGestionarEquipo = puedeGestionarEquipoCRM();
             const [campanasResponse, contactosResponse, usuarios] = await Promise.all([
                 api("/api/campanas?pageSize=200"),
                 api("/api/crm/contactos"),

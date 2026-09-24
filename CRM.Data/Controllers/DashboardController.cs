@@ -27,6 +27,16 @@ public class DashboardController : ControllerBase
     {
         var usuarioActualId = _access.UsuarioActualId;
 
+        if (!_access.TieneAccesoGlobal)
+        {
+            if (!usuarioActualId.HasValue)
+            {
+                return Forbid();
+            }
+
+            usuarioId = usuarioActualId.Value;
+        }
+
         if (usuarioId.HasValue)
         {
             if (!_access.TieneAccesoGlobal && usuarioActualId != usuarioId.Value)
@@ -80,9 +90,16 @@ public class DashboardController : ControllerBase
         var montoTotalPendiente = await oportunidadesQuery.Where(o => o.cEtapa != "GANADA" && o.cEtapa != "PERDIDA").SumAsync(o => (decimal?)o.nMonto) ?? 0m;
         var montoTotalGanado = await oportunidadesQuery.Where(o => o.cEtapa == "GANADA").SumAsync(o => (decimal?)o.nMonto) ?? 0m;
 
-        var porAsesor = await _context.Usuarios
+        var asesoresQuery = _context.Usuarios
             .AsNoTracking()
-            .Where(u => u.cEstado == 'A')
+            .Where(u => u.cEstado == 'A');
+
+        if (filtroUsuario.HasValue)
+        {
+            asesoresQuery = asesoresQuery.Where(u => u.nUsuario == filtroUsuario.Value);
+        }
+
+        var porAsesor = await asesoresQuery
             .Select(u => new
             {
                 usuarioId = u.nUsuario,
@@ -116,9 +133,14 @@ public class DashboardController : ControllerBase
     [HttpGet("carga-asesores")]
     public async Task<IActionResult> CargaAsesores([FromQuery] int? usuarioId = null)
     {
-        if (usuarioId.HasValue && !_access.TieneAccesoGlobal && _access.UsuarioActualId != usuarioId.Value)
+        if (!_access.TieneAccesoGlobal)
         {
-            return Forbid();
+            if (!_access.UsuarioActualId.HasValue)
+            {
+                return Forbid();
+            }
+
+            usuarioId = _access.UsuarioActualId.Value;
         }
 
         var asesoresQuery = _context.Usuarios
@@ -169,6 +191,161 @@ public class DashboardController : ControllerBase
             total = items.Count,
             usuarioId = usuarioId,
             items
+        });
+    }
+
+    [HttpGet("hoy")]
+    public async Task<IActionResult> Hoy([FromQuery] int? usuarioId = null)
+    {
+        var usuarioActualId = _access.UsuarioActualId;
+        if (!_access.TieneAccesoGlobal)
+        {
+            if (!usuarioActualId.HasValue)
+            {
+                return Forbid();
+            }
+
+            usuarioId = usuarioActualId.Value;
+        }
+
+        if (usuarioId.HasValue && !await _context.Usuarios.AsNoTracking()
+                .AnyAsync(usuario => usuario.nUsuario == usuarioId.Value && usuario.cEstado == 'A'))
+        {
+            return NotFound("El usuario seleccionado no existe o no está activo.");
+        }
+
+        var ahora = DateTime.Now;
+        var inicioHoy = ahora.Date;
+        var inicioManana = inicioHoy.AddDays(1);
+        var limiteOportunidades = inicioHoy.AddDays(7);
+        var limiteFuturo = inicioManana;
+
+        var clientesQuery = _access.FiltrarClientes(_context.Clientes.AsNoTracking());
+        var conversacionesQuery = _access.FiltrarConversaciones(_context.Conversaciones.AsNoTracking());
+        var tareasQuery = _access.FiltrarTareas(_context.Tareas.AsNoTracking());
+        var oportunidadesQuery = _access.FiltrarOportunidades(_context.Oportunidades.AsNoTracking());
+
+        if (usuarioId.HasValue && _access.TieneAccesoGlobal)
+        {
+            clientesQuery = clientesQuery.Where(cliente => cliente.Conversaciones.Any(conversacion => conversacion.nUsuarioAsignado == usuarioId.Value));
+            conversacionesQuery = conversacionesQuery.Where(conversacion => conversacion.nUsuarioAsignado == usuarioId.Value);
+            tareasQuery = tareasQuery.Where(tarea => tarea.nAsignadoA == usuarioId.Value);
+            oportunidadesQuery = oportunidadesQuery.Where(oportunidad => oportunidad.nUsuarioAsignado == usuarioId.Value);
+        }
+
+        var clientesNuevos = await clientesQuery
+            .Where(cliente => cliente.dFechaRegistro >= inicioHoy)
+            .OrderByDescending(cliente => cliente.dFechaRegistro)
+            .Take(50)
+            .Select(cliente => new
+            {
+                id = cliente.nCliente,
+                nombre = cliente.cNombre,
+                canal = cliente.cCanalOrigen,
+                fecha = cliente.dFechaRegistro,
+                conversacionId = cliente.Conversaciones
+                    .OrderByDescending(conversacion => conversacion.dUltimoMensaje)
+                    .Select(conversacion => (long?)conversacion.nConversacion)
+                    .FirstOrDefault()
+            })
+            .ToListAsync();
+
+        var mensajesPendientes = await conversacionesQuery
+            .Where(conversacion =>
+                conversacion.cEstado != "CERRADO" &&
+                conversacion.cEstado != "PERDIDO" &&
+                conversacion.cEstado != "NO_RESPONDIO" &&
+                conversacion.dUltimoMensajeCliente.HasValue &&
+                (!conversacion.Mensajes.Any(mensaje => mensaje.cDireccion == 'S' && mensaje.cTipo != "bot") ||
+                 conversacion.dUltimoMensajeCliente > conversacion.Mensajes
+                    .Where(mensaje => mensaje.cDireccion == 'S' && mensaje.cTipo != "bot")
+                    .Max(mensaje => (DateTime?)mensaje.dFecha)))
+            .OrderByDescending(conversacion => conversacion.dUltimoMensajeCliente)
+            .Take(50)
+            .Select(conversacion => new
+            {
+                id = conversacion.nConversacion,
+                clienteId = conversacion.nCliente,
+                nombre = conversacion.Cliente.cNombre,
+                canal = conversacion.cCanal,
+                estado = conversacion.cEstado,
+                fecha = conversacion.dUltimoMensajeCliente
+            })
+            .ToListAsync();
+
+        var tareasHoy = await tareasQuery
+            .Where(tarea => tarea.cEstado == "PENDIENTE" && tarea.dFechaVencimiento < inicioManana)
+            .OrderBy(tarea => tarea.dFechaVencimiento)
+            .Take(50)
+            .Select(tarea => new
+            {
+                id = tarea.nTarea,
+                titulo = tarea.cTitulo,
+                vence = tarea.dFechaVencimiento,
+                vencida = tarea.dFechaVencimiento < ahora,
+                clienteId = tarea.nCliente,
+                conversacionId = tarea.nConversacion,
+                cliente = tarea.Cliente == null ? null : tarea.Cliente.cNombre
+            })
+            .ToListAsync();
+
+        var oportunidadesAccion = await oportunidadesQuery
+            .Where(oportunidad =>
+                oportunidad.cEtapa != "GANADA" &&
+                oportunidad.cEtapa != "PERDIDA" &&
+                ((!oportunidad.dFechaActualizacion.HasValue || oportunidad.dFechaActualizacion < ahora.AddDays(-3)) ||
+                 (oportunidad.dFechaCierreEstimada.HasValue && oportunidad.dFechaCierreEstimada <= limiteOportunidades) ||
+                 oportunidad.cEtapa == "PROPUESTA" ||
+                 oportunidad.cEtapa == "NEGOCIACION"))
+            .OrderBy(oportunidad => oportunidad.dFechaCierreEstimada ?? DateTime.MaxValue)
+            .ThenBy(oportunidad => oportunidad.dFechaActualizacion ?? oportunidad.dFechaCreacion)
+            .Take(50)
+            .Select(oportunidad => new
+            {
+                id = oportunidad.nOportunidad,
+                titulo = oportunidad.cTitulo,
+                etapa = oportunidad.cEtapa,
+                monto = oportunidad.nMonto,
+                moneda = oportunidad.cMoneda,
+                clienteId = oportunidad.nCliente,
+                conversacionId = oportunidad.nConversacion,
+                cliente = oportunidad.Cliente.cNombre,
+                fechaCierreEstimada = oportunidad.dFechaCierreEstimada
+            })
+            .ToListAsync();
+
+        var tareasFuturas = await tareasQuery
+            .Where(tarea => tarea.cEstado == "PENDIENTE" && tarea.dFechaVencimiento >= limiteFuturo)
+            .OrderBy(tarea => tarea.dFechaVencimiento)
+            .Take(50)
+            .Select(tarea => new
+            {
+                id = tarea.nTarea,
+                titulo = tarea.cTitulo,
+                vence = tarea.dFechaVencimiento,
+                clienteId = tarea.nCliente,
+                conversacionId = tarea.nConversacion,
+                cliente = tarea.Cliente == null ? null : tarea.Cliente.cNombre
+            })
+            .ToListAsync();
+
+        return Ok(new
+        {
+            fecha = inicioHoy,
+            usuarioId,
+            hoy = new
+            {
+                clientesNuevos,
+                mensajesPendientes,
+                tareas = tareasHoy,
+                oportunidades = oportunidadesAccion,
+                total = clientesNuevos.Count + mensajesPendientes.Count + tareasHoy.Count + oportunidadesAccion.Count
+            },
+            futuro = new
+            {
+                tareas = tareasFuturas,
+                total = tareasFuturas.Count
+            }
         });
     }
 }

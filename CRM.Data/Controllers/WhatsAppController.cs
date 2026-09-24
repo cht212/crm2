@@ -505,8 +505,8 @@ namespace CRM.Data.Controllers
                 _configuration["WhatsApp:AppSecret"];
             if (string.IsNullOrWhiteSpace(appSecret))
             {
-                _logger.LogWarning("WhatsApp:AppSecret no estÃ¡ configurado; se omite la validaciÃ³n de firma para pruebas locales.");
-                return true;
+                _logger.LogError("WhatsApp:AppSecret no estÃ¡ configurado; se rechaza el webhook por seguridad.");
+                return false;
             }
 
             var signature = Request.Headers["X-Hub-Signature-256"].FirstOrDefault();

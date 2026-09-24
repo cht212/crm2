@@ -241,6 +241,7 @@ namespace CRM.Data.Migrations
                     b.Property<string>("cCanal")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(32)
                         .HasColumnName("c_canal");
 
                     b.Property<string>("cEstado")
@@ -421,6 +422,7 @@ namespace CRM.Data.Migrations
 
                     b.Property<string>("cExternalId")
                         .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(450)
                         .HasColumnName("c_external_id");
 
                     b.Property<string>("cMensaje")
@@ -447,6 +449,10 @@ namespace CRM.Data.Migrations
                     b.HasKey("nMensaje");
 
                     b.HasIndex("nConversacion");
+
+                    b.HasIndex("cCanal", "cDireccion", "cExternalId")
+                        .IsUnique()
+                        .HasFilter("[c_direccion] = 'E' AND [c_external_id] IS NOT NULL");
 
                     b.ToTable("crm_mensaje", (string)null);
                 });

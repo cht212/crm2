@@ -1,238 +1,180 @@
-# Manual operativo del CRM HPD
+﻿# Manual operativo del CRM HPD
 
-Fecha: 18 de septiembre de 2026
+Fecha de actualización: 24 de septiembre de 2026
 
-## 1. Objetivo del manual
+## 1. Objetivo
 
-Este manual esta pensado para el personal que va a entrar al CRM y necesita entender que hace cada seccion, para que sirve y cuando debe usarla.
+Este manual está pensado para uso real del negocio, no para desarrollo.
 
-No es un manual de programacion. La documentacion completa del codigo, carpetas, base de datos, seguridad e integraciones esta en `DOCUMENTACION_COMPLETA_CRM_HPD.md`.
+El CRM HPD sirve para centralizar la atención al cliente, especialmente por WhatsApp, y convertir esa atención en seguimiento, tareas, oportunidades y control operativo.
 
-## 2. Que es el CRM HPD
+La idea principal es simple:
 
-El CRM HPD es una plataforma para centralizar la atencion de clientes, principalmente por WhatsApp. Permite trabajar con conversaciones, clientes, tareas, ventas, notas, etiquetas, reportes, usuarios, bot y conexiones con plataformas externas.
+- atender conversaciones desde una sola vista
+- asignar responsable
+- seguir clientes con historial
+- registrar tareas pendientes
+- convertir interés en venta
+- supervisar el trabajo del equipo
 
-La idea principal es que cada cliente tenga historial y seguimiento. No se atiende solo un mensaje aislado; se atiende una ficha completa con datos, conversacion, responsable, pendientes y oportunidades comerciales.
+## 2. Roles reales del sistema
 
-## 3. Roles de usuario
+Los perfiles operativos activos en la aplicación son estos tres:
 
 ### Administrador
 
-El administrador ve todo el sistema.
+Tiene acceso completo al sistema.
 
-Puede:
+Debe revisar:
 
-- Configurar conexiones.
-- Crear usuarios.
-- Revisar todos los clientes y conversaciones.
-- Ver reportes.
-- Revisar actividad y fallos.
-- Configurar bot.
-- Supervisar seguridad operativa.
+- usuarios
+- permisos
+- conexiones externas
+- bot
+- alertas y fallos
+- reportes de operación
+- configuración general
 
 ### Supervisor
 
-El supervisor controla la operacion diaria sin administrar claves sensibles ni usuarios.
+Controla la operación diaria sin entrar a configuraciones técnicas sensibles.
 
-Puede:
+Debe revisar:
 
-- Ver dashboard operativo.
-- Revisar conversaciones.
-- Asignar asesores.
-- Ver contactos.
-- Ver tareas.
-- Revisar ventas.
-- Revisar reportes.
-- Revisar actividad y fallos.
-- Configurar bot si tiene permiso.
+- dashboard
+- conversaciones sin asignar
+- tareas vencidas
+- oportunidades abiertas
+- desempeño del equipo
+- casos prioritarios
 
 ### Asesor
 
-El asesor tiene una vista simple. Su trabajo principal es atender clientes y dar seguimiento.
+Es el perfil de atención directa al cliente.
 
-Puede:
+Debe enfocarse en:
 
-- Ver conversaciones asignadas.
-- Tomar conversaciones nuevas cuando esten disponibles para atencion.
-- Responder mensajes.
-- Ver o crear contactos permitidos.
-- Crear notas internas.
-- Crear tareas.
-- Ver Pipeline con sus casos y los chats sin asignar disponibles para tomar.
-- Registrar oportunidades de venta.
-- Dar seguimiento a sus pendientes.
+- conversaciones asignadas
+- respuesta a clientes
+- notas internas
+- tareas de seguimiento
+- oportunidades reales
+- cierre de casos
 
-El asesor no debe ver configuraciones tecnicas, usuarios, conexiones globales ni fallos del sistema.
+El asesor no debe entrar a configuraciones globales, usuarios o conexiones técnicas.
 
-En un flujo CRM real, el asesor debe trabajar en una experiencia simple tipo "Mi trabajo": conversaciones, clientes, tareas, pipeline propio y ventas. Todo lo tecnico debe quedar para supervisor o administrador.
+## 3. Qué es lo importante para trabajar cada día
 
-## 4. Inicio de sesion
+No hace falta entender toda la arquitectura para operar bien.
 
-El usuario entra desde la pantalla de login.
+Lo que importa en la práctica es esto:
 
-Debe usar:
+- ver qué clientes están escribiendo
+- responder rápido y con contexto
+- asignar correctamente las conversaciones
+- registrar tareas de seguimiento
+- saber si hay ventas reales o solo consultas
+- revisar pendientes del día
+- mantener la ficha del cliente ordenada
 
-- Usuario asignado por el administrador.
-- Contrasena asignada o actualizada.
+## 4. Inicio de sesión
 
-Si las credenciales son correctas, el sistema abre el CRM segun el rol.
+El usuario entra a la plataforma con su cuenta asignada.
 
-Si el usuario es asesor, el CRM lo lleva principalmente a Comunicaciones para atender clientes.
+Al iniciar sesión, el sistema lo lleva según su perfil:
+
+- asesor: a atención y seguimiento
+- supervisor: a control operativo
+- administrador: a administración y configuración
+
+Si el usuario no puede ver un módulo, normalmente es porque no tiene rol o permiso para ese área.
 
 ## 5. Dashboard
 
-El Dashboard es la vista ejecutiva del CRM.
+El dashboard sirve para ver el estado del negocio de forma rápida.
 
-Sirve para ver rapidamente:
+Debe usarse para responder preguntas como:
 
-- Salud operativa.
-- Conversaciones activas.
-- Tareas pendientes.
-- Tareas vencidas.
-- Oportunidades abiertas.
-- Monto comercial abierto.
-- Rendimiento por canal.
-- Carga de asesores.
-- Estado de analiticas reales por canal.
-- Resultado tecnico por metrica de Meta.
+- ¿cuántas conversaciones hay activas?
+- ¿qué tareas están pendientes?
+- ¿qué oportunidades están abiertas?
+- ¿hay casos sin asignar?
+- ¿qué asesor tiene más carga?
 
-Uso recomendado:
-
-- Administrador: revision general del negocio.
-- Supervisor: seguimiento diario del equipo.
-- Asesor: no es su pantalla principal.
-
-### Que significan las metricas del Dashboard
-
-El Dashboard mezcla dos tipos de datos:
-
-- Datos internos del CRM: contactos, conversaciones, mensajes, tareas, oportunidades, ventas y carga de asesores.
-- Datos externos de plataformas: estadisticas que vienen desde APIs como Meta Graph API para Facebook e Instagram.
-
-Los datos internos aparecen cuando el CRM registra actividad propia. Por ejemplo, si entra un mensaje, se crea una conversacion, se asigna un asesor o se crea una oportunidad.
-
-Los datos externos dependen de que la plataforma entregue estadisticas por API. Si Meta no entrega datos, el CRM no los inventa.
-
-### Analiticas reales
-
-La seccion "Analiticas reales" indica si cada canal esta listo para traer estadisticas externas.
-
-Estados:
-
-- OPERATIVO: el canal esta funcionando para el tipo de dato mostrado.
-- SIN_DATOS: la API respondio correctamente, pero devolvio cero en el rango consultado.
-- NO_CONFIGURADO: falta una clave, token, pagina o identificador.
-- ERROR: la API rechazo la consulta por permiso, token, pagina o metrica.
-- PENDIENTE: el canal esta preparado, pero aun no tiene servicio real de analiticas conectado.
-
-### Resultado por metrica de Meta
-
-La seccion "Resultado por metrica de Meta" sirve para comprobar el dato real sin adivinar.
-
-Puede mostrar:
-
-- CON_DATOS: Meta devolvio un valor mayor que cero.
-- CERO: Meta acepto la metrica, pero devolvio 0 para el rango consultado.
-- ERROR: Meta rechazo esa metrica especifica.
-- NO_CONFIGURADO: falta configurar token o ID para probarla.
-
-Facebook prueba metricas como vistas, alcance, interacciones y seguidores. Instagram prueba alcance, visitas al perfil y clicks al sitio web.
-
-Si Facebook aparece como SIN_DATOS, no necesariamente esta mal configurado. Significa que Meta acepto la consulta, pero no devolvio valores para ese periodo.
-
-Si Instagram aparece como NO_CONFIGURADO, normalmente falta el token de insights de Page/Instagram profesional. El token de Instagram Login usado para DMs no reemplaza ese token.
+No es un panel técnico. No debe usarse para revisar detalles de Meta, webhooks, tokens o configuración interna.
 
 ## 6. Comunicaciones
 
-Comunicaciones es el inbox del CRM.
+Esta es la parte central del trabajo diario.
 
-Sirve para:
+### Función principal
 
-- Ver conversaciones.
-- Abrir un chat.
-- Leer historial.
-- Responder al cliente.
-- Ver si la conversacion requiere atencion.
-- Ver el canal: WhatsApp, Facebook, Instagram u otro canal preparado.
-- Pausar bot cuando interviene un asesor.
-- Adjuntar archivos permitidos.
-- Actualizar perfil si aplica para Meta.
+Permite:
 
-Estados comunes:
+- ver el inbox del CRM
+- abrir conversaciones
+- leer el historial del cliente
+- responder mensajes
+- adjuntar archivos
+- cambiar estado de atención
+- asignar o tomar chats
+- continuar el seguimiento de un caso
 
-- NUEVO: conversacion nueva.
-- ABIERTO: conversacion activa.
-- EN_ATENCION: un asesor la esta atendiendo.
-- ESPERANDO_CLIENTE: se espera respuesta del cliente.
-- COTIZACION_ENVIADA: se envio propuesta.
-- CERRADO: atencion terminada.
-- PERDIDO: oportunidad o caso perdido.
-- NO_RESPONDIO: el cliente no respondio.
+### Estados comunes
 
-Para asesores:
+- Nuevo
+- Abierto
+- En atención
+- Esperando cliente
+- Cotización enviada
+- Cerrado
+- Perdido
+- No respondió
 
-- Solo deben aparecer conversaciones permitidas o asignadas.
-- Las conversaciones nuevas disponibles pueden tomarse para empezar la atencion.
-- Si responden una conversacion, queda pausado el bot para evitar respuestas automaticas fuera de contexto.
-- Puede usar plantillas rapidas para acelerar mensajes frecuentes como saludo, catalogo, solicitud de datos, seguimiento o cierre.
+### Buena práctica
 
-### Plantillas rapidas dentro de Comunicaciones
+El asesor debe entrar aquí cada vez que trabaja.
 
-Cuando una conversacion esta abierta, el CRM muestra una fila compacta de botones con respuestas frecuentes.
+Antes de responder, debe revisar:
 
-Uso:
-
-- El asesor hace clic en una plantilla.
-- El texto se coloca en el campo de mensaje.
-- El asesor revisa o ajusta el texto.
-- Luego envia manualmente.
-
-Importante:
-
-- La plantilla no se envia sola.
-- No reemplaza el criterio del asesor.
-- Sirve para ahorrar tiempo y mantener respuestas consistentes.
+- si el cliente ya existe
+- si hay nota previa
+- si hay tarea pendiente
+- si ya había una oportunidad
+- si la conversación ya está asignada a alguien
 
 ## 7. Contactos
 
-Contactos contiene la lista de clientes.
+Contactos es la agenda del CRM con los clientes.
 
 Sirve para:
 
-- Buscar clientes.
-- Ver datos basicos.
-- Ver telefono, documento, email y canal de origen.
-- Abrir la ficha del cliente.
-- Ver etiquetas.
-- Ver ultima conversacion.
-- Crear un contacto manual.
+- buscar clientes
+- ver teléfono, correo y canal
+- abrir la ficha del cliente
+- revisar etiquetas
+- ver la última conversación
+- evitar duplicados
 
-Uso recomendado:
+### Regla importante
 
-- Revisar si un cliente ya existe antes de crear uno nuevo.
-- Mantener datos limpios.
-- No duplicar clientes con el mismo telefono.
-
-Para asesores:
-
-- El backend limita los contactos visibles segun sus conversaciones asignadas.
-- Si un asesor crea un contacto nuevo, el sistema crea una conversacion inicial asignada a el.
+Antes de crear un contacto nuevo, se debe revisar si ya existe. Un cliente duplicado genera ruido, tareas repetidas y mala información.
 
 ## 8. Ficha del cliente
 
-La ficha del cliente resume la informacion importante de un cliente en un solo lugar.
+La ficha del cliente es la base del trabajo profesional.
 
-Puede incluir:
+Debe mostrar todo lo necesario para atender sin perder contexto:
 
-- Datos principales.
-- Conversaciones.
-- Notas internas.
-- Tareas.
-- Oportunidades.
-- Etiquetas.
-- Actividad relacionada.
+- datos básicos
+- conversaciones relacionadas
+- notas internas
+- tareas
+- oportunidades
+- etiquetas
+- historial relevante
 
-Sirve para que el asesor entienda rapidamente el contexto antes de responder o vender, sin tener que buscar informacion en varias pantallas.
+Si el asesor entiende la ficha, responde mejor y vende con más contexto.
 
 ## 9. Notas internas
 
@@ -240,573 +182,221 @@ Las notas internas son comentarios privados del equipo.
 
 Sirven para:
 
-- Registrar contexto.
-- Dejar indicaciones para otro asesor.
-- Registrar acuerdos no visibles para el cliente.
-- Anotar detalles de seguimiento.
+- dejar contexto para el siguiente asesor
+- registrar detalles del cliente
+- dejar acuerdos importantes
+- avisar qué sigue en el caso
 
-Importante:
-
-- No son mensajes enviados al cliente.
-- No deben usarse para guardar claves, tokens o informacion sensible innecesaria.
+No deben usarse como almacenamiento técnico ni para guardar tokens, claves o información sensible innecesaria.
 
 ## 10. Tareas
 
-Tareas permite programar seguimientos.
+Las tareas en CRM son el motor de seguimiento.
+
+Sirven para programar acciones como:
+
+- llamar mañana
+- enviar cotización
+- confirmar pago
+- revisar stock
+- hacer seguimiento nuevamente
+
+### Campos básicos
+
+- título
+- descripción
+- fecha de vencimiento
+- cliente
+- conversación
+- oportunidad relacionada
+- asesor asignado
+- estado
+
+### Estados recomendados
+
+- pendiente
+- vencida
+- completada
+- cancelada
+
+### Regla de uso
+
+Si el cliente no responde de inmediato, no se queda “en la mente”; se registra una tarea.
+
+## 11. Ventas y pipeline
+
+Hay dos cosas distintas y no deben mezclarse:
+
+### Pipeline
+
+Muestra la evolución de la atención.
+
+Se usa para ver:
+
+- conversaciones nuevas
+- casos en atención
+- casos esperando respuesta
+- casos cerrados o perdidos
+
+### Ventas
+
+Muestra la oportunidad comercial real.
+
+Se usa para registrar:
+
+- cliente potencial
+- monto estimado
+- etapa
+- probabilidad
+- fecha estimada de cierre
+
+### Regla práctica
+
+Si hay interés real, se crea una oportunidad. Si no, se mantiene atención y seguimiento, no venta forzada.
+
+## 12. Reportes
+
+Los reportes sirven para ver el estado general del negocio.
+
+Se usan para responder:
+
+- cuántos clientes hay
+- cuántas conversaciones entraron
+- cuántas tareas están abiertas
+- cuántas oportunidades hay
+- qué asesor tiene mayor carga
+- qué canal tiene más actividad
+
+El asesor normalmente no necesita reportes globales. El supervisor y administrador sí.
+
+## 13. Bot y plantillas rápidas
+
+El bot ayuda con respuesta automática inicial, pero no reemplaza la atención humana.
+
+### Bot
+
+Se usa para:
+
+- saludar al cliente
+- ofrecer opciones
+- derivar a asesor
+- responder de forma automática en momentos específicos
+
+### Plantillas rápidas
+
+Son mensajes predefinidos que el asesor usa manualmente para ahorrar tiempo.
 
 Ejemplos:
 
-- Llamar manana.
-- Enviar cotizacion.
-- Confirmar pago.
-- Revisar stock.
-- Dar seguimiento a una oportunidad.
+- saludo
+- catálogo
+- solicitud de datos
+- seguimiento
+- cierre
 
-Campos principales:
+### Regla importante
 
-- Titulo.
-- Descripcion.
-- Fecha de vencimiento.
-- Cliente relacionado.
-- Conversacion relacionada.
-- Oportunidad relacionada.
-- Asesor asignado.
-- Estado.
+La plantilla rápida no se envía sola. El asesor revisa el texto y decide si lo manda.
 
-Estados:
-
-- PENDIENTE.
-- VENCIDA, cuando ya paso su fecha.
-- COMPLETADA.
-- CANCELADA.
-
-Para asesores:
-
-- Debe funcionar como lista diaria de pendientes.
-- El backend limita las tareas a las que le pertenecen o estan vinculadas a sus clientes/conversaciones.
-
-## 11. Ventas
-
-Ventas maneja oportunidades comerciales.
-
-Sirve para:
-
-- Crear oportunidades.
-- Registrar monto.
-- Asignar etapa.
-- Estimar cierre.
-- Marcar oportunidades ganadas o perdidas.
-
-Etapas:
-
-- NUEVA.
-- CALIFICADA.
-- PROPUESTA.
-- NEGOCIACION.
-- GANADA.
-- PERDIDA.
-
-Uso recomendado:
-
-- Usar Ventas para oportunidades reales.
-- No confundir Pipeline con Ventas: Pipeline muestra estados de atencion; Ventas muestra oportunidades comerciales.
-
-Para asesores:
-
-- Pueden trabajar oportunidades relacionadas con sus clientes o conversaciones.
-- Deben registrar una oportunidad cuando exista una posibilidad real de venta, no por cada mensaje recibido.
-- Deben cerrar como GANADA o PERDIDA para que los reportes sean utiles.
-
-## 12. Pipeline
-
-Pipeline muestra el estado de las conversaciones y la atencion.
-
-Sirve para:
-
-- Ver casos nuevos.
-- Ver conversaciones en atencion.
-- Identificar casos cerrados o perdidos.
-- Mover tarjetas entre etapas con drag and drop.
-- Supervisar asignaciones.
-- Revisar la carga de trabajo.
-
-Uso recomendado:
-
-- Supervisor y administrador lo usan para control operativo completo.
-- El asesor puede usar Pipeline como tablero filtrado de sus casos y conversaciones nuevas sin asignar, no como vista global de toda la empresa.
-
-## 13. Reportes
-
-Reportes muestra informacion agregada del CRM.
-
-Permite responder:
-
-- Cuantos clientes existen.
-- Cuantas conversaciones entraron.
-- Cuantos mensajes se enviaron o recibieron.
-- Cuantas tareas estan pendientes.
-- Cuantas oportunidades estan abiertas.
-- Cuanto monto comercial hay.
-- Que asesor tiene mas carga.
-- Que canal genera mas actividad.
-
-Uso recomendado:
-
-- Administrador: revision estrategica.
-- Supervisor: seguimiento del equipo.
-- Asesor: normalmente no requiere reportes generales.
-
-## 14. Comentarios
-
-Comentarios esta preparado para centralizar interacciones tipo comentario de redes sociales.
-
-Sirve para:
-
-- Ver comentarios entrantes.
-- Identificar de que canal vienen.
-- Relacionarlos con cliente/conversacion.
-
-Estado actual:
-
-- Preparado para Facebook/Instagram segun permisos y webhooks reales de Meta.
-
-## 15. Actividad
-
-Actividad muestra acciones realizadas dentro del sistema.
-
-Ejemplos:
-
-- Creacion de cliente.
-- Cambio de estado.
-- Reasignacion de conversacion.
-- Creacion de oportunidad.
-- Eventos de integracion.
-
-Uso recomendado:
-
-- Administrador y supervisor.
-- Sirve para auditoria y trazabilidad.
-
-## 16. Fallos
-
-Fallos muestra problemas detectados en integraciones o mensajes.
-
-Puede mostrar:
-
-- Mensajes no enviados.
-- Errores de API.
-- Eventos de webhook fallidos.
-- Respuestas locales cuando el envio real no esta activo.
-
-Uso recomendado:
-
-- Administrador y supervisor.
-- No es una vista normal de asesor.
-
-## 17. Plantillas rapidas
-
-Las plantillas rapidas son respuestas manuales para asesores.
-
-Sirven para:
-
-- Responder mas rapido.
-- Mantener mensajes consistentes.
-- Evitar escribir lo mismo muchas veces.
-- Usar textos frecuentes sin que el bot los envie automaticamente.
-
-Ejemplos:
-
-- Saludo.
-- Envio de catalogo.
-- Solicitud de datos para cotizar.
-- Seguimiento.
-- Cierre.
-
-Importante:
-
-- Las plantillas rapidas no reemplazan al asesor.
-- El asesor elige la plantilla, la revisa y luego envia el mensaje.
-- Se administran desde el modulo Bot, pero son distintas a las plantillas del bot automatico.
-
-### Como agregar o editar plantillas rapidas
-
-Solo administrador o supervisor debe administrar estas respuestas.
-
-Pasos:
-
-1. Entrar al CRM como Administrador o Supervisor.
-2. Abrir el modulo Bot.
-3. Buscar la seccion "Plantillas rapidas" o "Respuestas manuales para asesores".
-4. Editar el titulo, categoria y texto del mensaje.
-5. Activar o desactivar la plantilla segun corresponda.
-6. Usar "Agregar respuesta rapida" si se necesita una nueva.
-7. Presionar "Guardar respuestas rapidas".
-
-Campos:
-
-- Titulo: nombre corto que vera el asesor en Comunicaciones.
-- Categoria: ayuda a ordenar el tipo de respuesta.
-- Mensaje: texto que se insertara en el campo de respuesta.
-- Activa: permite mostrar u ocultar la plantilla sin borrarla.
-
-Buenas practicas:
-
-- Usar titulos cortos.
-- Evitar textos demasiado largos.
-- No incluir claves, tokens, datos bancarios sensibles o informacion privada innecesaria.
-- Revisar ortografia y tono antes de guardar.
-- Mantener plantillas para casos repetidos: saludo, catalogo, cotizacion, seguimiento y cierre.
-
-## 18. Bot
-
-Bot permite configurar respuestas automaticas.
-
-Sirve para:
-
-- Definir mensaje de bienvenida.
-- Crear opciones.
-- Definir respuestas.
-- Derivar a asesor.
-- Limitar respuestas automaticas.
-
-Regla importante:
-
-- Cuando un asesor responde, el bot se pausa en esa conversacion.
-- Esto evita que el cliente reciba respuestas automaticas despues de que una persona ya tomo el caso.
-- Las plantillas del bot son para automatizacion. Las plantillas rapidas son para respuestas manuales del asesor.
-
-### Diferencia entre plantillas del bot y plantillas rapidas
-
-Plantillas del bot:
-
-- Las usa el bot automatico.
-- Se activan segun opciones que responde el cliente.
-- Pueden derivar a asesor.
-- Funcionan antes de que una persona tome el caso.
-
-Plantillas rapidas:
-
-- Las usa manualmente el asesor.
-- Solo insertan texto en el campo de mensaje.
-- No se envian automaticamente.
-- Ayudan durante la atencion humana.
-
-## 19. Flujo recomendado para asesores
-
-El flujo ideal para un asesor debe ser simple y repetible.
-
-### Paso 1: revisar conversaciones
-
-El asesor entra a Comunicaciones y revisa:
-
-- Chats asignados.
-- Chats nuevos disponibles para tomar.
-- Ultimo mensaje del cliente.
-- Estado de la conversacion.
-- Canal de origen.
-
-### Paso 2: abrir la ficha del cliente
-
-Antes de responder, debe revisar:
-
-- Nombre.
-- Telefono.
-- Canal.
-- Etiquetas.
-- Historial.
-- Notas internas.
-- Tareas pendientes.
-- Oportunidades abiertas.
-
-### Paso 3: responder con contexto
-
-Puede responder:
-
-- Escribiendo manualmente.
-- Usando plantillas rapidas.
-- Adjuntando archivo.
-- Enviando informacion comercial.
-
-### Paso 4: registrar seguimiento
-
-Si el cliente no compra de inmediato, el asesor debe crear una tarea.
-
-Ejemplos:
-
-- Llamar manana.
-- Enviar cotizacion.
-- Confirmar pago.
-- Hacer seguimiento en 48 horas.
-
-### Paso 5: registrar venta
-
-Si hay interes comercial real, debe crear o actualizar una oportunidad en Ventas.
-
-Debe registrar:
-
-- Cliente.
-- Monto estimado.
-- Etapa.
-- Probabilidad.
-- Fecha estimada de cierre.
-
-### Paso 6: cerrar correctamente
-
-Cuando termina la atencion:
-
-- Cambiar estado de conversacion.
-- Marcar tarea como completada si aplica.
-- Marcar oportunidad como GANADA o PERDIDA si corresponde.
-- Dejar nota interna si queda contexto importante.
-
-## 20. Modulos que debe ver cada rol
+## 14. Flujo recomendado diario para cada rol
 
 ### Asesor
 
-Debe ver solo:
-
-- Comunicaciones.
-- Contactos.
-- Tareas.
-- Pipeline.
-- Ventas.
-
-No debe ver:
-
-- Conexiones.
-- Usuarios.
-- Fallos tecnicos.
-- Actividad global.
-- Configuracion global del bot.
-- Reportes globales.
-- Conversaciones de otros asesores.
+1. Ingresar a Comunicaciones.
+2. Revisar chats nuevos o asignados.
+3. Leer el historial del cliente.
+4. Revisar ficha del cliente.
+5. Responder con contexto.
+6. Registrar nota si hay detalle importante.
+7. Crear tarea si corresponde.
+8. Crear o actualizar oportunidad si hay venta real.
+9. Cambiar el estado de la conversación cuando termine.
 
 ### Supervisor
 
-Debe ver:
-
-- Dashboard.
-- Comunicaciones.
-- Contactos.
-- Pipeline.
-- Tareas.
-- Ventas.
-- Reportes.
-- Actividad.
-- Fallos.
-- Bot.
+1. Revisar dashboard.
+2. Ver conversaciones sin asignar.
+3. Revisar tareas vencidas.
+4. Revisar pipeline.
+5. Ver oportunidades abiertas.
+6. Detectar cuellos de botella y carga del equipo.
 
 ### Administrador
 
-Debe ver todo:
+1. Revisar usuarios y permisos.
+2. Revisar conexiones externas.
+3. Revisar alertas y fallos.
+4. Ver actividad del sistema.
+5. Mantener bot, datos y configuración del negocio bajo control.
 
-- Dashboard.
-- Comunicaciones.
-- Contactos.
-- Tareas.
-- Pipeline.
-- Ventas.
-- Reportes.
-- Comentarios.
-- Actividad.
-- Fallos.
-- Bot.
-- Conexiones.
-- Usuarios.
+## 15. Qué no aporta valor para el día a día
 
-## 21. Conexiones
+Estas cosas son importantes para desarrollo, pero no para operar el CRM a diario:
 
-Conexiones permite configurar integraciones externas.
+- detalle de cada controlador
+- explicación de webhooks y endpoints
+- arquitectura interna completa
+- carpetas y clases del proyecto
+- integraciones futuras en detalle
+- referencias de API sin uso inmediato
+- roadmap técnico largo
 
-Canales:
+Estas cosas se deben guardar en documentación técnica, no en la guía de operación.
 
-- WhatsApp.
-- Instagram.
-- Facebook.
-- TikTok.
+## 16. Módulos que sí son operativos
 
-Sirve para:
+Los módulos útiles del día a día son estos:
 
-- Configurar tokens.
-- Copiar webhooks.
-- Validar datos.
-- Sincronizar o diagnosticar integraciones.
-- Revisar que los identificadores usados correspondan a la misma pagina/cuenta.
+- Comunicaciones
+- Contactos
+- Ficha del cliente
+- Notas internas
+- Tareas
+- Pipeline
+- Ventas
+- Dashboard
+- Reportes
+- Bot
+- Usuarios y permisos para administración
 
-Uso recomendado:
+## 17. Seguridad mínima que debe saber cualquier usuario
 
-- Solo administrador o personal tecnico.
-- No debe manipularse durante atencion normal.
+- nunca compartir usuario ni contraseña
+- no guardar tokens en notas internas
+- cerrar sesión en equipos compartidos
+- no usar información sensible en mensajes de prueba
+- reportar errores o comportamientos raros al administrador o supervisor
 
-Relaciones importantes:
+## 18. Qué revisar si algo no funciona
 
-- WhatsApp usa Phone Number ID, Business Account ID, token y webhook.
-- Facebook Insights requiere Page ID y Page Access Token con permiso de estadisticas.
-- Instagram DMs puede usar Instagram Login, pero Instagram Insights requiere datos de la cuenta profesional y token compatible con insights.
-- TikTok esta preparado como integracion futura; sus analiticas reales dependen de TikTok Business/Marketing API.
+### Si no llega una conversación
 
-## 22. Usuarios
+- revisar si la conversación está asignada
+- revisar si el canal está habilitado
+- revisar si hay fallo en el sistema
+- revisar si el webhook está activo
 
-Usuarios permite administrar cuentas internas del CRM.
+### Si un mensaje no se envía
 
-Sirve para:
+- revisar el estado del canal
+- verificar token o configuración
+- revisar fallos del sistema
+- confirmar si el envío real está activo
 
-- Crear asesores.
-- Crear supervisores.
-- Cambiar contrasenas.
-- Mantener usuarios activos.
+### Si no aparecen tareas o oportunidades
 
-Uso recomendado:
+- revisar si el cliente o la conversación está vinculada correctamente
+- revisar si la acción fue creada en el caso correcto
+- revisar si el usuario tiene permisos sobre ese registro
 
-- Solo administrador.
+## 19. Cierre
 
-## 23. Canales
+El CRM funciona mejor cuando se usa con disciplina operativa.
 
-### WhatsApp
+La regla clave es esta:
 
-Es el canal principal operativo.
+- el asesor atiende y sigue
+- el supervisor controla flujo y riesgo
+- el administrador mantiene el sistema seguro y estable
 
-Flujo:
-
-- Cliente escribe por WhatsApp.
-- Meta envia webhook.
-- CRM crea o actualiza cliente.
-- CRM crea o actualiza conversacion.
-- Mensaje aparece en Comunicaciones.
-- Asesor responde.
-- CRM registra el mensaje y lo envia por WhatsApp Cloud API si el envio real esta activo.
-
-### Instagram
-
-Estado actual:
-
-- Cuenta profesional validada.
-- Token de Instagram Login validado.
-- El CRM consulta Graph API correctamente.
-- En modo desarrollador Meta no entrega DMs reales externos ni webhooks reales de mensajes como produccion.
-
-Para recibir DMs reales se requiere publicacion/capability/aprobacion de Meta.
-
-### Facebook
-
-Preparado para Messenger y Page Webhooks.
-
-Requiere:
-
-- Pagina vinculada.
-- Page Access Token.
-- Permisos correctos.
-- Webhook suscrito.
-
-Para estadisticas reales de Facebook:
-
-- El CRM consulta Meta Graph API.
-- Si sale SIN_DATOS, Meta acepto la consulta pero devolvio 0.
-- Si sale ERROR, revisar token, permisos o metrica.
-- Si sale NO_CONFIGURADO, falta Page ID o Page Access Token.
-
-### TikTok
-
-Preparado como canal futuro de leads/campanas.
-
-No se debe prometer como inbox de DMs normales sin acceso oficial, partner o producto aprobado.
-
-Para estadisticas reales de TikTok se requiere una integracion aprobada con TikTok Business/Marketing API o un proveedor autorizado.
-
-## 24. Seguridad visible para el usuario
-
-El usuario debe entender estas reglas:
-
-- No compartir usuario ni contrasena.
-- No enviar tokens por capturas.
-- No guardar claves en notas internas.
-- Cerrar sesion en equipos compartidos.
-- Reportar errores o mensajes sospechosos.
-- El asesor solo debe trabajar sus clientes/conversaciones.
-
-Controles ya aplicados:
-
-- Login obligatorio.
-- Roles.
-- Vista simplificada por rol.
-- Restriccion backend por asignacion para asesores.
-- Bot restringido a roles superiores.
-- Endpoints protegidos.
-- Rate limiting.
-- Cookies endurecidas.
-- Protecciones contra solicitudes externas indebidas.
-
-## 25. Recomendacion de uso diario
-
-Para asesores:
-
-1. Entrar al CRM.
-2. Ir a Comunicaciones.
-3. Revisar conversaciones pendientes.
-4. Responder al cliente.
-5. Actualizar datos del contacto si hace falta.
-6. Crear nota interna cuando haya contexto importante.
-7. Crear tarea si hay seguimiento.
-8. Crear oportunidad si hay venta real.
-9. Cerrar o cambiar estado cuando corresponda.
-
-Para supervisores:
-
-1. Revisar Dashboard.
-2. Revisar Pipeline.
-3. Validar conversaciones sin asignar.
-4. Revisar tareas vencidas.
-5. Revisar ventas abiertas.
-6. Revisar reportes y fallos.
-
-Para administradores:
-
-1. Revisar usuarios.
-2. Revisar conexiones.
-3. Revisar fallos.
-4. Revisar actividad.
-5. Mantener configuraciones y permisos.
-
-## 26. Que hacer si algo no aparece
-
-Si no aparece una conversacion:
-
-- Revisar si esta asignada al usuario correcto.
-- Revisar si el canal esta configurado.
-- Revisar Fallos si eres supervisor/admin.
-- Revisar si el webhook publico esta activo.
-
-Si no aparece Instagram:
-
-- Recordar que en modo desarrollador Meta limita DMs reales.
-- Probar con datos simulados o esperar aprobacion/publicacion.
-
-Si no se envia un mensaje:
-
-- Revisar estado del canal.
-- Revisar token.
-- Revisar Fallos.
-- Revisar si el envio real esta activo.
-
-Si las estadisticas externas salen en cero:
-
-- Revisar en Dashboard la seccion "Resultado por metrica de Meta".
-- Si dice CERO, la API respondio bien pero no hubo datos en ese rango.
-- Si dice ERROR, revisar el mensaje tecnico mostrado.
-- Si dice NO_CONFIGURADO, completar los datos en Conexiones.
-- Probar un rango de fechas mas amplio si aplica.
-
-Si no aparecen plantillas rapidas:
-
-- Revisar en Bot si existen plantillas rapidas activas.
-- Confirmar que se presiono "Guardar respuestas rapidas".
-- Abrir una conversacion en Comunicaciones; las plantillas solo aparecen dentro de un chat.
-- Si se editaron recientemente, recargar el modulo Comunicaciones.
-
-## 27. Cierre
-
-El CRM ya esta preparado para operar como centro de atencion y seguimiento comercial. El uso correcto depende de separar bien responsabilidades:
-
-- Asesor atiende y vende.
-- Supervisor controla operacion.
-- Administrador configura y audita.
+Si la operación diaria se centra en conversaciones, clientes, tareas y ventas, el CRM cumple su propósito. Todo lo demás debe quedar como soporte técnico o administración, no como parte central del trabajo diario.

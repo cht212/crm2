@@ -19,7 +19,7 @@
                 <div class="module-heading">
                     <div>
                         <h1>Contactos</h1>
-                        <p>Agenda de clientes registrados desde WhatsApp o carga manual.</p>
+                        <p>Clientes reales del CRM, con canal de origen, etiquetas, historial y última conversación.</p>
                     </div>
                 </div>
                 <section class="contacts-workspace">
@@ -28,6 +28,12 @@
                         <input name="telefono" maxlength="30" placeholder="Teléfono" required>
                         <input name="email" type="email" maxlength="150" placeholder="Email opcional">
                         <input name="documento" maxlength="20" placeholder="Documento opcional">
+                        <select name="canalOrigen">
+                            <option value="WHATSAPP">WhatsApp</option>
+                            <option value="FACEBOOK">Facebook</option>
+                            <option value="INSTAGRAM">Instagram</option>
+                            <option value="TIKTOK">TikTok</option>
+                        </select>
                         <button type="submit">Crear contacto</button>
                     </form>
                     <div class="module-search-row">

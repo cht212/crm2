@@ -39,14 +39,21 @@
         }
 
         async function cargarModuloTareas(vista) {
-            const puedeGestionarEquipo = rolActual === "Administrador" || rolActual === "Supervisor";
+            const puedeGestionarEquipo = puedeGestionarEquipoCRM();
+            if (puedeGestionarEquipo && tareasFiltroActivo === "mias") {
+                tareasFiltroActivo = "hoy";
+            }
             const [tareasResponse, usuarios] = await Promise.all([
                 api("/api/tareas?pageSize=200"),
                 puedeGestionarEquipo ? cargarUsuarios() : Promise.resolve([])
             ]);
             if (!tareasResponse.ok) throw new Error("Tareas no disponibles");
             const pagina = await tareasResponse.json();
-            const tareas = pagina.items || [];
+            const todasLasTareas = pagina.items || [];
+            const miId = Number(sesionActual?.id || 0);
+            const tareas = puedeGestionarEquipo
+                ? todasLasTareas
+                : todasLasTareas.filter(t => miId > 0 && Number(t.asignadoAId) === miId);
             const resumen = obtenerResumenTareas(tareas);
             if (resumen.vencidas > 0 && !tareasVencidasNotificadas) {
                 tareasVencidasNotificadas = true;
@@ -58,7 +65,7 @@
                 t.estado !== "CANCELADA").length;
             const tareasVisibles = filtrarTareas(tareas);
             const filtros = [
-                ["mias", "Mis pendientes", misPendientes],
+                ...(puedeGestionarEquipo ? [] : [["mias", "Mis pendientes", misPendientes]]),
                 ["hoy", "Hoy", resumen.hoy],
                 ["vencidas", "Vencidas", resumen.vencidas],
                 ["todas", "Todas", resumen.total],
@@ -69,7 +76,7 @@
                 <div class="module-heading">
                     <div>
                         <h1>Tareas</h1>
-                        <p>Seguimientos, recordatorios y pendientes del equipo comercial.</p>
+                        <p>${puedeGestionarEquipo ? "Seguimientos vencidos y trabajo diario del equipo comercial." : "Tus seguimientos activos: primero vencidas y tareas de hoy."}</p>
                     </div>
                 </div>
                 <section class="task-summary">
@@ -111,6 +118,9 @@
                 event.preventDefault();
                 const datos = Object.fromEntries(new FormData(event.currentTarget));
                 datos.asignadoAId = datos.asignadoAId ? Number(datos.asignadoAId) : null;
+                if (!puedeGestionarEquipo && sesionActual?.id) {
+                    datos.asignadoAId = Number(sesionActual.id);
+                }
                 const crear = await api("/api/tareas", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -161,12 +171,20 @@
                 ganadas: ganadas.length,
                 perdidas: perdidas.length,
                 montoAbierto: abiertas.reduce((total, op) => total + Number(op.monto || 0), 0),
-                montoGanado: ganadas.reduce((total, op) => total + Number(op.monto || 0), 0)
+                montoGanado: ganadas.reduce((total, op) => total + Number(op.monto || 0), 0),
+                winRate: calcularPorcentaje(ganadas.length, ganadas.length + perdidas.length),
+                cierreSemana: abiertas.filter(op => {
+                    if (!op.fechaCierreEstimada) return false;
+                    const cierre = new Date(op.fechaCierreEstimada);
+                    const limite = new Date();
+                    limite.setDate(limite.getDate() + 7);
+                    return cierre <= limite;
+                }).length
             };
         }
 
         async function cargarModuloVentas(vista) {
-            const puedeGestionarEquipo = rolActual === "Administrador" || rolActual === "Supervisor";
+            const puedeGestionarEquipo = puedeGestionarEquipoCRM();
             const [ventasResponse, contactosResponse, usuarios] = await Promise.all([
                 api("/api/oportunidades?pageSize=200"),
                 api("/api/crm/contactos"),
@@ -196,17 +214,20 @@
                     <article class="metric-card"><span class="metric-label">Abiertas</span><strong class="metric-value">${resumen.abiertas}</strong></article>
                     <article class="metric-card"><span class="metric-label">Monto abierto</span><strong class="metric-value">${formatearMoneda(resumen.montoAbierto)}</strong></article>
                     <article class="metric-card"><span class="metric-label">Ganadas</span><strong class="metric-value">${resumen.ganadas}</strong></article>
-                    <article class="metric-card"><span class="metric-label">Monto ganado</span><strong class="metric-value">${formatearMoneda(resumen.montoGanado)}</strong></article>
+                    <article class="metric-card ${resumen.cierreSemana ? "warning-card" : ""}"><span class="metric-label">Cierre 7 días</span><strong class="metric-value">${resumen.cierreSemana}</strong><small>${resumen.winRate}% win rate</small></article>
                 </section>
                 <section class="sales-workspace">
                     <form id="quickDealForm" class="user-form sales-form">
                         <input name="titulo" maxlength="200" placeholder="Nueva oportunidad" required>
-                        <select name="clienteId" required>
+                        <input id="salesClientSearch" class="sales-client-search" type="search" placeholder="Buscar cliente por nombre o teléfono">
+                        <select id="salesClientSelect" name="clienteId" required>
                             <option value="">Cliente...</option>
                             ${contactos.map(contacto => `<option value="${contacto.id}">${escapeHtml(contacto.nombre)} · ${escapeHtml(contacto.telefono || "")}</option>`).join("")}
                         </select>
                         <input name="monto" type="number" min="0" step="0.01" placeholder="Monto">
                         <select name="moneda"><option value="PEN">PEN</option><option value="USD">USD</option></select>
+                        <input name="fechaCierreEstimada" type="date" title="Fecha estimada de cierre" aria-label="Fecha estimada de cierre">
+                        <input name="probabilidad" type="number" min="0" max="100" step="5" value="10" placeholder="Prob. %">
                         ${puedeGestionarEquipo ? `<select name="usuarioAsignadoId">
                             <option value="">Asesor...</option>
                             ${usuarios.map(usuario => `<option value="${usuario.id}" ${Number(usuario.id) === Number(sesionActual?.id) ? "selected" : ""}>${escapeHtml(usuario.nombre)}</option>`).join("")}
@@ -234,7 +255,7 @@
                                         <div>
                                             <strong>${escapeHtml(op.titulo)}</strong>
                                             <p>${escapeHtml(op.cliente?.nombre || "Sin cliente")} · ${escapeHtml(op.moneda)} ${Number(op.monto || 0).toFixed(2)}</p>
-                                            <small>${op.probabilidad}% probabilidad${op.asesor ? ` · ${escapeHtml(op.asesor)}` : ""}</small>
+                                            <small>${op.probabilidad}% probabilidad${op.fechaCierreEstimada ? ` · Cierre ${formatearFecha(op.fechaCierreEstimada)}` : " · Sin fecha de cierre"}${op.asesor ? ` · ${escapeHtml(op.asesor)}` : ""}</small>
                                         </div>
                                         <select class="mini-select" data-sales-stage="${op.id}">
                                             ${etapas.map(opcion => `<option value="${opcion}" ${opcion === op.etapa ? "selected" : ""}>${opcion}</option>`).join("")}
@@ -255,8 +276,12 @@
                 const datos = Object.fromEntries(new FormData(event.currentTarget));
                 datos.clienteId = Number(datos.clienteId);
                 datos.usuarioAsignadoId = datos.usuarioAsignadoId ? Number(datos.usuarioAsignadoId) : null;
+                if (!puedeGestionarEquipo && sesionActual?.id) {
+                    datos.usuarioAsignadoId = Number(sesionActual.id);
+                }
                 datos.monto = Number(datos.monto || 0);
-                datos.probabilidad = 10;
+                datos.probabilidad = Number(datos.probabilidad || 10);
+                datos.fechaCierreEstimada = datos.fechaCierreEstimada || null;
                 const crear = await api("/api/oportunidades", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -268,6 +293,20 @@
                 }
                 notificar("Oportunidad creada.", "success");
                 await cargarModuloVentas(vista);
+            });
+
+            vista.querySelector("#salesClientSearch")?.addEventListener("input", event => {
+                const termino = event.currentTarget.value.trim().toLowerCase();
+                const selector = vista.querySelector("#salesClientSelect");
+                if (!selector) return;
+                [...selector.options].forEach((option, index) => {
+                    if (index === 0) {
+                        option.hidden = false;
+                        return;
+                    }
+                    option.hidden = Boolean(termino) && !option.textContent.toLowerCase().includes(termino);
+                });
+                if (selector.selectedOptions[0]?.hidden) selector.value = "";
             });
 
             vista.querySelectorAll("[data-sales-filter]").forEach(button => {

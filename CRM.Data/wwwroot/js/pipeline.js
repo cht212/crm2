@@ -9,7 +9,7 @@
             if (!response.ok) throw new Error("Pipeline no disponible");
             const paginaPipeline = await response.json();
             const conversacionesPipeline = paginaPipeline.items || [];
-            const puedeGestionarEquipo = rolActual === "Administrador" || rolActual === "Supervisor";
+            const puedeGestionarEquipo = puedeGestionarEquipoCRM();
             const etapas = estadosConversacionPorRol().map(etapa => etapa.id);
             let usuarios = [];
             if (puedeGestionarEquipo) {

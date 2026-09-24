@@ -56,7 +56,10 @@ public sealed class MetaGraphApiService
             pruebas);
     }
 
-    public async Task<MetaFacebookFeedResult> ObtenerFacebookFeedAsync(int limit = 10)
+    public Task<MetaFacebookFeedResult> ObtenerFacebookFeedAsync(int limit = 10) =>
+        ObtenerFacebookFeedAsync(null, null, limit);
+
+    public async Task<MetaFacebookFeedResult> ObtenerFacebookFeedAsync(DateTime? desde, DateTime? hasta, int limit = 10)
     {
         var pageId = GetValue("Meta:Facebook:PageId");
         var token = GetValue("Meta:Facebook:AccessToken");
@@ -69,8 +72,10 @@ public sealed class MetaGraphApiService
 
         var apiVersion = GetValue("Meta:ApiVersion") ?? _configuration["Meta:ApiVersion"] ?? "v25.0";
         var pageToken = await ResolvePageAccessTokenAsync(apiVersion, pageId, token);
-        var fields = "id,message,created_time,permalink_url,likes.limit(0).summary(true),comments.limit(0).summary(true),shares";
-        var url = $"https://graph.facebook.com/{apiVersion}/{Uri.EscapeDataString(pageId)}/feed?fields={fields}&limit={Math.Clamp(limit, 1, 25)}";
+        var since = new DateTimeOffset((desde ?? DateTime.Today.AddDays(-30)).Date).ToUnixTimeSeconds();
+        var until = new DateTimeOffset((hasta ?? DateTime.Today).Date.AddDays(1)).ToUnixTimeSeconds();
+        var fields = "id,message,created_time,permalink_url,type,full_picture,is_published,is_video,shares,likes.limit(0).summary(true),comments.limit(0).summary(true),attachments.limit(5){media_type,media,image_data{url},target{url},subattachments{media_type,media,image_data{url}}},insights.metric(post_impressions,post_reach,post_engagement).period(lifetime)";
+        var url = $"https://graph.facebook.com/{apiVersion}/{Uri.EscapeDataString(pageId)}/feed?fields={fields}&limit={Math.Clamp(limit, 1, 25)}&since={since}&until={until}";
 
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", pageToken);
@@ -137,6 +142,11 @@ public sealed class MetaGraphApiService
                      sharesCount.TryGetInt32(out var shareTotal)
             ? shareTotal
             : 0;
+        var reach = ReadInsightValue(post, "post_reach");
+        var impressions = ReadInsightValue(post, "post_impressions");
+        var engagement = ReadInsightValue(post, "post_engagement");
+        var mediaUrl = ReadMediaUrl(post);
+        var mediaType = ReadMediaType(post);
 
         return new MetaFacebookPost(
             ReadString(post, "id") ?? string.Empty,
@@ -145,7 +155,91 @@ public sealed class MetaGraphApiService
             ReadString(post, "permalink_url"),
             likes,
             comments,
-            shares);
+            shares,
+            reach,
+            impressions,
+            engagement > 0 ? engagement : likes + comments + shares,
+            mediaUrl,
+            mediaType);
+    }
+
+    private static string? ReadMediaUrl(JsonElement root)
+    {
+        if (root.TryGetProperty("full_picture", out var fullPicture) && fullPicture.ValueKind == JsonValueKind.String)
+        {
+            return fullPicture.GetString();
+        }
+
+        if (root.TryGetProperty("attachments", out var attachments) && attachments.ValueKind == JsonValueKind.Object)
+        {
+            if (attachments.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in data.EnumerateArray())
+                {
+                    if (item.TryGetProperty("media", out var media) && media.ValueKind == JsonValueKind.Object)
+                    {
+                        if (media.TryGetProperty("image", out var image) && image.TryGetProperty("src", out var src) && src.ValueKind == JsonValueKind.String)
+                        {
+                            return src.GetString();
+                        }
+
+                        if (media.TryGetProperty("source", out var source) && source.ValueKind == JsonValueKind.String)
+                        {
+                            return source.GetString();
+                        }
+                    }
+
+                    if (item.TryGetProperty("media_type", out var mediaType) && mediaType.ValueKind == JsonValueKind.String)
+                    {
+                        if (item.TryGetProperty("media", out var mediaObj) && mediaObj.ValueKind == JsonValueKind.Object)
+                        {
+                            if (mediaObj.TryGetProperty("image", out var imageObj) && imageObj.TryGetProperty("src", out var src) && src.ValueKind == JsonValueKind.String)
+                            {
+                                return src.GetString();
+                            }
+
+                            if (mediaObj.TryGetProperty("source", out var sourceVal) && sourceVal.ValueKind == JsonValueKind.String)
+                            {
+                                return sourceVal.GetString();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static string? ReadMediaType(JsonElement root)
+    {
+        if (root.TryGetProperty("is_video", out var isVideo) && isVideo.ValueKind == JsonValueKind.True)
+        {
+            return "video";
+        }
+
+        if (root.TryGetProperty("type", out var type) && type.ValueKind == JsonValueKind.String)
+        {
+            var value = type.GetString();
+            if (value?.Contains("video", StringComparison.OrdinalIgnoreCase) == true) return "video";
+            if (value?.Contains("photo", StringComparison.OrdinalIgnoreCase) == true) return "photo";
+        }
+
+        if (root.TryGetProperty("attachments", out var attachments) && attachments.ValueKind == JsonValueKind.Object)
+        {
+            if (attachments.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in data.EnumerateArray())
+                {
+                    if (item.TryGetProperty("media_type", out var mediaType) && mediaType.ValueKind == JsonValueKind.String)
+                    {
+                        return mediaType.GetString();
+                    }
+                }
+            }
+        }
+
+        return "photo";
     }
 
     private static int ReadSummaryCount(JsonElement root, string property)
@@ -156,6 +250,65 @@ public sealed class MetaGraphApiService
             count.TryGetInt32(out var value))
         {
             return value;
+        }
+
+        return 0;
+    }
+
+    private static int ReadInsightValue(JsonElement root, string metricName)
+    {
+        if (!root.TryGetProperty("insights", out var insights) || insights.ValueKind != JsonValueKind.Object)
+        {
+            return 0;
+        }
+
+        if (!insights.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Array)
+        {
+            return 0;
+        }
+
+        foreach (var item in data.EnumerateArray())
+        {
+            var name = ReadString(item, "name");
+            if (string.Equals(name, metricName, StringComparison.OrdinalIgnoreCase))
+            {
+                if (item.TryGetProperty("total_value", out var totalValue) && totalValue.ValueKind == JsonValueKind.Object)
+                {
+                    return ReadNumericValue(totalValue, "value");
+                }
+
+                if (item.TryGetProperty("values", out var values) && values.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var valueItem in values.EnumerateArray())
+                    {
+                        var numeric = ReadNumericValue(valueItem, "value");
+                        if (numeric > 0)
+                        {
+                            return numeric;
+                        }
+                    }
+                }
+
+                return ReadNumericValue(item, "value");
+            }
+        }
+
+        return 0;
+    }
+
+    private static int ReadNumericValue(JsonElement root, string property)
+    {
+        if (root.TryGetProperty(property, out var valueNode))
+        {
+            if (valueNode.ValueKind == JsonValueKind.Number && valueNode.TryGetInt32(out var intValue))
+            {
+                return intValue;
+            }
+
+            if (valueNode.ValueKind == JsonValueKind.String && int.TryParse(valueNode.GetString(), out var parsedValue))
+            {
+                return parsedValue;
+            }
         }
 
         return 0;
@@ -1115,7 +1268,12 @@ public sealed record MetaFacebookPost(
     string? PermalinkUrl,
     int Likes,
     int Comments,
-    int Shares);
+    int Shares,
+    int Reach,
+    int Impressions,
+    int Engagement,
+    string? MediaUrl,
+    string? MediaType);
 
 public sealed record MetaCredentialCheck(
     string Clave,

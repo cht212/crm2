@@ -2,7 +2,7 @@
 // Mantiene variables y funciones globales para compatibilidad con la vista actual.
 
         async function cargarModuloActividad(vista, entidad = "") {
-            if (rolActual !== "Administrador" && rolActual !== "Supervisor") {
+            if (!puedeGestionarEquipoCRM()) {
                 vista.innerHTML = '<div class="error">Solo administradores y supervisores pueden ver la actividad.</div>';
                 return;
             }
@@ -74,14 +74,8 @@
         }
 
         async function cargarModuloReportes(vista) {
-            if (normalizarRol(rolActual) === "asesor" && sesionActual?.id && !reportesFiltros.usuarioId) {
+            if (esRol("asesor") && sesionActual?.id && !reportesFiltros.usuarioId) {
                 reportesFiltros.usuarioId = String(sesionActual.id);
-            }
-            if (asesorFiltroActivo && asesorFiltroActivo !== "unassigned" && !reportesFiltros.usuarioId) {
-                reportesFiltros.usuarioId = String(asesorFiltroActivo);
-            }
-            if (asesorFiltroActivo && asesorFiltroActivo !== "unassigned") {
-                reportesFiltros.usuarioId = String(asesorFiltroActivo);
             }
 
             const params = new URLSearchParams();

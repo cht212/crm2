@@ -2,7 +2,7 @@
 // Módulo de agenda para ver fechas clave, tareas y cierres del equipo.
 
         async function cargarModuloAgenda(vista) {
-            const puedeGestionarEquipo = rolActual === "Administrador" || rolActual === "Supervisor";
+            const puedeGestionarEquipo = puedeGestionarEquipoCRM();
             const [tareasResponse, ventasResponse, usuarios] = await Promise.all([
                 api("/api/tareas?pageSize=200"),
                 api("/api/oportunidades?pageSize=200"),
@@ -25,6 +25,7 @@
                     estado: item.estado,
                     detalle: item.descripcion || "Sin detalle",
                     id: item.id,
+                    conversacionId: item.conversacionId,
                     modulo: "tareas"
                 })),
                 ...oportunidades.map(item => ({
@@ -35,6 +36,7 @@
                     estado: item.etapa || "NUEVA",
                     detalle: `${item.moneda || "PEN"} ${Number(item.monto || 0).toFixed(2)} · ${item.cliente?.nombre || "Sin cliente"}`,
                     id: item.id,
+                    conversacionId: item.conversacionId,
                     modulo: "ventas"
                 }))
             ].sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
@@ -84,7 +86,14 @@
                     const [modulo, id] = String(button.dataset.agendaOpen || "").split("|");
                     if (!modulo || !id) return;
                     if (modulo === "tareas") {
-                        abrirDetalleConversacion(Number(id), "agenda");
+                        const evento = eventos.find(item => item.modulo === modulo && String(item.id) === String(id));
+                        if (evento?.conversacionId) {
+                            abrirDetalleConversacion(evento.conversacionId, "agenda");
+                        } else {
+                            tareasFiltroActivo = "todas";
+                            abrirModulo("tareas");
+                            notificar("La tarea no tiene conversacion asociada para abrir directamente.", "info");
+                        }
                         return;
                     }
                     if (modulo === "ventas") {

@@ -291,13 +291,13 @@
 
         function estadosConversacionPorRol() {
             const base = estadosConversacion();
-            const rol = (rolActual || "").trim();
+            const rol = normalizarRol(rolActual);
 
-            if (rol === "Asesor") {
+            if (rol === "asesor") {
                 return base.filter(etapa => ["NUEVO", "EN_ATENCION", "ESPERANDO_CLIENTE"].includes(etapa.id));
             }
 
-            if (rol === "Supervisor") {
+            if (rol === "supervisor") {
                 return base.filter(etapa => ["NUEVO", "ABIERTO", "EN_ATENCION", "ESPERANDO_CLIENTE", "COTIZACION_ENVIADA", "CERRADO"].includes(etapa.id));
             }
 

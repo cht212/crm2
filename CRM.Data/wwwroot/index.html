@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -11,13 +11,13 @@
             if (oscuro) document.documentElement.classList.add("theme-dark");
         } catch { }
     </script>
-    <link rel="stylesheet" href="MaterializeReference.css">
+    <link rel="stylesheet" href="MaterializeReference.css?v=20260924-operativo-v2">
 </head>
 <body>
     <div class="app">
         <header class="header">
             <div>
-                <span class="header-caption">CRM · Centro de atención</span>
+                <span class="header-caption">CRM � Centro de atenci�n</span>
             </div>
             <div class="status">
                 <span class="status-dot"></span>
@@ -31,7 +31,7 @@
                         <div class="notification-head">
                             <strong>Notificaciones</strong>
                             <div class="notification-actions">
-                                <button id="markNotificationsReadButton" type="button">Leídas</button>
+                                <button id="markNotificationsReadButton" type="button">Le�das</button>
                                 <button id="clearNotificationsButton" type="button">Limpiar</button>
                             </div>
                         </div>
@@ -55,7 +55,7 @@
                         <button id="changePhotoButton" class="profile-menu-item" type="button"><i data-lucide="image-up"></i><span>Cambiar foto</span></button>
                         <button id="viewProfileButton" class="profile-menu-item" type="button"><i data-lucide="user-round"></i><span>Perfil</span></button>
                         <button id="themeToggleButton" class="profile-menu-item" type="button"><i data-lucide="moon"></i><span>Modo oscuro</span></button>
-                        <button id="logoutButton" class="profile-menu-item danger" type="button"><i data-lucide="log-out"></i><span>Cerrar sesión</span></button>
+                        <button id="logoutButton" class="profile-menu-item danger" type="button"><i data-lucide="log-out"></i><span>Cerrar sesi�n</span></button>
                     </div>
                     <input id="profilePhotoInput" type="file" accept=".jpg,.jpeg,.png,.webp" hidden>
                 </div>
@@ -64,11 +64,11 @@
         <main class="main">
             <nav class="workspace-nav" aria-label="Navegacion del CRM">
                 <div class="nav-brand">
-                    <button id="navBrandMark" class="nav-brand-mark" type="button" title="Expandir menú" aria-label="Expandir menú">
+                    <button id="navBrandMark" class="nav-brand-mark" type="button" title="Expandir men�" aria-label="Expandir men�">
                         <img src="/iconodelog.png" alt="HPD" class="brand-icon">
                         <img src="/logo-full.png" alt="HPD Glass Group" class="brand-full">
                     </button>
-                    <button id="navToggle" class="nav-toggle" type="button" title="Contraer menú" aria-label="Contraer menú"><i data-lucide="panel-left-close"></i></button>
+                    <button id="navToggle" class="nav-toggle" type="button" title="Contraer men�" aria-label="Contraer men�"><i data-lucide="panel-left-close"></i></button>
                 </div>
                 <div class="nav-top">
                     <button class="nav-item active" data-module="dashboard" title="Dashboard"><i data-lucide="layout-dashboard"></i><span class="nav-label">Dashboard</span></button>
@@ -106,16 +106,10 @@
                     <button class="nav-item" data-module="tareas" title="Tareas"><i data-lucide="list-checks"></i><span class="nav-label">Tareas</span></button>
                     <button class="nav-item" data-module="pipeline" title="Pipeline"><i data-lucide="kanban"></i><span class="nav-label">Pipeline</span></button>
                     <button class="nav-item" data-module="ventas" title="Ventas"><i data-lucide="badge-dollar-sign"></i><span class="nav-label">Ventas</span></button>
-                    <button class="nav-item" data-module="campanas" title="Campañas"><i data-lucide="megaphone"></i><span class="nav-label">Campañas</span></button>
-                    <button class="nav-item" data-module="automatizacion" title="Automatización"><i data-lucide="cpu"></i><span class="nav-label">Automatización</span></button>
-                    <button class="nav-item" data-module="agenda" title="Agenda"><i data-lucide="calendar-days"></i><span class="nav-label">Agenda</span></button>
-                    <button class="nav-item" data-module="alertas" title="Alertas"><i data-lucide="bell-ring"></i><span class="nav-label">Alertas</span></button>
                     <button class="nav-item" data-module="reportes" title="Reportes"><i data-lucide="chart-no-axes-combined"></i><span class="nav-label">Reportes</span></button>
-                    <button class="nav-item" data-module="comentarios" title="Comentarios"><i data-lucide="message-circle-reply"></i><span class="nav-label">Comentarios</span></button>
+                    <button id="connectionsNav" class="nav-item hidden" data-module="conexiones" title="Conexiones"><i data-lucide="plug-zap"></i><span class="nav-label">Conexiones</span></button>
                     <button id="activityNav" class="nav-item hidden" data-module="actividad" title="Actividad"><i data-lucide="history"></i><span class="nav-label">Actividad</span></button>
                     <button id="failuresNav" class="nav-item hidden" data-module="fallos" title="Fallos"><i data-lucide="triangle-alert"></i><span class="nav-label">Fallos</span></button>
-                    <button class="nav-item" data-module="bot" title="Bot"><i data-lucide="bot-message-square"></i><span class="nav-label">Bot</span></button>
-                    <button class="nav-item" data-module="conexiones" title="Conexiones"><i data-lucide="plug-zap"></i><span class="nav-label">Conexiones</span></button>
                     <button id="usersNav" class="nav-item hidden" data-module="usuarios" title="Usuarios"><i data-lucide="users-round"></i><span class="nav-label">Usuarios</span></button>
                 </div>
             </nav>
@@ -161,7 +155,7 @@
                         <i data-lucide="arrow-left"></i>
                     </button>
                     <div class="lead-detail-crumb">
-                        <span id="leadDetailId">Conversación</span>
+                        <span id="leadDetailId">Conversaci�n</span>
                     </div>
                 </div>
                 <div id="chatHeader" class="chat-header">
@@ -171,14 +165,14 @@
                 <div id="messages" class="messages">
                     <div class="empty">Selecciona una conversacion para ver los mensajes.</div>
                 </div>
-                <div id="quickReplies" class="quick-replies hidden" aria-label="Plantillas rápidas"></div>
+                <div id="quickReplies" class="quick-replies hidden" aria-label="Plantillas r�pidas"></div>
                 <div id="attachmentPreview" class="attachment-preview" aria-live="polite">
                     <div id="attachmentThumb" class="attachment-thumb">&#128206;</div>
                     <div class="attachment-meta">
                         <div id="attachmentName" class="attachment-name">Sin archivo</div>
                         <div id="attachmentSize" class="attachment-size">0 KB</div>
                     </div>
-                    <button id="removeAttachment" class="attachment-remove" type="button" aria-label="Quitar archivo">×</button>
+                    <button id="removeAttachment" class="attachment-remove" type="button" aria-label="Quitar archivo">�</button>
                 </div>
                 <div class="composer">
                     <input id="fileInput" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp" hidden>
@@ -199,27 +193,22 @@
     </div>
 
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="js/state.js"></script>
-    <script src="js/layout-profile.js"></script>
-    <script src="js/api-session.js"></script>
-    <script src="js/inbox.js"></script>
-    <script src="js/customer-panel.js"></script>
-    <script src="js/messaging-attachments.js"></script>
-    <script src="js/utils.js"></script>
-    <script src="js/module-router.js"></script>
-    <script src="js/contacts.js"></script>
-    <script src="js/tasks-sales.js"></script>
-    <script src="js/campaigns.js"></script>
-    <script src="js/automation.js"></script>
-    <script src="js/agenda.js"></script>
-    <script src="js/alertas.js"></script>
-    <script src="js/dashboard.js"></script>
-    <script src="js/pipeline.js"></script>
-    <script src="js/activity-reports.js"></script>
-    <script src="js/quality-modules.js"></script>
-    <script src="js/bot.js"></script>
-    <script src="js/connections.js"></script>
-    <script src="js/users.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/state.js?v=20260924-facebook-visual"></script>
+    <script src="js/layout-profile.js?v=20260924-facebook-visual"></script>
+    <script src="js/api-session.js?v=20260924-operativo-v2"></script>
+    <script src="js/inbox.js?v=20260924-facebook-visual"></script>
+    <script src="js/customer-panel.js?v=20260924-counters-v1"></script>
+    <script src="js/messaging-attachments.js?v=20260924-facebook-visual"></script>
+    <script src="js/utils.js?v=20260924-facebook-visual"></script>
+    <script src="js/module-router.js?v=20260924-operativo-v2"></script>
+    <script src="js/contacts.js?v=20260924-operativo-v1"></script>
+    <script src="js/tasks-sales.js?v=20260924-operativo-v1"></script>
+    <script src="js/dashboard.js?v=20260924-operativo-v1"></script>
+    <script src="js/pipeline.js?v=20260924-facebook-visual"></script>
+    <script src="js/activity-reports.js?v=20260924-facebook-visual"></script>
+    <script src="js/connections.js?v=20260924-operativo-v2"></script>
+    <script src="js/quality-modules.js?v=20260924-operativo-v2"></script>
+    <script src="js/users.js?v=20260924-facebook-visual"></script>
+    <script src="js/app.js?v=20260924-facebook-visual"></script>
 </body>
 </html>

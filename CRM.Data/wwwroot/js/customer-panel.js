@@ -56,7 +56,7 @@
         }
 
         function obtenerIniciales(nombre) {
-            return (nombre || "C")
+            return (nombre || "U")
                 .split(" ")
                 .filter(Boolean)
                 .slice(0, 2)
@@ -67,7 +67,7 @@
 
         function renderClienteAvatar(cliente, clase) {
             const foto = cliente?.fotoPerfilUrl;
-            const iniciales = obtenerIniciales(cliente?.nombre);
+            const iniciales = obtenerIniciales(cliente?.nombre || "Cliente");
             if (foto) {
                 return `<div class="${clase} has-photo" style="background-image:url('${escapeAttribute(foto)}')" title="${escapeAttribute(cliente?.nombre || "Cliente")}"></div>`;
             }
@@ -157,7 +157,11 @@
 
         function renderDatosCliente(panel, conversacion) {
             const cliente = conversacion.cliente || {};
-            const etapas = estadosConversacion();
+            const etapasPermitidas = estadosConversacionPorRol();
+            const etapaActual = estadosConversacion().find(etapa => etapa.id === conversacion.estado);
+            const etapas = etapaActual && !etapasPermitidas.some(etapa => etapa.id === etapaActual.id)
+                ? [...etapasPermitidas, etapaActual]
+                : etapasPermitidas;
             const indiceEtapa = Math.max(etapas.findIndex(etapa => etapa.id === conversacion.estado), 0);
             const pasos = Math.min(indiceEtapa + 1, 4);
             panel.innerHTML = `
@@ -305,6 +309,7 @@
                     return;
                 }
                 await renderNotasCliente(panel, conversacion);
+                await cargarResumen360Cliente(conversacion);
                 notificar("Nota agregada.", "success");
             });
         }
@@ -322,7 +327,7 @@
                 <form id="taskForm" class="crm-form">
                     <input name="titulo" maxlength="200" placeholder="Seguimiento pendiente" required>
                     <input name="fechaVencimiento" type="datetime-local" required>
-                    <select name="asignadoAId"><option value="">Sin asignar</option>${usuarios.map(u => `<option value="${u.id}">${escapeHtml(u.nombre)}</option>`).join("")}</select>
+                    <select name="asignadoAId"><option value="">Sin asignar</option>${usuarios.map(u => `<option value="${u.id}" ${Number(u.id) === Number(sesionActual?.id) ? "selected" : ""}>${escapeHtml(u.nombre)}</option>`).join("")}</select>
                     <textarea name="descripcion" rows="2" maxlength="2000" placeholder="Detalle opcional"></textarea>
                     <button type="submit">Crear tarea</button>
                 </form>
@@ -341,6 +346,9 @@
                 datos.clienteId = clienteId;
                 datos.conversacionId = conversacion.id;
                 datos.asignadoAId = datos.asignadoAId ? Number(datos.asignadoAId) : null;
+                if (!puedeGestionarEquipoCRM() && sesionActual?.id) {
+                    datos.asignadoAId = Number(sesionActual.id);
+                }
                 const crear = await api("/api/tareas", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -351,6 +359,7 @@
                     return;
                 }
                 await renderTareasCliente(panel, conversacion);
+                await cargarResumen360Cliente(conversacion);
                 notificar("Tarea creada.", "success");
             });
 
@@ -359,6 +368,7 @@
                     const response = await api(`/api/tareas/${button.dataset.completeTask}/completar`, { method: "PUT" });
                     if (!response.ok) notificar(await response.text(), "error");
                     await renderTareasCliente(panel, conversacion);
+                    await cargarResumen360Cliente(conversacion);
                     if (response.ok) notificar("Tarea completada.", "success");
                 });
             });
@@ -406,6 +416,7 @@
                     return;
                 }
                 await renderOportunidadesCliente(panel, conversacion);
+                await cargarResumen360Cliente(conversacion);
                 notificar("Oportunidad creada.", "success");
             });
 
@@ -427,6 +438,7 @@
                     });
                     if (!response.ok) notificar(await response.text(), "error");
                     await renderOportunidadesCliente(panel, conversacion);
+                    await cargarResumen360Cliente(conversacion);
                     if (response.ok) notificar("Etapa de oportunidad actualizada.", "success");
                 });
             });
@@ -454,7 +466,7 @@
         async function cargarEtiquetasCliente(clienteId) {
             const contenedor = document.getElementById("clientTags");
             if (!contenedor || !clienteId) return;
-            const puedeGestionarEtiquetas = rolActual === "Administrador" || rolActual === "Supervisor";
+            const puedeGestionarEtiquetas = puedeGestionarEquipoCRM();
             const [clienteTagsResponse, todasResponse] = await Promise.all([
                 api(`/api/etiquetas/clientes/${clienteId}`),
                 api("/api/etiquetas")

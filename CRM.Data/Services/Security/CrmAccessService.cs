@@ -23,15 +23,23 @@ public sealed class CrmAccessService
             ? id
             : null;
 
+    public string? RolActual =>
+        _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.Role);
+
+    public bool EsAdministrador =>
+        _httpContextAccessor.HttpContext?.User.IsInRole(CrmRoles.Administrador) == true;
+
+    public bool EsSupervisor =>
+        _httpContextAccessor.HttpContext?.User.IsInRole(CrmRoles.Supervisor) == true;
+
     public bool EsAsesor =>
-        _httpContextAccessor.HttpContext?.User.IsInRole("Asesor") == true;
+        _httpContextAccessor.HttpContext?.User.IsInRole(CrmRoles.Asesor) == true;
 
     public bool TieneAccesoGlobal =>
-        _httpContextAccessor.HttpContext?.User.IsInRole("Administrador") == true ||
-        _httpContextAccessor.HttpContext?.User.IsInRole("Supervisor") == true;
+        EsAdministrador || EsSupervisor;
 
     public bool PuedeGestionarUsuarios =>
-        _httpContextAccessor.HttpContext?.User.IsInRole("Administrador") == true;
+        EsAdministrador;
 
     public bool PuedeVerDashboard =>
         TieneAccesoGlobal || EsAsesor;
@@ -43,25 +51,8 @@ public sealed class CrmAccessService
             return false;
         }
 
-        var moduloNormalizado = modulo.Trim().ToLowerInvariant();
-
-        if (TieneAccesoGlobal)
-        {
-            return moduloNormalizado switch
-            {
-                "dashboard" or "inbox" or "contactos" or "tareas" or "pipeline" or "ventas" or
-                "campanas" or "automatizacion" or "agenda" or "alertas" or "reportes" or "comentarios" or
-                "actividad" or "fallos" or "bot" or "conexiones" => true,
-                "usuarios" => PuedeGestionarUsuarios,
-                _ => false
-            };
-        }
-
-        return moduloNormalizado switch
-        {
-            "inbox" or "contactos" or "tareas" or "pipeline" or "comentarios" => true,
-            _ => false
-        };
+        var rolActual = RolActual;
+        return CrmRolePermissions.CanAccessModule(rolActual, modulo);
     }
 
     public static bool EsConversacionDisponibleParaAsesor(Conversacion conversacion) =>

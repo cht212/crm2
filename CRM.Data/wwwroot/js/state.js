@@ -12,6 +12,7 @@ const POLLING_MS = 15000;
         let fichaTabActiva = "datos";
         let usuariosCache = null;
         let dashboardCanalActivo = "TODOS";
+        let facebookDateRange = { desde: "", hasta: "" };
         let inboxCanalActivo = "TODOS";
         let tareasFiltroActivo = "mias";
         let ventasEtapaFiltro = "TODAS";

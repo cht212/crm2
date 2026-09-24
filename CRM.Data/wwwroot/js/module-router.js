@@ -1,10 +1,19 @@
 ﻿// Archivo generado desde Script.js para separar responsabilidades del CRM.
 // Mantiene variables y funciones globales para compatibilidad con la vista actual.
 
+        let moduloNavegacionVersion = 0;
+
         async function abrirModulo(modulo) {
             if (typeof puedeVerModulo === "function" && !puedeVerModulo(modulo)) {
                 modulo = typeof moduloInicialPorRol === "function" ? moduloInicialPorRol() : "inbox";
             }
+
+            const version = ++moduloNavegacionVersion;
+
+            // Cancela peticiones pendientes del módulo anterior para impedir
+            // que una respuesta tardía reemplace el contenido de la navegación actual.
+            window.__crmNavigationController?.abort();
+            window.__crmNavigationController = new AbortController();
 
             moduloActual = modulo;
             document.querySelectorAll(".nav-item").forEach(item => {
@@ -13,15 +22,19 @@
             document.querySelector('[data-nav-group="comunicaciones"]')?.classList.toggle("active", modulo === "inbox");
             sincronizarSubmenuComunicaciones();
 
-            // Cualquier navegación por el menú principal cierra la vista de
-            // "conversación individual" abierta desde el Pipeline u otro listado.
             modoDetalleConversacion = false;
-            document.getElementById("leadDetailBar").classList.add("hidden");
+            document.getElementById("leadDetailBar")?.classList.add("hidden");
 
             const vista = document.getElementById("moduleView");
             const sidebar = document.querySelector(".sidebar");
             const chat = document.querySelector(".chat");
             const details = document.getElementById("details");
+
+            if (!vista || !sidebar || !chat || !details) {
+                throw new Error("La estructura principal del CRM está incompleta.");
+            }
+
+            vista.dataset.module = modulo;
 
             if (modulo === "inbox") {
                 vista.classList.add("hidden");
@@ -31,36 +44,67 @@
                 return;
             }
 
-            /*
-             * Los módulos NO se superponen a la bandeja:
-             * ocultamos el conjunto Inbox mientras se consulta Contactos,
-             * Pipeline o Reportes.
-             */
             sidebar.classList.add("hidden");
             chat.classList.add("hidden");
             details.classList.add("hidden");
             vista.classList.remove("hidden");
-            vista.innerHTML = '<div class="empty">Cargando modulo...</div>';
+            vista.innerHTML = '<div class="empty">Cargando módulo...</div>';
 
             try {
-                if (modulo === "dashboard") await cargarModuloDashboard(vista);
-                if (modulo === "contactos") await cargarModuloContactos(vista);
-                if (modulo === "tareas") await cargarModuloTareas(vista);
-                if (modulo === "pipeline") await cargarModuloPipeline(vista);
-                if (modulo === "ventas") await cargarModuloVentas(vista);
-                if (modulo === "campanas") await cargarModuloCampanas(vista);
-                if (modulo === "automatizacion") await cargarModuloAutomatizacion(vista);
-                if (modulo === "agenda") await cargarModuloAgenda(vista);
-                if (modulo === "alertas") await cargarModuloAlertas(vista);
-                if (modulo === "reportes") await cargarModuloReportes(vista);
-                if (modulo === "actividad") await cargarModuloActividad(vista);
-                if (modulo === "comentarios") await cargarModuloComentarios(vista);
-                if (modulo === "fallos") await cargarModuloFallos(vista);
-                if (modulo === "bot") await cargarModuloBot(vista);
-                if (modulo === "conexiones") await cargarModuloConexiones(vista);
-                if (modulo === "usuarios") await cargarModuloUsuarios(vista);
+                switch (modulo) {
+                    case "dashboard":
+                        await cargarModuloDashboard(vista);
+                        break;
+                    case "contactos":
+                        await cargarModuloContactos(vista);
+                        break;
+                    case "tareas":
+                        await cargarModuloTareas(vista);
+                        break;
+                    case "pipeline":
+                        await cargarModuloPipeline(vista);
+                        break;
+                    case "ventas":
+                        await cargarModuloVentas(vista);
+                        break;
+                    case "reportes":
+                        await cargarModuloReportes(vista);
+                        break;
+                    case "conexiones":
+                        await cargarModuloConexiones(vista);
+                        break;
+                    case "actividad":
+                        await cargarModuloActividad(vista);
+                        break;
+                    case "fallos":
+                        await cargarModuloFallos(vista);
+                        break;
+                    case "usuarios":
+                        await cargarModuloUsuarios(vista);
+                        break;
+                    default:
+                        throw new Error(`Módulo no implementado: ${modulo}`);
+                }
+
+                if (version !== moduloNavegacionVersion || moduloActual !== modulo) {
+                    return;
+                }
             } catch (error) {
-                console.error(error);
-                vista.innerHTML = `<div class="error">No se pudo cargar el modulo. ${escapeHtml(error.message || "")}</div>`;
+                if (error?.name === "AbortError") {
+                    return;
+                }
+
+                console.error(`No se pudo cargar el módulo ${modulo}:`, error);
+
+                if (version !== moduloNavegacionVersion || moduloActual !== modulo) {
+                    return;
+                }
+
+                vista.classList.remove("hidden");
+                vista.innerHTML = `
+                    <div class="error">
+                        <strong>No se pudo cargar el módulo.</strong>
+                        <p>${escapeHtml(error.message || "")}</p>
+                    </div>`;
             }
         }

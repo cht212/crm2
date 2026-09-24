@@ -2,7 +2,7 @@
 // Mantiene variables y funciones globales para compatibilidad con la vista actual.
 
         async function cargarModuloUsuarios(vista) {
-            if (rolActual !== "Administrador") {
+            if (!esRol("administrador")) {
                 vista.innerHTML = '<div class="error">Solo un administrador puede gestionar usuarios.</div>';
                 return;
             }
@@ -35,6 +35,7 @@
                     notificar(await crearResponse.text(), "error");
                     return;
                 }
+                usuariosCache = null;
                 await cargarModuloUsuarios(vista);
                 notificar("Usuario creado.", "success");
             });

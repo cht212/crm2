@@ -72,8 +72,8 @@ namespace CRM.Data.Data
             modelBuilder.Entity<Mensaje>().Property(m => m.nMensaje).HasColumnName("n_mensaje");
             modelBuilder.Entity<Mensaje>().Property(m => m.nConversacion).HasColumnName("n_conversacion");
             modelBuilder.Entity<Mensaje>().Property(m => m.cWhatsappId).HasColumnName("c_whatsapp_id");
-            modelBuilder.Entity<Mensaje>().Property(m => m.cCanal).HasColumnName("c_canal");
-            modelBuilder.Entity<Mensaje>().Property(m => m.cExternalId).HasColumnName("c_external_id");
+            modelBuilder.Entity<Mensaje>().Property(m => m.cCanal).HasColumnName("c_canal").HasMaxLength(32);
+            modelBuilder.Entity<Mensaje>().Property(m => m.cExternalId).HasColumnName("c_external_id").HasMaxLength(450);
             modelBuilder.Entity<Mensaje>().Property(m => m.cDireccion).HasColumnName("c_direccion");
             modelBuilder.Entity<Mensaje>().Property(m => m.cTipo).HasColumnName("c_tipo");
             modelBuilder.Entity<Mensaje>().Property(m => m.cMensaje).HasColumnName("c_mensaje");
@@ -84,6 +84,11 @@ namespace CRM.Data.Data
                 .HasOne(m => m.Conversacion)
                 .WithMany(c => c.Mensajes)
                 .HasForeignKey(m => m.nConversacion);
+
+            modelBuilder.Entity<Mensaje>()
+                .HasIndex(m => new { m.cCanal, m.cDireccion, m.cExternalId })
+                .IsUnique()
+                .HasFilter("[c_direccion] = 'E' AND [c_external_id] IS NOT NULL");
 
             modelBuilder.Entity<CrmUsuario>().ToTable("crm_usuario");
             modelBuilder.Entity<CrmUsuario>().HasKey(u => u.nUsuario);

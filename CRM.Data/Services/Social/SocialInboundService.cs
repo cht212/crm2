@@ -155,7 +155,30 @@ public sealed class SocialInboundService
         };
 
         _context.Mensajes.Add(mensaje);
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException) when (!string.IsNullOrWhiteSpace(input.ExternalMessageId))
+        {
+            _context.Entry(mensaje).State = EntityState.Detached;
+
+            var mensajeExistente = await _context.Mensajes
+                .AsNoTracking()
+                .Where(item =>
+                    item.cCanal == canal &&
+                    item.cDireccion == 'E' &&
+                    item.cExternalId == input.ExternalMessageId)
+                .Select(item => (long?)item.nConversacion)
+                .FirstOrDefaultAsync();
+
+            if (mensajeExistente.HasValue)
+            {
+                return mensajeExistente.Value;
+            }
+
+            throw;
+        }
 
         var respuestaBot = await ObtenerRespuestaBotAsync(
             conversacion.nConversacion,
