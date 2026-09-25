@@ -1,5 +1,4 @@
-﻿// Archivo generado desde Script.js para separar responsabilidades del CRM.
-// Mantiene variables y funciones globales para compatibilidad con la vista actual.
+// Módulo frontend del CRM.
 
         async function api(url, options = {}) {
             const separador = url.includes("?") ? "&" : "?";
@@ -120,9 +119,10 @@
                 "inbox",
                 "contactos",
                 "tareas",
-                "pipeline",
+                "leads",
                 "ventas",
                 "reportes",
+                "bot",
                 "conexiones",
                 "actividad",
                 "usuarios",
@@ -133,9 +133,10 @@
                 "inbox",
                 "contactos",
                 "tareas",
-                "pipeline",
+                "leads",
                 "ventas",
                 "reportes",
+                "bot",
                 "actividad"
             ]),
             asesor: new Set([
@@ -143,7 +144,7 @@
                 "inbox",
                 "contactos",
                 "tareas",
-                "pipeline",
+                "leads",
                 "ventas"
             ])
         };
@@ -192,6 +193,8 @@
 
             document.getElementById("usersNav")?.classList.toggle("hidden", !permitidos.has("usuarios"));
             document.getElementById("usersNav") && (document.getElementById("usersNav").hidden = !permitidos.has("usuarios"));
+            document.getElementById("botNav")?.classList.toggle("hidden", !permitidos.has("bot"));
+            document.getElementById("botNav") && (document.getElementById("botNav").hidden = !permitidos.has("bot"));
             document.getElementById("connectionsNav")?.classList.toggle("hidden", !permitidos.has("conexiones"));
             document.getElementById("connectionsNav") && (document.getElementById("connectionsNav").hidden = !permitidos.has("conexiones"));
             document.getElementById("activityNav")?.classList.toggle("hidden", !permitidos.has("actividad"));

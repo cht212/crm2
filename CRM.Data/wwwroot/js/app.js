@@ -1,5 +1,4 @@
-﻿// Archivo generado desde Script.js para separar responsabilidades del CRM.
-// Mantiene variables y funciones globales para compatibilidad con la vista actual.
+// Módulo frontend del CRM.
 
         //
         // =========================================================

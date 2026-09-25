@@ -1,5 +1,4 @@
-﻿// Archivo generado desde Script.js para separar responsabilidades del CRM.
-// Mantiene variables y funciones globales para compatibilidad con la vista actual.
+// Módulo frontend del CRM.
 
         function mostrarFichaCliente(conversacion) {
             const cliente = conversacion.cliente || {};
@@ -7,9 +6,6 @@
             const etiquetaContacto = obtenerEtiquetaContacto(conversacion);
             const canal = (conversacion?.canal || "WHATSAPP").toUpperCase();
             const puedeActualizarMeta = ["FACEBOOK", "INSTAGRAM"].includes(canal);
-            if (fichaTabActiva === "bot") {
-                fichaTabActiva = "datos";
-            }
             const tabs = [
                 ["datos", "Datos"],
                 ["notas", "Notas"],
@@ -55,15 +51,7 @@
             cargarPanelFicha(fichaTabActiva, conversacion);
         }
 
-        function obtenerIniciales(nombre) {
-            return (nombre || "U")
-                .split(" ")
-                .filter(Boolean)
-                .slice(0, 2)
-                .map(parte => parte.charAt(0))
-                .join("")
-                .toUpperCase();
-        }
+        // obtenerIniciales() vive en utils.js (única fuente).
 
         function renderClienteAvatar(cliente, clase) {
             const foto = cliente?.fotoPerfilUrl;
@@ -177,11 +165,11 @@
                     <select id="conversationStateSelect" class="mini-select">
                         ${etapas.map(etapa => `<option value="${etapa.id}" ${etapa.id === conversacion.estado ? "selected" : ""}>${escapeHtml(etapa.label)}</option>`).join("")}
                     </select>
-                    <div class="pipeline">
-                        <span class="pipeline-step active"></span>
-                        <span class="pipeline-step ${pasos >= 2 ? "active" : ""}"></span>
-                        <span class="pipeline-step ${pasos >= 3 ? "active" : ""}"></span>
-                        <span class="pipeline-step ${pasos >= 4 ? "active" : ""}"></span>
+                    <div class="lead-progress">
+                        <span class="lead-progress-step active"></span>
+                        <span class="lead-progress-step ${pasos >= 2 ? "active" : ""}"></span>
+                        <span class="lead-progress-step ${pasos >= 3 ? "active" : ""}"></span>
+                        <span class="lead-progress-step ${pasos >= 4 ? "active" : ""}"></span>
                     </div>
                 </div>
                 <div class="crm-facts">
@@ -226,40 +214,14 @@
             });
         }
 
-        function renderBotConversacion(panel, conversacion) {
-            const bot = conversacion.bot || {};
-            const estado = (bot.estado || "ACTIVO").toUpperCase();
-            const activo = estado === "ACTIVO";
-            panel.innerHTML = `
-                <div class="conversation-bot-card ${activo ? "active" : "paused"}">
-                    <div>
-                        <span class="panel-kicker">Bot de derivación</span>
-                        <h3>${activo ? "Bot activo" : "Bot pausado"}</h3>
-                        <p>${activo
-                            ? "El bot puede enviar el menú inicial y responder opciones simples hasta el límite configurado."
-                            : "El asesor tomó control. El bot no responderá automáticamente en esta conversación."}</p>
-                    </div>
-                    <button id="conversationBotToggle" class="connection-action" type="button">
-                        ${activo ? "Pausar bot" : "Activar bot"}
-                    </button>
-                </div>
-                <div class="crm-list">
-                    <article class="crm-list-item">
-                        <strong>Regla de ahorro</strong>
-                        <p>El bot solo debe ayudar a derivar o clasificar. Cuando el asesor responde, se pausa automáticamente para evitar mensajes innecesarios.</p>
-                    </article>
-                    <article class="crm-list-item">
-                        <strong>Estado actual</strong>
-                        <p>${escapeHtml(estado)}${bot.pausadoDesde ? ` desde ${formatearFecha(bot.pausadoDesde)}` : ""}</p>
-                    </article>
-                </div>`;
+        // La pestaña "bot" de la ficha del cliente se retiró de `tabs` en
+        // mostrarFichaCliente() (ver arriba), pero renderBotConversacion()
+        // seguía en el archivo sin ningún llamador: código muerto. El
+        // control de bot por conversación sigue disponible desde el header
+        // del chat (botón "Bot activo/pausado" en inbox.js), que usa
+        // cambiarBotConversacion() más abajo.
 
-            document.getElementById("conversationBotToggle").addEventListener("click", () => {
-                cambiarBotConversacion(conversacion.id, activo ? "PAUSADO" : "ACTIVO", "bot");
-            });
-        }
-
-        async function cambiarBotConversacion(conversacionId, estado, tabRetorno = fichaTabActiva) {
+        async function cambiarBotConversacion(conversacionId, estado) {
             const response = await api(`/api/whatsapp/conversaciones/${conversacionId}/bot`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
@@ -271,10 +233,6 @@
             }
             await seleccionarConversacion(conversacionId);
             notificar(estado === "ACTIVO" ? "Bot activado para este chat." : "Bot pausado para este chat.", "success");
-            fichaTabActiva = tabRetorno;
-            if (tabRetorno === "bot") {
-                mostrarFichaCliente(conversacionSeleccionada);
-            }
         }
 
         async function renderNotasCliente(panel, conversacion) {
@@ -376,6 +334,7 @@
 
         async function renderOportunidadesCliente(panel, conversacion) {
             const clienteId = conversacion.cliente.id;
+            const fechaMinimaCierre = new Date().toISOString().slice(0, 10);
             const response = await api(`/api/oportunidades?clienteId=${clienteId}&pageSize=20`);
             if (!response.ok) throw new Error("Oportunidades no disponibles");
             const pagina = await response.json();
@@ -384,15 +343,17 @@
             panel.innerHTML = `
                 <form id="dealForm" class="crm-form two-cols">
                     <input name="titulo" maxlength="200" placeholder="Nueva oportunidad" required>
-                    <input name="monto" type="number" min="0" step="0.01" placeholder="Monto">
+                    <input name="monto" type="number" min="0.01" step="0.01" placeholder="Monto" required>
                     <select name="moneda"><option value="PEN">PEN</option><option value="USD">USD</option></select>
+                    <input name="fechaCierreEstimada" type="date" min="${fechaMinimaCierre}" title="Fecha estimada de cierre" aria-label="Fecha estimada de cierre" required>
                     <input name="probabilidad" type="number" min="0" max="100" value="10" placeholder="Probabilidad">
                     <button type="submit">Crear oportunidad</button>
                 </form>
                 <div class="crm-list">
                     ${oportunidades.map(op => `<article class="crm-list-item">
                         <strong>${escapeHtml(op.titulo)}</strong>
-                        <p>${escapeHtml(op.moneda)} ${Number(op.monto || 0).toFixed(2)} · ${op.probabilidad}%</p>
+                        <p>${escapeHtml(op.moneda)} ${Number(op.monto || 0).toFixed(2)} · ${op.probabilidad}%${op.fechaCierreEstimada ? ` · Cierre ${formatearFecha(op.fechaCierreEstimada)}` : ""}</p>
+                        ${op.motivoPerdida ? `<p>Motivo: ${escapeHtml(op.motivoPerdida)}</p>` : ""}
                         <select class="mini-select" data-deal-stage="${op.id}">
                             ${etapas.map(etapa => `<option value="${etapa}" ${etapa === op.etapa ? "selected" : ""}>${etapa}</option>`).join("")}
                         </select>
@@ -406,6 +367,11 @@
                 datos.conversacionId = conversacion.id;
                 datos.monto = Number(datos.monto || 0);
                 datos.probabilidad = Number(datos.probabilidad || 10);
+                datos.fechaCierreEstimada = datos.fechaCierreEstimada || null;
+                if (datos.monto <= 0 || !datos.fechaCierreEstimada) {
+                    notificar("Completa monto y fecha estimada de cierre para crear la oportunidad.", "warning");
+                    return;
+                }
                 const crear = await api("/api/oportunidades", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },

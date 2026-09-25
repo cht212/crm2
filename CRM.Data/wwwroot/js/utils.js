@@ -1,5 +1,4 @@
-﻿// Archivo generado desde Script.js para separar responsabilidades del CRM.
-// Mantiene variables y funciones globales para compatibilidad con la vista actual.
+// Módulo frontend del CRM.
 
         function formatearFecha(fecha) {
             if (!fecha) return "";
@@ -276,13 +275,59 @@
             });
         }
 
+        // Catálogo único de canales/redes soportados. Antes existían DOS
+        // copias de este catálogo y de sus helpers (una en inbox.js, otra
+        // aquí). Al cargarse ambos scripts, la definición de utils.js
+        // pisaba silenciosamente a la de inbox.js -y esa versión no sabía
+        // resolver el filtro "TODOS" ni leer conversacion.canalOrigen /
+        // PascalCase-, así que el badge "Todas" del inbox perdía su color
+        // y ciertas conversaciones caían mal clasificadas. Ahora hay una
+        // sola fuente de verdad, usada por inbox.js, leads.js, dashboard.js,
+        // connections.js, bot.js y las notificaciones.
+        const REDES_DISPONIBLES = [
+            { canal: "TODOS", nombre: "Todas", clase: "all" },
+            { canal: "WHATSAPP", nombre: "WhatsApp", clase: "whatsapp" },
+            { canal: "INSTAGRAM", nombre: "Instagram", clase: "instagram" },
+            { canal: "FACEBOOK", nombre: "Facebook", clase: "facebook" },
+            { canal: "TIKTOK", nombre: "TikTok", clase: "tiktok" }
+        ];
+
+        function normalizarCanal(canal) {
+            return String(canal || "WHATSAPP").trim().toUpperCase();
+        }
+
+        function obtenerRedPorCanal(canal) {
+            const codigo = normalizarCanal(canal);
+            return REDES_DISPONIBLES.find(red => red.canal === codigo)
+                || REDES_DISPONIBLES.find(red => red.canal === "WHATSAPP");
+        }
+
+        function obtenerCanalConversacion(conversacion) {
+            return normalizarCanal(
+                conversacion?.canal ||
+                conversacion?.Canal ||
+                conversacion?.canalOrigen ||
+                conversacion?.CanalOrigen
+            );
+        }
+
+        function obtenerIniciales(nombre) {
+            return (nombre || "U")
+                .split(" ")
+                .filter(Boolean)
+                .slice(0, 2)
+                .map(parte => parte.charAt(0))
+                .join("")
+                .toUpperCase();
+        }
+
         function estadosConversacion() {
             return [
                 { id: "NUEVO", label: "Nuevo" },
                 { id: "ABIERTO", label: "Abierto" },
                 { id: "EN_ATENCION", label: "En atencion" },
                 { id: "ESPERANDO_CLIENTE", label: "Esperando cliente" },
-                { id: "COTIZACION_ENVIADA", label: "Cotizacion enviada" },
+                { id: "COTIZACION_ENVIADA", label: "Cotización enviada" },
                 { id: "CERRADO", label: "Cerrado" },
                 { id: "PERDIDO", label: "Perdido" },
                 { id: "NO_RESPONDIO", label: "No respondio" }

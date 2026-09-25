@@ -1,14 +1,13 @@
-﻿// Archivo generado desde Script.js para separar responsabilidades del CRM.
-// Mantiene variables y funciones globales para compatibilidad con la vista actual.
+// Módulo frontend del CRM.
 
-        async function cargarModuloPipeline(vista) {
+        async function cargarModuloLeads(vista) {
             // El endpoint ahora pagina (antes traía todo sin límite).
             // Pedimos un lote grande para mantener el kanban tal como
             // estaba; una vista con "cargar más" es un paso pendiente.
-            const response = await api("/api/crm/pipeline?pageSize=200");
-            if (!response.ok) throw new Error("Pipeline no disponible");
-            const paginaPipeline = await response.json();
-            const conversacionesPipeline = paginaPipeline.items || [];
+            const response = await api("/api/crm/leads?pageSize=200");
+            if (!response.ok) throw new Error("Leads no disponibles");
+            const paginaLeads = await response.json();
+            const conversacionesLeads = paginaLeads.items || [];
             const puedeGestionarEquipo = puedeGestionarEquipoCRM();
             const etapas = estadosConversacionPorRol().map(etapa => etapa.id);
             let usuarios = [];
@@ -51,14 +50,14 @@
 
             vista.innerHTML = `
                         <div class="module-heading">
-                            <div><h1>Pipeline</h1><p>Gestiona la etapa de cada conversación como tablero kanban.</p></div>
+                            <div><h1>Leads</h1><p>Organiza prospectos por etapa de atención antes de convertirlos en venta.</p></div>
                             ${puedeGestionarEquipo
                                 ? '<button type="button" id="btnAsignarPendientes" class="secondary-btn">Asignar pendientes automáticamente</button>'
                                 : ""}
                         </div>
                         <div class="kanban-summary">
                             ${etapas.map(etapa => {
-                                const total = conversacionesPipeline.filter(item => item.estado === etapa).length;
+                                const total = conversacionesLeads.filter(item => item.estado === etapa).length;
                                 return `<div class="kanban-summary-card" data-stage="${etapa}">
                                     <span>${etapa}</span>
                                     <strong>${total}</strong>
@@ -66,7 +65,7 @@
                             }).join("")}
                         </div>
                         <div class="stage-columns">${etapas.map(etapa => {
-                            const items = conversacionesPipeline.filter(item => item.estado === etapa);
+                            const items = conversacionesLeads.filter(item => item.estado === etapa);
                             return `
                             <div class="stage-column" data-stage="${etapa}">
                                 <div class="stage-header">
@@ -91,6 +90,11 @@
                                 <div class="deal-meta-row">
                                     <span>${crearLogoRed(red.clase || "whatsapp")} ${escapeHtml(red.nombre || "WhatsApp")} · ${escapeHtml(item.cliente.telefono)}</span>
                                     <span class="deal-stage-pill">${escapeHtml(item.estado)}</span>
+                                </div>
+                                <div class="deal-meta-row">
+                                    ${item.proximaTarea
+                                        ? `<span class="${item.proximaTarea.vencida ? "danger-text" : ""}">Próximo paso: ${escapeHtml(item.proximaTarea.titulo)} · ${formatearFecha(item.proximaTarea.vence)}</span>`
+                                        : '<span class="danger-text">Sin próximo paso</span>'}
                                 </div>
                                 <select class="stage-select" data-id="${item.id}">
                                     ${etapas.map(opcion => `<option value="${opcion}" ${opcion === item.estado ? "selected" : ""}>${opcion}</option>`).join("")}
@@ -125,7 +129,7 @@
             /*
              * Al hacer click en la tarjeta (fuera de los <select>) abrimos
              * SOLO esa conversación, igual que en Kommo al hacer click sobre
-             * un lead del pipeline: no lleva al inbox general con todos los
+             * un lead: no lleva al inbox general con todos los
              * chats, sino a una vista de detalle con la flecha "<" para volver
              * aquí mismo.
              */
@@ -140,7 +144,7 @@
                 });
                 card.addEventListener("click", event => {
                     if (event.target.closest("select") || event.target.closest(".assignee-profile")) return;
-                    abrirDetalleConversacion(card.dataset.conversationId, "pipeline");
+                    abrirDetalleConversacion(card.dataset.conversationId, "leads");
                 });
             });
             vista.querySelectorAll(".stage-column").forEach(column => {
@@ -171,7 +175,7 @@
                         const response = await api("/api/crm/conversaciones/asignar-pendientes", { method: "POST" });
                         if (!response.ok) throw new Error("No se pudo asignar");
                         const resultado = await response.json();
-                        await cargarModuloPipeline(vista);
+                        await cargarModuloLeads(vista);
                         notificar(resultado.asignadas > 0
                             ? `Se asignaron ${resultado.asignadas} conversación(es) sin asesor.`
                             : "No había conversaciones pendientes por asignar.", "success");
@@ -191,7 +195,7 @@
          * pero no la bandeja completa con la lista de todos los chats.
          * moduloOrigen indica a qué pantalla debe volver la flecha "<".
          */
-        async function abrirDetalleConversacion(id, moduloOrigen = "pipeline") {
+        async function abrirDetalleConversacion(id, moduloOrigen = "leads") {
             modoDetalleConversacion = true;
             moduloRetornoDetalle = moduloOrigen;
 
@@ -217,7 +221,7 @@
                 body: JSON.stringify({ usuarioId: usuarioId ? Number(usuarioId) : null })
             });
             if (!response.ok) throw new Error("No se pudo asignar la conversación");
-            await cargarModuloPipeline(document.getElementById("moduleView"));
+            await cargarModuloLeads(document.getElementById("moduleView"));
             notificar("Conversación reasignada.");
         }
 
@@ -241,6 +245,6 @@
                 body: JSON.stringify({ estado: estadoNuevo })
             });
             if (!response.ok) throw new Error("No se pudo cambiar el estado");
-            await cargarModuloPipeline(document.getElementById("moduleView"));
+            await cargarModuloLeads(document.getElementById("moduleView"));
             notificar("Estado actualizado.");
         }

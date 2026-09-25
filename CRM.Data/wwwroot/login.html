@@ -6,25 +6,34 @@
     <title>CRM HPD | Acceso</title>
     <style>
         :root {
-            --primary: #007DC3;
-            --primary-darken-1: #0069A6;
-            --secondary: #B5D5F0;
-            --secondary-darken-1: #8FB9DA;
-            --success: #A8C96B;
-            --success-darken-1: #88AA4D;
-            --info: #007DC3;
-            --warning: #FDB528;
-            --error: #FF4D49;
+            --pantone-285: #0072CE;
+            --pantone-277: #ABCAE9;
+            --pantone-374: #C1D82F;
+            --pantone-gray-52: #8A8C8E;
+            --pantone-293: #003DA5;
+            --pantone-306: #00B5E2;
+            --pantone-3272: #00A499;
+            --pantone-376: #84BD00;
+            --pantone-1235: #FFB81C;
+            --primary: var(--pantone-285);
+            --primary-darken-1: var(--pantone-293);
+            --secondary: var(--pantone-277);
+            --secondary-darken-1: color-mix(in srgb, var(--pantone-277) 72%, var(--pantone-293));
+            --success: var(--pantone-376);
+            --success-darken-1: color-mix(in srgb, var(--pantone-376) 74%, var(--pantone-293));
+            --info: var(--pantone-306);
+            --warning: var(--pantone-1235);
+            --error: color-mix(in srgb, var(--pantone-1235) 72%, var(--pantone-293));
             --background: #F5F8FA;
             --surface: #FFFFFF;
             --on-background: #263238;
             --on-surface: #263238;
-            --line: #dfeaf2;
-            --muted: #5f7081;
+            --line: color-mix(in srgb, var(--pantone-277) 48%, white);
+            --muted: color-mix(in srgb, var(--pantone-gray-52) 74%, var(--pantone-293));
             --shadow: 0 26px 70px rgba(15, 30, 45, 0.12);
-            --navy-900: #0d2437;
-            --navy-800: #12324d;
-            --navy-700: #1c4568;
+            --navy-900: var(--pantone-293);
+            --navy-800: color-mix(in srgb, var(--pantone-293) 82%, black);
+            --navy-700: color-mix(in srgb, var(--pantone-285) 52%, var(--pantone-293));
             --panel-glass: rgba(255,255,255,0.08);
         }
 
@@ -46,7 +55,7 @@
             min-height: 100vh;
             display: grid;
             grid-template-columns: 1.55fr 1fr;
-            background: linear-gradient(180deg, #eff5f8 0%, #f8fbff 100%);
+            background: linear-gradient(180deg, color-mix(in srgb, var(--pantone-277) 24%, white) 0%, #f8fbff 100%);
             overflow: hidden;
         }
 
@@ -101,29 +110,29 @@
         }
 
         .brand-icon {
-            width: 42px;
-            height: 42px;
+            width: 54px;
+            height: 54px;
             border-radius: 12px;
-            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+            background: color-mix(in srgb, var(--surface) 92%, var(--secondary));
             display: grid;
             place-items: center;
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.24);
+            box-shadow: 0 12px 26px color-mix(in srgb, var(--pantone-293) 24%, transparent), inset 0 0 0 1px rgba(255,255,255,0.42);
         }
 
         .brand-icon img {
-            width: 22px;
-            height: 22px;
-            filter: brightness(0) invert(1);
+            width: 38px;
+            height: 38px;
+            object-fit: contain;
             display: block;
         }
 
         .brand-logo {
-            height: 42px;
+            height: 56px;
             width: auto;
-            max-width: 210px;
+            max-width: 260px;
             object-fit: contain;
-            filter: brightness(0) invert(1);
             display: block;
+            filter: drop-shadow(0 12px 22px color-mix(in srgb, var(--pantone-293) 38%, transparent));
         }
 
         .brand-badge {
@@ -136,7 +145,7 @@
             border-radius: 999px;
             border: 1px solid rgba(255,255,255,0.16);
             background: rgba(255,255,255,0.04);
-            color: rgba(255,255,255,0.9);
+            color: var(--surface);
             font-size: 0.7rem;
             font-weight: 700;
             letter-spacing: 0.14em;
@@ -146,7 +155,7 @@
         .brand-content {
             max-width: 560px;
             padding-left: 8px;
-            color: #fff;
+            color: var(--surface);
         }
 
         .eyebrow {
@@ -156,7 +165,7 @@
             min-height: 34px;
             padding: 0 16px;
             border-radius: 999px;
-            background: rgba(181, 213, 240, 0.09);
+            background: color-mix(in srgb, var(--secondary) 9%, transparent);
             border: 1px solid rgba(255,255,255,0.12);
             color: rgba(236,244,255,0.9);
             font-size: 0.72rem;
@@ -171,7 +180,7 @@
             line-height: 0.96;
             letter-spacing: -0.075em;
             font-weight: 900;
-            color: #fff;
+            color: var(--surface);
             max-width: 620px;
         }
 
@@ -206,7 +215,7 @@
             line-height: 1;
             font-weight: 800;
             letter-spacing: -0.06em;
-            color: #fff;
+            color: var(--surface);
         }
 
         .metric-label {
@@ -248,14 +257,14 @@
             height: 10px;
             border-radius: 50%;
             background: var(--success);
-            box-shadow: 0 0 0 6px rgba(168, 201, 107, 0.18);
+            box-shadow: 0 0 0 6px color-mix(in srgb, var(--success) 18%, transparent);
         }
 
         .mini-chart {
             width: 100%;
             height: 120px;
             border-radius: 14px;
-            background: linear-gradient(180deg, rgba(181,213,240,0.12), rgba(0,125,195,0.1));
+            background: linear-gradient(180deg, color-mix(in srgb, var(--secondary) 12%, transparent), color-mix(in srgb, var(--primary) 10%, transparent));
             border: 1px solid rgba(255,255,255,0.08);
             overflow: hidden;
         }
@@ -268,14 +277,14 @@
 
         .mini-chart path {
             fill: none;
-            stroke: #d4f0ff;
+            stroke: color-mix(in srgb, var(--secondary) 82%, white);
             stroke-width: 4;
             stroke-linecap: round;
             stroke-linejoin: round;
         }
 
         .mini-chart circle {
-            fill: #fff;
+            fill: var(--surface);
         }
 
         .mini-footer {
@@ -289,7 +298,7 @@
         }
 
         .mini-footer strong {
-            color: #fff;
+            color: var(--surface);
             font-size: 1.35rem;
             letter-spacing: -0.04em;
         }
@@ -322,8 +331,8 @@
             min-height: 34px;
             padding: 0 14px;
             border-radius: 999px;
-            background: rgba(0,125,195,0.08);
-            border: 1px solid rgba(0,125,195,0.14);
+            background: color-mix(in srgb, var(--primary) 8%, transparent);
+            border: 1px solid color-mix(in srgb, var(--primary) 14%, transparent);
             color: var(--primary-darken-1);
             font-size: 0.72rem;
             font-weight: 800;
@@ -337,7 +346,7 @@
             height: 8px;
             border-radius: 50%;
             background: var(--primary);
-            box-shadow: 0 0 0 5px rgba(0, 125, 195, 0.12);
+            box-shadow: 0 0 0 5px color-mix(in srgb, var(--primary) 12%, transparent);
         }
 
         .lang-pill {
@@ -376,9 +385,9 @@
             margin-bottom: 16px;
             padding: 11px 14px;
             border-radius: 12px;
-            background: rgba(255,77,73,0.08);
-            border: 1px solid rgba(255,77,73,0.18);
-            color: #b73e3b;
+            background: color-mix(in srgb, var(--error) 9%, transparent);
+            border: 1px solid color-mix(in srgb, var(--error) 22%, transparent);
+            color: var(--error);
             font-size: 0.9rem;
             font-weight: 700;
         }
@@ -405,14 +414,14 @@
         }
 
         .field input::placeholder {
-            color: #7d8ea5;
+            color: var(--muted);
         }
 
         .field input:focus {
             outline: none;
-            border-color: rgba(0,125,195,0.8);
-            box-shadow: 0 0 0 4px rgba(0,125,195,0.08);
-            background: #fff;
+            border-color: color-mix(in srgb, var(--primary) 80%, transparent);
+            box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 8%, transparent);
+            background: var(--surface);
         }
 
         .field-icon {
@@ -422,7 +431,7 @@
             transform: translateY(-50%);
             width: 18px;
             height: 18px;
-            color: #6a7f96;
+            color: var(--muted);
         }
 
         .field-icon svg {
@@ -443,14 +452,14 @@
             border: 0;
             border-radius: 10px;
             background: transparent;
-            color: #72839a;
+            color: var(--muted);
             display: grid;
             place-items: center;
             cursor: pointer;
         }
 
         .password-wrap .toggle:hover {
-            background: rgba(0,125,195,0.06);
+            background: color-mix(in srgb, var(--primary) 6%, transparent);
         }
 
         .password-wrap .toggle svg {
@@ -490,24 +499,34 @@
             font-weight: 700;
         }
 
+        .link-button {
+            padding: 0;
+            border: 0;
+            background: transparent;
+            color: var(--primary-darken-1);
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
         .primary-btn {
             width: 100%;
             min-height: 58px;
             border: 0;
             border-radius: 12px;
             background: linear-gradient(180deg, var(--primary) 0%, var(--primary-darken-1) 100%);
-            color: #fff;
+            color: var(--surface);
             font-size: 1.04rem;
             font-weight: 800;
             letter-spacing: -0.02em;
             cursor: pointer;
-            box-shadow: 0 16px 28px rgba(0, 125, 195, 0.28);
+            box-shadow: 0 16px 28px color-mix(in srgb, var(--primary) 28%, transparent);
             transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
 
         .primary-btn:hover:not(:disabled) {
             transform: translateY(-1px);
-            box-shadow: 0 20px 32px rgba(0, 125, 195, 0.33);
+            box-shadow: 0 20px 32px color-mix(in srgb, var(--primary) 33%, transparent);
         }
 
         .primary-btn:disabled {
@@ -652,7 +671,7 @@
                             <input type="checkbox" id="rememberMe" />
                             <span>Recordarme</span>
                         </label>
-                        <a href="#" class="link">¿Olvidaste tu contraseña?</a>
+                        <button type="button" id="forgotPasswordButton" class="link-button">¿Olvidaste tu contraseña?</button>
                     </div>
 
                     <button type="submit" class="primary-btn">Entrar al CRM</button>
@@ -660,7 +679,7 @@
 
                 <div class="support">
                     <span>¿Necesitas ayuda?</span>
-                    <a href="#">Soporte</a>
+                    <a href="mailto:soporte@hpd.com?subject=Soporte%20CRM%20HPD" class="link">Soporte</a>
                 </div>
             </div>
         </section>
@@ -671,11 +690,18 @@
         const errorMessage = document.getElementById('errorMessage');
         const passwordInput = document.getElementById('password');
         const togglePassword = document.getElementById('togglePassword');
+        const forgotPasswordButton = document.getElementById('forgotPasswordButton');
 
         togglePassword.addEventListener('click', () => {
             const isPassword = passwordInput.type === 'password';
             passwordInput.type = isPassword ? 'text' : 'password';
             togglePassword.setAttribute('aria-label', isPassword ? 'Ocultar contraseña' : 'Mostrar contraseña');
+        });
+
+        forgotPasswordButton.addEventListener('click', () => {
+            errorMessage.textContent = 'La recuperación de contraseña todavía no está habilitada. Contacta con soporte para restablecer el acceso.';
+            errorMessage.classList.add('show');
+            passwordInput.focus();
         });
 
         form.addEventListener('submit', async (event) => {

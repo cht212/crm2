@@ -10,22 +10,31 @@
 }
 
 :root {
-    --primary: #007DC3;
-    --primary-darken-1: #0069A6;
-    --secondary: #B5D5F0;
-    --secondary-darken-1: #8FB9DA;
-    --success: #A8C96B;
-    --success-darken-1: #88AA4D;
-    --info: #007DC3;
-    --warning: #FDB528;
-    --error: #FF4D49;
+    --pantone-285: #0072CE;
+    --pantone-277: #ABCAE9;
+    --pantone-374: #C1D82F;
+    --pantone-gray-52: #8A8C8E;
+    --pantone-293: #003DA5;
+    --pantone-306: #00B5E2;
+    --pantone-3272: #00A499;
+    --pantone-376: #84BD00;
+    --pantone-1235: #FFB81C;
+    --primary: var(--pantone-285);
+    --primary-darken-1: var(--pantone-293);
+    --secondary: var(--pantone-277);
+    --secondary-darken-1: color-mix(in srgb, var(--pantone-277) 72%, var(--pantone-293));
+    --success: var(--pantone-376);
+    --success-darken-1: color-mix(in srgb, var(--pantone-376) 74%, var(--pantone-293));
+    --info: var(--pantone-306);
+    --warning: var(--pantone-1235);
+    --error: color-mix(in srgb, var(--pantone-1235) 72%, var(--pantone-293));
     --background: #F5F8FA;
     --surface: #FFFFFF;
     --on-background: #263238;
     --on-surface: #263238;
-    --perfect-scrollbar-thumb: #8FB9DA;
+    --perfect-scrollbar-thumb: var(--secondary-darken-1);
     --expansion-panel-text-custom-bg: #F8FBFC;
-    --table-header-color: #DFEAF2;
+    --table-header-color: color-mix(in srgb, var(--pantone-277) 48%, white);
     --font-family-custom: "Inter", sans-serif, -apple-system, blinkmacsystemfont, "Segoe UI", roboto, "Helvetica Neue", Arial;
     --font-family-monospace: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     --ink: var(--on-background);
@@ -34,6 +43,8 @@
     --panel: var(--surface);
     --soft: var(--expansion-panel-text-custom-bg);
     --canvas: var(--background);
+    /* OJO: --green es el acento de marca principal (azul, Pantone 285),
+       no un verde literal. Para verde real usar --pantone-374 o --pantone-376 (--success). */
     --green: var(--primary);
     --green-dark: var(--primary-darken-1);
     --green-soft: color-mix(in srgb, var(--primary) 8%, transparent);
@@ -891,11 +902,15 @@ button.primary-btn:hover,
     display: none !important;
 }
 
-.nav-item:hover, .nav-item.active {
+.nav-item:hover {
     background: var(--soft);
     color: var(--primary-darken-1);
     border-color: color-mix(in srgb, var(--surface) 6%, transparent);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary-darken-1) 4%, transparent);
+}
+
+.nav-item.active {
+    color: var(--primary-darken-1);
 }
 
 .nav-label {
@@ -979,19 +994,20 @@ button.primary-btn:hover,
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
     transition: background .16s ease, color .16s ease;
 }
 
 .nav-subitem .brand-logo {
-    width: 18px;
-    height: 18px;
-    flex: 0 0 18px;
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
     background: transparent;
 }
 
 .nav-subitem .brand-logo svg {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
 }
 
 .nav-subitem:hover,
@@ -1182,17 +1198,32 @@ button.primary-btn:hover,
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    min-width: 0;
 }
 
 .conversation-channel {
     margin-bottom: 5px;
     color: var(--muted);
     font-size: 12px;
+    line-height: 1;
 }
 
 .conversation-channel .brand-logo {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+}
+
+.conversation-channel .brand-logo svg {
+    width: 20px;
+    height: 20px;
+}
+
+.conversation-channel span:last-child {
+    line-height: 20px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .conversation-time {
@@ -1233,7 +1264,7 @@ button.primary-btn:hover,
 /*
  * Barra de "detalle de conversacion", al estilo Kommo:
  * flecha para volver + numero, visible solo cuando la
- * conversacion se abrio desde el Pipeline (o Contactos),
+ * conversacion se abrio desde Leads (o Contactos),
  * nunca desde el Inbox general.
  */
 .lead-detail-bar {
@@ -1823,21 +1854,21 @@ button.primary-btn:hover,
     font-weight: 600;
 }
 
-.pipeline {
+.lead-progress {
     display: flex;
     align-items: center;
     gap: 5px;
     margin-top: 11px;
 }
 
-.pipeline-step {
+.lead-progress-step {
     height: 7px;
     flex: 1;
     border-radius: 99px;
     background: var(--line);
 }
 
-.pipeline-step.active {
+.lead-progress-step.active {
     background: var(--green);
 }
 
@@ -2255,9 +2286,9 @@ button.primary-btn:hover,
 }
 
 .nav-item.active {
-    background: linear-gradient(90deg, rgba(255,255,255,.16), rgba(255,255,255,.08));
-    border: 1px solid rgba(255,255,255,.28);
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,.12);
+    background: var(--soft);
+    border-color: transparent;
+    box-shadow: none;
 }
 
 .nav-item {
@@ -2304,7 +2335,7 @@ button.primary-btn:hover,
     border-left: 4px solid var(--primary);
 }
 
-.module-view[data-module="pipeline"] .module-heading {
+.module-view[data-module="leads"] .module-heading {
     border-left: 4px solid var(--success);
 }
 
@@ -2988,10 +3019,12 @@ button.primary-btn:hover,
 }
 
 .brand-logo {
-    display: grid;
+    display: inline-grid;
     place-items: center;
     width: 28px;
     height: 28px;
+    flex: 0 0 auto;
+    line-height: 1;
     color: var(--green);
 }
 
@@ -3007,22 +3040,30 @@ button.primary-btn:hover,
 }
 
 .brand-logo.whatsapp {
-    color: var(--success);
+    color: #25D366;
 }
 
 .brand-logo.instagram {
-    border-radius: 9px;
-    background: linear-gradient(135deg, var(--warning), var(--error) 48%, var(--primary-darken-1));
-    color: var(--surface);
-    padding: 3px;
+    color: transparent;
+    background: linear-gradient(135deg, #FEDA75 0%, #FA7E1E 25%, #D62976 50%, #962FBF 75%, #4F5BD5 100%);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
+}
+
+.brand-logo.instagram svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    border-radius: 8px;
 }
 
 .brand-logo.facebook {
-    color: var(--primary);
+    color: #1877F2;
 }
 
 .brand-logo.tiktok {
-    color: var(--on-background);
+    color: #000000;
 }
 
 .insight-grid {
@@ -3553,6 +3594,10 @@ button.primary-btn:hover,
     background: var(--green);
 }
 
+.chart-bar.whatsapp {
+    background: #25D366;
+}
+
 .chart-bar.instagram {
     background: linear-gradient(90deg, var(--warning), var(--error) 48%, var(--primary-darken-1));
 }
@@ -3575,6 +3620,10 @@ button.primary-btn:hover,
     flex: 0 0 12px;
     border-radius: 999px;
     background: var(--green);
+}
+
+.network-dot.whatsapp {
+    background: #25D366;
 }
 
 .network-dot.instagram {
@@ -3928,39 +3977,18 @@ button.primary-btn:hover,
 .connection-icon {
     width: 48px;
     height: 48px;
-    border-radius: 14px;
+    border-radius: 12px;
     display: grid;
     place-items: center;
-    color: var(--surface);
+    color: inherit;
+    background: transparent;
     font-weight: 900;
     letter-spacing: 0;
 }
 
 .connection-icon .brand-logo {
-    width: 28px;
-    height: 28px;
-    color: var(--surface);
-}
-
-.connection-icon .brand-logo.instagram {
-    background: transparent;
-    padding: 0;
-}
-
-.connection-icon.whatsapp {
-    background: linear-gradient(135deg, var(--success), var(--success-darken-1));
-}
-
-.connection-icon.instagram {
-    background: linear-gradient(135deg, var(--warning), var(--error) 48%, var(--primary-darken-1));
-}
-
-.connection-icon.facebook {
-    background: linear-gradient(135deg, var(--primary), var(--primary-darken-1));
-}
-
-.connection-icon.tiktok {
-    background: linear-gradient(135deg, var(--on-background), var(--secondary-darken-1));
+    width: 48px;
+    height: 48px;
 }
 
 .connection-badge {
@@ -4244,7 +4272,7 @@ button.primary-btn:hover,
     padding: 4px 8px;
     border-radius: 999px;
     background: rgba(15, 23, 42, 0.7);
-    color: #fff;
+    color: var(--surface);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: .04em;
@@ -4944,16 +4972,16 @@ button.bot-channel-card.active {
 
 .kanban-summary-card {
     border: 1px solid var(--line);
-    border-left: 4px solid var(--stage-color, var(--green));
+    border-left: 5px solid var(--stage-color, var(--pantone-gray-52));
     border-radius: var(--materialize-radius);
-    background: var(--surface);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--stage-color, var(--pantone-gray-52)) 12%, var(--surface)), var(--surface));
     padding: 13px 14px;
     box-shadow: var(--materialize-shadow-soft);
 }
 
 .kanban-summary-card span {
     display: block;
-    color: var(--muted);
+    color: color-mix(in srgb, var(--stage-color, var(--muted)) 78%, var(--muted));
     font-size: 11px;
     font-weight: 900;
     letter-spacing: .08em;
@@ -4966,10 +4994,17 @@ button.bot-channel-card.active {
     font-size: 24px;
 }
 
+/* Un color por cada etapa real del pipeline (antes solo 4 de las 8
+   tenian --stage-color y el resto caia en un gris/azul por defecto,
+   por lo que la franja se veia igual -y apagada- en casi todas). */
 .kanban-summary-card[data-stage="NUEVO"] { --stage-color: var(--primary); }
 .kanban-summary-card[data-stage="ABIERTO"] { --stage-color: var(--warning); }
+.kanban-summary-card[data-stage="EN_ATENCION"] { --stage-color: var(--info); }
+.kanban-summary-card[data-stage="ESPERANDO_CLIENTE"] { --stage-color: var(--secondary-darken-1); }
+.kanban-summary-card[data-stage="COTIZACION_ENVIADA"] { --stage-color: var(--pantone-3272); }
 .kanban-summary-card[data-stage="CERRADO"] { --stage-color: var(--success); }
 .kanban-summary-card[data-stage="PERDIDO"] { --stage-color: var(--error); }
+.kanban-summary-card[data-stage="NO_RESPONDIO"] { --stage-color: var(--pantone-gray-52); }
 
 .stage-columns {
     display: flex;
@@ -5019,14 +5054,18 @@ button.bot-channel-card.active {
     height: 3px;
     border-radius: 3px;
     margin-top: 10px;
-    background: var(--stage-color, var(--green));
-    opacity: .55;
+    background: var(--stage-color, var(--pantone-gray-52));
+    opacity: .9;
 }
 
 .stage-column[data-stage="NUEVO"] { --stage-color: var(--primary); }
 .stage-column[data-stage="ABIERTO"] { --stage-color: var(--warning); }
+.stage-column[data-stage="EN_ATENCION"] { --stage-color: var(--info); }
+.stage-column[data-stage="ESPERANDO_CLIENTE"] { --stage-color: var(--secondary-darken-1); }
+.stage-column[data-stage="COTIZACION_ENVIADA"] { --stage-color: var(--pantone-3272); }
 .stage-column[data-stage="CERRADO"] { --stage-color: var(--success); }
 .stage-column[data-stage="PERDIDO"] { --stage-color: var(--error); }
+.stage-column[data-stage="NO_RESPONDIO"] { --stage-color: var(--pantone-gray-52); }
 
 .deal-card {
     background: var(--surface);
@@ -5124,6 +5163,11 @@ button.bot-channel-card.active {
     width: 15px;
     height: 15px;
     flex: 0 0 auto;
+}
+
+.danger-text {
+    color: var(--error);
+    font-weight: 700;
 }
 
 .deal-stage-pill {
@@ -5291,28 +5335,30 @@ button.bot-channel-card.active {
 }
 /* ===== Modo oscuro ===== */
 .theme-dark {
-    --primary: #007DC3;
-    --primary-darken-1: #0069A6;
-    --secondary: #B5D5F0;
-    --secondary-darken-1: #8FB9DA;
-    --success: #A8C96B;
-    --success-darken-1: #88AA4D;
-    --info: #007DC3;
-    --warning: #FDB528;
-    --error: #FF4D49;
+    --primary: var(--pantone-285);
+    --primary-darken-1: var(--pantone-293);
+    --secondary: var(--pantone-277);
+    --secondary-darken-1: color-mix(in srgb, var(--pantone-277) 72%, var(--pantone-293));
+    --success: var(--pantone-376);
+    --success-darken-1: color-mix(in srgb, var(--pantone-376) 74%, var(--pantone-293));
+    --info: var(--pantone-306);
+    --warning: var(--pantone-1235);
+    --error: color-mix(in srgb, var(--pantone-1235) 72%, var(--pantone-293));
     --background: #162B3A;
     --surface: #203E52;
     --on-background: #EAEAFF;
     --on-surface: #EAEAFF;
-    --perfect-scrollbar-thumb: #4A7893;
+    --perfect-scrollbar-thumb: color-mix(in srgb, var(--pantone-277) 50%, var(--surface));
     --expansion-panel-text-custom-bg: #24475D;
-    --table-header-color: #3A3E5B;
+    --table-header-color: color-mix(in srgb, var(--pantone-293) 34%, var(--surface));
     --ink: var(--on-background);
     --muted: var(--on-background);
     --line: var(--table-header-color);
     --panel: var(--surface);
     --soft: var(--expansion-panel-text-custom-bg);
     --canvas: var(--background);
+    /* OJO: --green es el acento de marca principal (azul, Pantone 285),
+       no un verde literal. Para verde real usar --pantone-374 o --pantone-376 (--success). */
     --green: var(--primary);
     --green-dark: var(--primary-darken-1);
     --green-soft: color-mix(in srgb, var(--primary) 18%, transparent);
@@ -5366,7 +5412,6 @@ button.bot-channel-card.active {
 .theme-dark .sales-card,
 .theme-dark .task-item,
 .theme-dark .contact-card,
-.theme-dark .kanban-summary-card,
 .theme-dark .network-tab {
     background: var(--surface);
     border-color: var(--line);
@@ -5377,8 +5422,14 @@ button.bot-channel-card.active {
     background: color-mix(in srgb, var(--surface) 98%, transparent);
 }
 
+/* Antes el menu lateral tomaba el mismo tono de superficie que las
+   tarjetas y el fondo del modulo -> quedaba todo del mismo azul y el
+   nav "se perdia" sin separacion visual. Vuelve a usar el navy de marca
+   (igual que en modo claro) para que siempre se distinga del contenido. */
 .theme-dark .workspace-nav {
-    background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, transparent), color-mix(in srgb, var(--surface) 96%, transparent));
+    background: linear-gradient(180deg, var(--primary-darken-1) 0%, var(--primary-darken-1) 100%);
+    border-right-color: color-mix(in srgb, var(--pantone-277) 20%, transparent);
+    box-shadow: 2px 0 18px rgba(0,0,0,.28);
 }
 
 .theme-dark .nav-item,
@@ -5394,7 +5445,11 @@ button.bot-channel-card.active {
 .theme-dark .nav-subitem:hover,
 .theme-dark .nav-subitem.active {
     background: color-mix(in srgb, var(--primary) 18%, transparent);
-    color: var(--surface);
+    /* Antes decía var(--surface): el mismo azul oscuro del fondo,
+       así que el texto del item activo (p. ej. "Dashboard") quedaba
+       del mismo tono que su propio fondo. Debe ser el color de
+       contraste (claro), no el de superficie. */
+    color: var(--on-surface);
     border-color: color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
@@ -5411,6 +5466,43 @@ button.bot-channel-card.active {
 .theme-dark .conversation-name,
 .theme-dark .module-heading h1 {
     color: var(--on-background);
+}
+
+/* El fondo del encabezado (título de módulo, banner del dashboard)
+   estaba fijo en blanco: el texto claro de arriba quedaba casi
+   invisible encima. Ahora usa superficie/borde del tema oscuro. */
+.theme-dark .module-heading {
+    background: linear-gradient(180deg, var(--surface), var(--soft));
+    border-color: var(--line);
+}
+
+/* Las tarjetas de métricas (dashboard, tareas, reportes...) no tenían
+   NINGUNA regla de modo oscuro: seguían con su degradado blanco fijo
+   mientras el texto se volvía claro encima -> números casi ilegibles. */
+.theme-dark .metric-card,
+.theme-dark .module-card {
+    background: linear-gradient(180deg, var(--surface), var(--soft));
+    border-color: var(--line);
+}
+
+.theme-dark .metric-label {
+    color: var(--muted);
+}
+
+.theme-dark .metric-value {
+    color: var(--ink);
+}
+
+/* Estas variantes con color por posición pesan más que la regla de
+   arriba (tienen un selector más específico) y si no se pisan aquí
+   siguen ganando con su degradado claro fijo. */
+.theme-dark .module-grid .metric-card:nth-child(odd),
+.theme-dark .module-grid .metric-card:nth-child(even),
+.theme-dark .task-summary .metric-card:nth-child(1),
+.theme-dark .task-summary .metric-card:nth-child(2),
+.theme-dark .task-summary .metric-card:nth-child(3),
+.theme-dark .task-summary .metric-card:nth-child(4) {
+    background: linear-gradient(180deg, var(--surface), var(--soft));
 }
 
 .theme-dark .sidebar-header,
@@ -5456,11 +5548,30 @@ button.bot-channel-card.active {
 .theme-dark .sales-card,
 .theme-dark .task-item,
 .theme-dark .contact-card,
-.theme-dark .kanban-summary-card,
 .theme-dark .platform-card {
     background: color-mix(in srgb, var(--surface) 2%, transparent);
     border-color: var(--line);
     color: var(--on-surface);
+}
+
+/* .kanban-summary-card tiene su propia regla (mas abajo) porque
+   "border-color" de arriba pisaba el border-left de color de etapa,
+   dejando las 8 tarjetas con el mismo tono apagado sin importar el estado. */
+.theme-dark .kanban-summary-card {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--stage-color, var(--pantone-gray-52)) 20%, var(--surface)), var(--surface));
+    border-color: var(--line);
+    border-left-color: var(--stage-color, var(--pantone-gray-52));
+    color: var(--on-surface);
+}
+
+/* Otros recuadros que se quedaban con su degradado blanco fijo en
+   modo oscuro (el formulario "Nueva oportunidad" de Ventas y el de
+   Tareas, y las columnas del tablero de Ventas). */
+.theme-dark .task-form,
+.theme-dark .sales-form,
+.theme-dark .sales-column {
+    background: linear-gradient(180deg, var(--surface), var(--soft));
+    border-color: var(--line);
 }
 
 .theme-dark .conversation:hover,
@@ -5545,7 +5656,7 @@ button.bot-channel-card.active {
 
 .theme-dark .chart-track,
 .theme-dark .funnel-track,
-.theme-dark .pipeline-step {
+.theme-dark .lead-progress-step {
     background: var(--expansion-panel-text-custom-bg);
 }
 
@@ -5666,25 +5777,10 @@ button.bot-channel-card.active {
     gap: 6px;
 }
 
-.kanban-summary-card[data-stage="EN_ATENCION"],
-.stage-column[data-stage="EN_ATENCION"] {
-    --stage-color: var(--primary);
-}
-
-.kanban-summary-card[data-stage="ESPERANDO_CLIENTE"],
-.stage-column[data-stage="ESPERANDO_CLIENTE"] {
-    --stage-color: var(--warning);
-}
-
-.kanban-summary-card[data-stage="COTIZACION_ENVIADA"],
-.stage-column[data-stage="COTIZACION_ENVIADA"] {
-    --stage-color: var(--secondary-darken-1);
-}
-
-.kanban-summary-card[data-stage="NO_RESPONDIO"],
-.stage-column[data-stage="NO_RESPONDIO"] {
-    --stage-color: var(--muted);
-}
+/* Los colores de --stage-color por etapa (NUEVO, ABIERTO, EN_ATENCION,
+   ESPERANDO_CLIENTE, COTIZACION_ENVIADA, CERRADO, PERDIDO, NO_RESPONDIO)
+   se definen junto a .kanban-summary-card y .stage-column, no aqui,
+   para tener una sola fuente de verdad por color de etapa. */
 
 .theme-dark .tick-pendiente,
 .theme-dark .tick-enviado {

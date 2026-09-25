@@ -262,8 +262,8 @@ public class CrmManagementController : ControllerBase
     // Antes traía TODAS las conversaciones sin límite: con volumen real
     // esto se vuelve lento y pesado para el navegador. Ahora pagina y
     // permite filtrar por estado.
-    [HttpGet("pipeline")]
-    public async Task<IActionResult> Pipeline(
+    [HttpGet("leads")]
+    public async Task<IActionResult> Leads(
         [FromQuery] string? estado = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50)
@@ -300,6 +300,19 @@ public class CrmManagementController : ControllerBase
                 asesor = conversacion.UsuarioAsignado == null
                     ? null
                     : conversacion.UsuarioAsignado.cNombre,
+                proximaTarea = _context.Tareas
+                    .Where(tarea =>
+                        tarea.nConversacion == conversacion.nConversacion &&
+                        tarea.cEstado == "PENDIENTE")
+                    .OrderBy(tarea => tarea.dFechaVencimiento)
+                    .Select(tarea => new
+                    {
+                        id = tarea.nTarea,
+                        titulo = tarea.cTitulo,
+                        vence = tarea.dFechaVencimiento,
+                        vencida = tarea.dFechaVencimiento < DateTime.Now
+                    })
+                    .FirstOrDefault(),
                 ultimoMensaje = conversacion.dUltimoMensaje,
                 inicio = conversacion.dFechaInicio
             })
@@ -423,6 +436,23 @@ public class CrmManagementController : ControllerBase
         if (!await _access.PuedeAccederConversacionAsync(id))
         {
             return Forbid();
+        }
+
+        if (estado is "ESPERANDO_CLIENTE" or "COTIZACION_ENVIADA")
+        {
+            var tieneProximoPaso = await _context.Tareas
+                .AsNoTracking()
+                .AnyAsync(tarea =>
+                    tarea.nConversacion == id &&
+                    tarea.cEstado == "PENDIENTE" &&
+                    tarea.dFechaVencimiento >= DateTime.Today);
+
+            if (!tieneProximoPaso)
+            {
+                return BadRequest(
+                    "Antes de dejar este lead en espera o cotización, crea una tarea con el próximo paso. " +
+                    "Así ningún prospecto queda sin seguimiento.");
+            }
         }
 
         if (estado == "CERRADO")

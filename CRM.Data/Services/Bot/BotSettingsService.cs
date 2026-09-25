@@ -5,7 +5,7 @@ using System.Text.Json;
 public sealed class BotSettingsService
 {
     private const string DefaultMessage =
-        "Hola, gracias por escribirnos. En breves se le derivara con un asesor.\n\nResponde con una opcion:\n1. Hablar con un asesor\n2. Informacion de productos\n3. Cotizacion\n4. Horarios y ubicacion";
+        "Hola, gracias por escribirnos. En breve te atenderá un asesor.\n\nResponde con una opción:\n1. Hablar con un asesor\n2. Información de productos\n3. Cotización\n4. Horarios y ubicación";
     private readonly object _sync = new();
     private readonly string _settingsPath;
     private readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
@@ -63,10 +63,10 @@ public sealed class BotSettingsService
 
     private static List<BotOption> CrearOpcionesDefault() =>
     [
-        new("1", "Hablar con un asesor", "Listo, ya derivamos tu conversacion con un asesor. En breves te atenderan.", true),
-        new("2", "Informacion de productos", "Te ayudaremos con informacion de productos. Un asesor te compartira los detalles disponibles.", true),
-        new("3", "Cotizacion", "Perfecto, un asesor te solicitara los datos necesarios para preparar tu cotizacion.", true),
-        new("4", "Horarios y ubicacion", "Nuestro equipo te confirmara horarios, ubicacion y disponibilidad por este mismo chat.", true)
+        new("1", "Hablar con un asesor", "Listo, ya derivamos tu conversación con un asesor. En breve te atenderán.", true),
+        new("2", "Información de productos", "Te ayudaremos con información de productos. Un asesor te compartirá los detalles disponibles.", true),
+        new("3", "Cotización", "Perfecto, un asesor te solicitará los datos necesarios para preparar tu cotización.", true),
+        new("4", "Horarios y ubicación", "Nuestro equipo te confirmará horarios, ubicación y disponibilidad por este mismo chat.", true)
     ];
 
     private static List<BotOption> NormalizarOpciones(IEnumerable<BotOption>? options)

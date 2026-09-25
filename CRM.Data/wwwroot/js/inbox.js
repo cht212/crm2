@@ -1,5 +1,4 @@
-﻿// Archivo generado desde Script.js para separar responsabilidades del CRM.
-// Mantiene variables y funciones globales para compatibilidad con la vista actual.
+// Módulo frontend del CRM.
 
         function actualizarLabelFiltroAsesor(valorSeleccionado) {
             const valor = valorSeleccionado || "";
@@ -93,6 +92,14 @@
                         if (moduloActual === "reportes") {
                             const vista = document.querySelector("#moduleView .module-content") || document.getElementById("moduleView");
                             if (vista && typeof cargarModuloReportes === "function") {
+                                // Antes reportesFiltros.usuarioId nunca se actualizaba
+                                // aquí: al cambiar de asesor en el inbox, el módulo de
+                                // Reportes se recargaba pero seguía mostrando el filtro
+                                // anterior. sincronizarFiltroReportesDesdeAsesor() existía
+                                // en el archivo pero no la llamaba nadie.
+                                if (typeof sincronizarFiltroReportesDesdeAsesor === "function") {
+                                    sincronizarFiltroReportesDesdeAsesor();
+                                }
                                 cargarModuloReportes(vista);
                             }
                         }
@@ -191,34 +198,9 @@
             await abrirDetalleConversacion(id, moduloActual || "dashboard");
         }
 
-        function redesDisponibles() {
-            return [
-                { canal: "TODOS", nombre: "Todas", clase: "all" },
-                { canal: "WHATSAPP", nombre: "WhatsApp", clase: "whatsapp" },
-                { canal: "INSTAGRAM", nombre: "Instagram", clase: "instagram" },
-                { canal: "FACEBOOK", nombre: "Facebook", clase: "facebook" },
-                { canal: "TIKTOK", nombre: "TikTok", clase: "tiktok" }
-            ];
-        }
-
-        function normalizarCanal(canal) {
-            return String(canal || "WHATSAPP").trim().toUpperCase();
-        }
-
-        function obtenerCanalConversacion(conversacion) {
-            return normalizarCanal(
-                conversacion.canal ||
-                conversacion.Canal ||
-                conversacion.canalOrigen ||
-                conversacion.CanalOrigen ||
-                "WHATSAPP"
-            );
-        }
-
-        function obtenerRedPorCanal(canal) {
-            const canalNormalizado = normalizarCanal(canal);
-            return redesDisponibles().find(red => red.canal === canalNormalizado) || redesDisponibles()[1];
-        }
+        // normalizarCanal(), obtenerCanalConversacion() y obtenerRedPorCanal()
+        // viven ahora en utils.js (catálogo REDES_DISPONIBLES) para no tener
+        // dos implementaciones del mismo nombre compitiendo entre archivos.
 
         function renderFiltrosRedBandeja() {
             const contenedor = document.getElementById("inboxNetworkFilters");
@@ -289,8 +271,14 @@
             badge.classList.toggle("hidden", pendientes === 0);
         }
 
+        // Refleja en el filtro de Reportes el asesor elegido en el selector
+        // de la bandeja. Antes exigía esRol("asesor") para actuar, pero ese
+        // selector está oculto para el rol asesor y "reportes" ni siquiera
+        // está en su menú (ver MODULOS_POR_ROL en api-session.js), así que
+        // la condición nunca se cumplía: quien realmente cambia de asesor
+        // desde el inbox mientras ve Reportes es un administrador o
+        // supervisor.
         function sincronizarFiltroReportesDesdeAsesor() {
-            if (!esRol("asesor")) return;
             if (!asesorFiltroActivo || asesorFiltroActivo === "unassigned") {
                 reportesFiltros.usuarioId = "";
                 return;

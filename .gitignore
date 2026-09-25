@@ -15,10 +15,6 @@
 *.pfx
 *.crt
 
-# Documentation cleanup
-**/*.html
-**/*.htm
-
 # Local development files
 *.user
 *.suo

@@ -1,5 +1,4 @@
-﻿// Archivo generado desde Script.js para separar responsabilidades del CRM.
-// Mantiene variables y funciones globales para compatibilidad con la vista actual.
+// Módulo frontend del CRM.
 
         function limpiarIconosDePanelExtra() {
             document.querySelectorAll('.workspace-nav [data-lucide^="panel-left-"]').forEach(icon => {
@@ -28,15 +27,8 @@
         if (window.lucide) window.lucide.createIcons();
         limpiarIconosDePanelExtra();
 
-        function obtenerIniciales(nombre) {
-            return (nombre || "U")
-                .split(" ")
-                .filter(Boolean)
-                .slice(0, 2)
-                .map(parte => parte.charAt(0))
-                .join("")
-                .toUpperCase();
-        }
+        // obtenerIniciales() vive en utils.js (única fuente; antes estaba
+        // duplicada aquí y en customer-panel.js con el mismo código).
 
         function claveFotoPerfil() {
             return `crm.profile.photo.${sesionActual?.usuario || "local"}`;

@@ -1,5 +1,4 @@
-﻿// Archivo generado desde Script.js para separar responsabilidades del CRM.
-// Mantiene variables y funciones globales para compatibilidad con la vista actual.
+// Módulo frontend del CRM.
 
         let moduloNavegacionVersion = 0;
 
@@ -61,14 +60,17 @@
                     case "tareas":
                         await cargarModuloTareas(vista);
                         break;
-                    case "pipeline":
-                        await cargarModuloPipeline(vista);
+                    case "leads":
+                        await cargarModuloLeads(vista);
                         break;
                     case "ventas":
                         await cargarModuloVentas(vista);
                         break;
                     case "reportes":
                         await cargarModuloReportes(vista);
+                        break;
+                    case "bot":
+                        await cargarModuloBot(vista);
                         break;
                     case "conexiones":
                         await cargarModuloConexiones(vista);

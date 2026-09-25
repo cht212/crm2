@@ -15,7 +15,7 @@ public partial class WhatsAppService
 // asesor (por ejemplo, las creadas antes de activar el
 // reparto automático) y las asigna una por una, respetando
 // el balance de carga. Se usa desde el botón "Asignar
-// pendientes" del Pipeline, y solo hace falta ejecutarlo
+// pendientes" de Leads, y solo hace falta ejecutarlo
 // una vez: los mensajes nuevos ya se asignan solos.
 //
 // =========================================================

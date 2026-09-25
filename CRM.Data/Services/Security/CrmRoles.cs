@@ -42,19 +42,19 @@ public static class CrmRolePermissions
 {
     private static readonly HashSet<string> ModuloAdministrador =
     [
-        "dashboard", "inbox", "contactos", "tareas", "pipeline", "ventas",
-        "alertas", "reportes", "actividad", "fallos", "bot", "conexiones", "usuarios"
+        "dashboard", "inbox", "contactos", "tareas", "leads", "ventas",
+        "reportes", "actividad", "fallos", "bot", "conexiones", "usuarios"
     ];
 
     private static readonly HashSet<string> ModuloSupervisor =
     [
-        "dashboard", "inbox", "contactos", "tareas", "pipeline", "ventas",
-        "alertas", "reportes", "actividad"
+        "dashboard", "inbox", "contactos", "tareas", "leads", "ventas",
+        "reportes", "actividad", "bot"
     ];
 
     private static readonly HashSet<string> ModuloAsesor =
     [
-        "dashboard", "inbox", "contactos", "tareas", "pipeline", "ventas"
+        "dashboard", "inbox", "contactos", "tareas", "leads", "ventas"
     ];
 
     public static bool CanAccessModule(string? role, string modulo)

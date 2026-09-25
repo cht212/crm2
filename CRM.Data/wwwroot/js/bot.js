@@ -1,10 +1,9 @@
-﻿ñ// Archivo generado desde Script.js para separar responsabilidades del CRM.
-// Mantiene variables y funciones globales para compatibilidad con la vista actual.
+// Módulo de configuración del bot y respuestas rápidas.
 
         async function cargarModuloBot(vista) {
             let bot = {
                 enabled: true,
-                message: "Hola, gracias por escribirnos. En breves se le derivara con un asesor.\n\nResponde con una opcion:\n1. Hablar con un asesor\n2. Informacion de productos\n3. Cotizacion\n4. Horarios y ubicacion",
+                message: "Hola, gracias por escribirnos. En breve te atenderá un asesor.\n\nResponde con una opción:\n1. Hablar con un asesor\n2. Información de productos\n3. Cotización\n4. Horarios y ubicación",
                 maxAutoReplies: 2,
                 options: []
             };
@@ -33,36 +32,15 @@
                     clase: "whatsapp",
                     nombre: "WhatsApp",
                     estado: bot.enabled ? "Activo" : "Apagado",
-                    descripcion: "Responde al primer mensaje y deriva la conversación al asesor con menos carga.",
+                    descripcion: "Canal activo en producción. Responde al primer mensaje y deriva la conversación al asesor con menos carga.",
                     listo: true
-                },
-                {
-                    id: "instagram",
-                    clase: "instagram",
-                    nombre: "Instagram",
-                    estado: "Preparado",
-                    descripcion: "Usará las mismas reglas cuando Meta habilite mensajes reales para la app.",
-                    listo: false
-                },
-                {
-                    id: "facebook",
-                    clase: "facebook",
-                    nombre: "Facebook",
-                    estado: "Preparado",
-                    descripcion: "Preparado para Messenger y comentarios de página con derivación a asesor.",
-                    listo: false
-                },
-                {
-                    id: "tiktok",
-                    clase: "tiktok",
-                    nombre: "TikTok",
-                    estado: "Preparado",
-                    descripcion: "Listo para automatizar leads o formularios cuando se conecte TikTok Business API.",
-                    listo: false
                 }
             ];
+            if (!canalesBot.some(canal => canal.id === botCanalActivo)) {
+                botCanalActivo = "whatsapp";
+            }
             const opcionesBot = bot.options?.length ? bot.options : [
-                { key: "1", title: "Hablar con un asesor", response: "Listo, ya derivamos tu conversacion con un asesor. En breves te atenderan.", derivesToAdvisor: true }
+                { key: "1", title: "Hablar con un asesor", response: "Listo, ya derivamos tu conversación con un asesor. En breve te atenderán.", derivesToAdvisor: true }
             ];
             const canalActivo = canalesBot.find(canal => canal.id === botCanalActivo) || canalesBot[0];
             const crearFilaPlantillaBot = option => `
@@ -126,7 +104,7 @@
                     </div>
                     <div class="bot-channel-grid compact">
                         ${canalesBot.map(canal => `
-                            <button type="button" class="bot-channel-card ${canal.id === botCanalActivo ? "ready active" : canal.listo ? "ready" : "planned"}" data-bot-channel="${canal.id}">
+                            <button type="button" class="bot-channel-card ${canal.id === botCanalActivo ? "ready active" : "ready"}" data-bot-channel="${canal.id}">
                                 ${crearLogoRed(canal.clase)}
                                 <div>
                                     <strong>${escapeHtml(canal.nombre)}</strong>
@@ -141,7 +119,7 @@
                             <div class="bot-icon"><i data-lucide="bot-message-square"></i></div>
                             <div>
                                 <h2>Respuesta automática de ${escapeHtml(canalActivo.nombre)}</h2>
-                                <p>WhatsApp guarda configuración real. Los demás canales quedan listos para usar estas reglas al aprobarse o conectarse su API.</p>
+                                <p>En este momento el bot está operativo solo para WhatsApp. Los demás canales se mantienen fuera de producción para evitar flujos incompletos.</p>
                             </div>
                         </div>
                         <form id="botSettingsForm" class="bot-form">
@@ -171,8 +149,8 @@
                             <div><strong>2</strong><span>El CRM crea/actualiza cliente y conversación.</span></div>
                             <div><strong>3</strong><span>Se asigna automáticamente al asesor con menos carga.</span></div>
                             <div><strong>4</strong><span>El bot envía un solo menú corto de opciones.</span></div>
-                            <div><strong>5</strong><span>Si el cliente responde 1, 2, 3 o 4, el bot confirma y no sigue conversando.</span></div>
-                            <div><strong>6</strong><span>Comunicaciones marca el chat como pendiente de asesor.</span></div>
+                            <div><strong>5</strong><span>Si una opción deriva a asesor, el bot confirma y se pausa en ese chat.</span></div>
+                            <div><strong>6</strong><span>El asesor continúa desde Comunicaciones con respuestas rápidas.</span></div>
                         </div>
                     </article>
                 </section>
@@ -196,7 +174,7 @@
                     </div>
                     <div id="quickTemplatesList" class="bot-template-list">
                         ${(plantillasRapidas.length ? plantillasRapidas : [
-                            { title: "Saludo", category: "Atencion", message: "Hola, gracias por escribirnos. Soy tu asesor, cuentame en que puedo ayudarte.", enabled: true }
+                            { title: "Saludo", category: "Atención", message: "Hola, gracias por escribirnos. Soy tu asesor, cuéntame en qué puedo ayudarte.", enabled: true }
                         ]).map(crearFilaPlantillaRapida).join("")}
                     </div>
                     <div class="connection-actions-row">
@@ -209,12 +187,12 @@
                 </section>
                 <section class="bot-channel-section">
                     <div>
-                        <span class="panel-kicker">Canales preparados</span>
-                        <h2>Automatización por red</h2>
+                        <span class="panel-kicker">Canal disponible</span>
+                        <h2>Automatización en producción</h2>
                     </div>
                     <div class="bot-channel-grid">
                         ${canalesBot.map(canal => `
-                            <article class="bot-channel-card ${canal.listo ? "ready" : "planned"}">
+                            <article class="bot-channel-card ready">
                                 ${crearLogoRed(canal.clase)}
                                 <div>
                                     <strong>${escapeHtml(canal.nombre)}</strong>
@@ -259,7 +237,7 @@
                 lista.insertAdjacentHTML("beforeend", crearFilaPlantillaBot({
                     key: String(cantidad),
                     title: "Nueva opción",
-                    response: "Gracias por escribirnos. Un asesor te ayudara con esta solicitud.",
+                    response: "Gracias por escribirnos. Un asesor te ayudará con esta solicitud.",
                     derivesToAdvisor: true
                 }));
                 if (window.lucide) window.lucide.createIcons();

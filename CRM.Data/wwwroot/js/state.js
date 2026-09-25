@@ -1,5 +1,4 @@
-﻿// Archivo generado desde Script.js para separar responsabilidades del CRM.
-// Mantiene variables y funciones globales para compatibilidad con la vista actual.
+// Módulo frontend del CRM.
 
 const POLLING_MS = 15000;
         let conversaciones = [];
@@ -27,9 +26,9 @@ const POLLING_MS = 15000;
         let tareasVencidasNotificadas = false;
         const ultimosMensajesCliente = new Map();
         // Módulo al que debe volver el botón "<" cuando se abre
-        // una conversación individual desde el Pipeline (o cualquier
+        // una conversación individual desde Leads (o cualquier
         // otro listado que no sea el Inbox general).
-        let moduloRetornoDetalle = "pipeline";
+        let moduloRetornoDetalle = "leads";
         let modoDetalleConversacion = false;
 
         const lista = document.getElementById("conversationList");

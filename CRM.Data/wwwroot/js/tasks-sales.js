@@ -1,5 +1,4 @@
-﻿// Archivo generado desde Script.js para separar responsabilidades del CRM.
-// Mantiene variables y funciones globales para compatibilidad con la vista actual.
+// Módulo frontend del CRM.
 
         function esMismaFecha(fecha, referencia) {
             if (!fecha) return false;
@@ -57,7 +56,21 @@
             const resumen = obtenerResumenTareas(tareas);
             if (resumen.vencidas > 0 && !tareasVencidasNotificadas) {
                 tareasVencidasNotificadas = true;
-                notificar(`Tienes ${resumen.vencidas} tarea(s) vencida(s).`, "warning");
+                const mensajeVencidas = `Tienes ${resumen.vencidas} tarea(s) vencida(s).`;
+                notificar(mensajeVencidas, "warning");
+                // registrarNotificacionSistema() (definida en utils.js) ya
+                // tenía todo el soporte visual listo en la campana de
+                // notificaciones (icono, estilo "sistema"), pero nada la
+                // invocaba: el aviso de tareas vencidas solo vivía en el
+                // toast, que desaparece a los pocos segundos.
+                if (typeof registrarNotificacionSistema === "function") {
+                    registrarNotificacionSistema({
+                        id: "tareas-vencidas",
+                        titulo: "Tareas vencidas",
+                        detalle: mensajeVencidas,
+                        tipo: "TAREA"
+                    });
+                }
             }
             const misPendientes = tareas.filter(t =>
                 Number(t.asignadoAId) === Number(sesionActual?.id || 0) &&
@@ -185,6 +198,7 @@
 
         async function cargarModuloVentas(vista) {
             const puedeGestionarEquipo = puedeGestionarEquipoCRM();
+            const fechaMinimaCierre = new Date().toISOString().slice(0, 10);
             const [ventasResponse, contactosResponse, usuarios] = await Promise.all([
                 api("/api/oportunidades?pageSize=200"),
                 api("/api/crm/contactos"),
@@ -224,9 +238,9 @@
                             <option value="">Cliente...</option>
                             ${contactos.map(contacto => `<option value="${contacto.id}">${escapeHtml(contacto.nombre)} · ${escapeHtml(contacto.telefono || "")}</option>`).join("")}
                         </select>
-                        <input name="monto" type="number" min="0" step="0.01" placeholder="Monto">
+                        <input name="monto" type="number" min="0.01" step="0.01" placeholder="Monto" required>
                         <select name="moneda"><option value="PEN">PEN</option><option value="USD">USD</option></select>
-                        <input name="fechaCierreEstimada" type="date" title="Fecha estimada de cierre" aria-label="Fecha estimada de cierre">
+                        <input name="fechaCierreEstimada" type="date" min="${fechaMinimaCierre}" title="Fecha estimada de cierre" aria-label="Fecha estimada de cierre" required>
                         <input name="probabilidad" type="number" min="0" max="100" step="5" value="10" placeholder="Prob. %">
                         ${puedeGestionarEquipo ? `<select name="usuarioAsignadoId">
                             <option value="">Asesor...</option>
@@ -256,6 +270,7 @@
                                             <strong>${escapeHtml(op.titulo)}</strong>
                                             <p>${escapeHtml(op.cliente?.nombre || "Sin cliente")} · ${escapeHtml(op.moneda)} ${Number(op.monto || 0).toFixed(2)}</p>
                                             <small>${op.probabilidad}% probabilidad${op.fechaCierreEstimada ? ` · Cierre ${formatearFecha(op.fechaCierreEstimada)}` : " · Sin fecha de cierre"}${op.asesor ? ` · ${escapeHtml(op.asesor)}` : ""}</small>
+                                            ${op.motivoPerdida ? `<small>Motivo: ${escapeHtml(op.motivoPerdida)}</small>` : ""}
                                         </div>
                                         <select class="mini-select" data-sales-stage="${op.id}">
                                             ${etapas.map(opcion => `<option value="${opcion}" ${opcion === op.etapa ? "selected" : ""}>${opcion}</option>`).join("")}
@@ -282,6 +297,10 @@
                 datos.monto = Number(datos.monto || 0);
                 datos.probabilidad = Number(datos.probabilidad || 10);
                 datos.fechaCierreEstimada = datos.fechaCierreEstimada || null;
+                if (datos.monto <= 0 || !datos.fechaCierreEstimada) {
+                    notificar("Completa monto y fecha estimada de cierre para crear la venta.", "warning");
+                    return;
+                }
                 const crear = await api("/api/oportunidades", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },

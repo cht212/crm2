@@ -44,10 +44,10 @@ namespace CRM.Data.Controllers
 
 
         // =========================================================
-        // VERIFICACIÃ“N DEL WEBHOOK DE META
+        // VERIFICACIÓN DEL WEBHOOK DE META
         // =========================================================
         //
-        // Meta llamarÃ¡ a este endpoint cuando configuremos
+        // Meta llamará a este endpoint cuando configuremos
         // el webhook.
         //
         // URL:
@@ -63,7 +63,7 @@ namespace CRM.Data.Controllers
             [FromQuery(Name = "hub.challenge")] string? challenge)
         {
             _logger.LogInformation(
-                "Solicitud de verificaciÃ³n de webhook recibida."
+                "Solicitud de verificación de webhook recibida."
             );
 
             string? tokenConfigurado =
@@ -84,7 +84,7 @@ namespace CRM.Data.Controllers
             }
 
             _logger.LogWarning(
-                "FallÃ³ la verificaciÃ³n del webhook de WhatsApp."
+                "Falló la verificación del webhook de WhatsApp."
             );
 
             return Forbid();
@@ -95,7 +95,7 @@ namespace CRM.Data.Controllers
         // WEBHOOK DE META
         // =========================================================
         //
-        // Meta enviarÃ¡ aquÃ­ los mensajes recibidos.
+        // Meta enviará aquí los mensajes recibidos.
         //
         // POST /api/whatsapp/webhook
         //
@@ -125,7 +125,7 @@ namespace CRM.Data.Controllers
 
 
                 // -------------------------------------------------
-                // Validar estructura bÃ¡sica
+                // Validar estructura básica
                 // -------------------------------------------------
 
                 if (!payload.TryGetProperty("entry", out JsonElement entry))
@@ -172,7 +172,7 @@ namespace CRM.Data.Controllers
 
                         // -------------------------------------------------
                         // statuses (acuses de recibo: enviado/entregado/
-                        // leÃ­do/fallido de nuestros mensajes salientes)
+                        // leído/fallido de nuestros mensajes salientes)
                         // -------------------------------------------------
 
                         if (value.TryGetProperty(
@@ -194,7 +194,7 @@ namespace CRM.Data.Controllers
                                 "messages",
                                 out JsonElement messages))
                         {
-                            // Puede ser una notificaciÃ³n que no contiene
+                            // Puede ser una notificación que no contiene
                             // un mensaje de cliente.
                             continue;
                         }
@@ -268,7 +268,7 @@ namespace CRM.Data.Controllers
                 );
 
                 // En caso de error interno devolvemos 500.
-                // AsÃ­ podemos detectar el problema durante desarrollo.
+                // Así podemos detectar el problema durante desarrollo.
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
                     new
@@ -306,7 +306,7 @@ namespace CRM.Data.Controllers
 
 
                 // -------------------------------------------------
-                // TELÃ‰FONO DEL CLIENTE
+                // TELÉFONO DEL CLIENTE
                 // -------------------------------------------------
 
                 string? telefono = null;
@@ -322,7 +322,7 @@ namespace CRM.Data.Controllers
                 if (string.IsNullOrWhiteSpace(telefono))
                 {
                     _logger.LogWarning(
-                        "Mensaje recibido sin nÃºmero de telÃ©fono."
+                        "Mensaje recibido sin número de teléfono."
                     );
 
                     return;
@@ -427,8 +427,8 @@ namespace CRM.Data.Controllers
 
                 _logger.LogInformation(
                     "Mensaje de WhatsApp procesado. " +
-                    "ConversaciÃ³n: {ConversacionId}, " +
-                    "TelÃ©fono: {Telefono}",
+                    "Conversación: {ConversacionId}, " +
+                    "Teléfono: {Telefono}",
                     conversacionId,
                     telefono
                 );
@@ -448,11 +448,11 @@ namespace CRM.Data.Controllers
         // PROCESAR ACUSE DE ESTADO (statuses) DE META
         // =========================================================
         //
-        // Meta manda aquÃ­ sent / delivered / read / failed para cada
+        // Meta manda aquí sent / delivered / read / failed para cada
         // mensaje saliente que enviamos, identificado por su
         // whatsappId (message.id). Actualizamos el campo c_estado
         // del mensaje correspondiente para pintar los checks en el
-        // chat (âœ“ enviado, âœ“âœ“ entregado, âœ“âœ“ azul leÃ­do, âœ— fallido).
+        // chat (check enviado, doble check entregado, doble check azul leído, x fallido).
         //
         // =========================================================
 
@@ -505,7 +505,7 @@ namespace CRM.Data.Controllers
                 _configuration["WhatsApp:AppSecret"];
             if (string.IsNullOrWhiteSpace(appSecret))
             {
-                _logger.LogError("WhatsApp:AppSecret no estÃ¡ configurado; se rechaza el webhook por seguridad.");
+                _logger.LogError("WhatsApp:AppSecret no está configurado; se rechaza el webhook por seguridad.");
                 return false;
             }
 

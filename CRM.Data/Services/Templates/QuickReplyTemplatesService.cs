@@ -106,10 +106,10 @@ public sealed class QuickReplyTemplatesService
 
     private static List<QuickReplyTemplate> CreateDefaultTemplates() =>
     [
-        new("Saludo", "Hola, gracias por escribirnos. Soy tu asesor, cuentame en que puedo ayudarte.", "Atencion", true),
-        new("Catalogo", "Claro, te comparto la informacion de productos disponibles. Si buscas algo especifico, dime modelo, medida o cantidad.", "Ventas", true),
-        new("Datos para cotizar", "Para prepararte una cotizacion, por favor enviame producto, cantidad, ciudad de entrega y datos de contacto.", "Cotizacion", true),
-        new("Seguimiento", "Hola, te escribo para dar seguimiento a tu solicitud. Quedo atento por si deseas avanzar con la cotizacion.", "Seguimiento", true),
+        new("Saludo", "Hola, gracias por escribirnos. Soy tu asesor, cuéntame en qué puedo ayudarte.", "Atención", true),
+        new("Catalogo", "Claro, te comparto la información de productos disponibles. Si buscas algo especifico, dime modelo, medida o cantidad.", "Ventas", true),
+        new("Datos para cotizar", "Para prepararte una cotización, por favor envíame producto, cantidad, ciudad de entrega y datos de contacto.", "Cotización", true),
+        new("Seguimiento", "Hola, te escribo para dar seguimiento a tu solicitud. Quedo atento por si deseas avanzar con la cotización.", "Seguimiento", true),
         new("Cierre", "Perfecto, quedo atento a tu confirmacion para continuar con el pedido.", "Cierre", true)
     ];
 

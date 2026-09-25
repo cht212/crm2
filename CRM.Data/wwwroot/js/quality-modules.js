@@ -1,4 +1,4 @@
-// Modulos de control operativo: comentarios sociales y fallos de integracion.
+// Módulos de control operativo: comentarios sociales y fallos de integración.
 
 async function cargarModuloComentarios(vista, canal = "TODOS") {
     const response = await api(`/api/crm/comentarios?canal=${encodeURIComponent(canal)}&pageSize=150`);
@@ -44,8 +44,8 @@ async function cargarModuloComentarios(vista, canal = "TODOS") {
 }
 
 async function cargarModuloFallos(vista) {
-    if (!puedeGestionarEquipoCRM()) {
-        vista.innerHTML = '<div class="error">Solo administradores y supervisores pueden ver fallos.</div>';
+    if (!esRol("administrador")) {
+        vista.innerHTML = '<div class="error">Solo un administrador puede ver fallos.</div>';
         return;
     }
 

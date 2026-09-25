@@ -1,4 +1,4 @@
-﻿using CRM.Data.Models;
+using CRM.Data.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
@@ -148,7 +148,7 @@ public async Task<long> ProcesarMensajeEntranteAsync(
     else
     {
         // =================================================
-        // Actualizar conversación
+        // Actualizar conversacion
         // =================================================
 
         conversacion.dUltimoMensaje =
@@ -162,12 +162,12 @@ public async Task<long> ProcesarMensajeEntranteAsync(
     // 5.1 ASIGNACIÓN AUTOMÁTICA DEL ASESOR
     // =====================================================
     //
-    // Si la conversación (nueva o existente) todavía no
+    // Si la conversacion (nueva o existente) todavía no
     // tiene un asesor asignado, se reparte automáticamente
     // entre los asesores activos, igual que hace Kommo con
     // la distribución automática de leads. Así el
     // administrador ya no necesita asignarla a mano: solo
-    // entra al Pipeline y ve a quién le tocó.
+    // entra a Leads y ve a quién le tocó.
     //
     // =====================================================
 
@@ -224,15 +224,17 @@ public async Task<long> ProcesarMensajeEntranteAsync(
         tipo,
         mensaje);
 
-    if (!string.IsNullOrWhiteSpace(respuestaBot))
+    if (respuestaBot is not null)
     {
-        await EnviarRespuestaBotAsync(conversacion, telefono, respuestaBot);
+        await EnviarRespuestaBotAsync(conversacion, telefono, respuestaBot.Texto, respuestaBot.DerivaAAsesor);
     }
 
     return conversacion.nConversacion;
 }
 
-private async Task<string?> ObtenerRespuestaBotAsync(
+private sealed record BotReply(string Texto, bool DerivaAAsesor);
+
+private async Task<BotReply?> ObtenerRespuestaBotAsync(
     long conversacionId,
     bool conversacionFueCreada,
     string tipo,
@@ -250,7 +252,7 @@ private async Task<string?> ObtenerRespuestaBotAsync(
 
     if (conversacion.cBotEstado == "PAUSADO")
     {
-        _logger.LogInformation("Bot no responde: conversacion {ConversacionId} esta pausada.", conversacionId);
+        _logger.LogInformation("Bot no responde: conversacion {ConversacionId} está pausada.", conversacionId);
         return null;
     }
 
@@ -272,7 +274,7 @@ private async Task<string?> ObtenerRespuestaBotAsync(
 
     if (opcion is not null)
     {
-        return opcion.Response;
+        return new BotReply(opcion.Response, opcion.DerivesToAdvisor);
     }
 
     var ultimaRespuestaAsesor = await _context.Mensajes
@@ -300,7 +302,7 @@ private async Task<string?> ObtenerRespuestaBotAsync(
     if (respuestasBotEnviadas >= _botSettings.MaxAutoRepliesPerConversation)
     {
         _logger.LogInformation(
-            "Bot no responde: conversacion {ConversacionId} alcanzo limite de respuestas {Limite} desde la ultima respuesta manual.",
+            "Bot no responde: conversacion {ConversacionId} alcanzó el límite de respuestas {Limite} desde la última respuesta manual.",
             conversacionId,
             _botSettings.MaxAutoRepliesPerConversation);
         return null;
@@ -308,17 +310,21 @@ private async Task<string?> ObtenerRespuestaBotAsync(
 
     if (conversacionFueCreada || respuestasBotEnviadas == 0)
     {
-        return _botSettings.WhatsAppAutoReplyMessage;
+        return new BotReply(_botSettings.WhatsAppAutoReplyMessage, false);
     }
 
     _logger.LogInformation(
-        "Bot no responde: el mensaje '{Mensaje}' no coincide con ninguna opcion configurada.",
+        "Bot no responde: el mensaje '{Mensaje}' no coincide con ninguna opción configurada.",
         textoCliente);
 
     return null;
 }
 
-private async Task EnviarRespuestaBotAsync(Conversacion conversacion, string telefono, string texto)
+private async Task EnviarRespuestaBotAsync(
+    Conversacion conversacion,
+    string telefono,
+    string texto,
+    bool derivaAAsesor)
 {
     string? whatsappId = null;
     var intentoEnviarAMeta = _whatsAppCloudApiService.ShouldSendToMeta;
@@ -355,10 +361,16 @@ private async Task EnviarRespuestaBotAsync(Conversacion conversacion, string tel
     });
 
     conversacion.dUltimoMensaje = DateTime.Now;
+    if (derivaAAsesor)
+    {
+        conversacion.cBotEstado = "PAUSADO";
+        conversacion.dBotPausadoDesde = DateTime.Now;
+    }
+
     await _context.SaveChangesAsync();
 
     _logger.LogInformation(
-        "Respuesta automática del bot registrada para la conversación {ConversacionId}, asesor asignado {UsuarioId}.",
+        "Respuesta automática del bot registrada para la conversacion {ConversacionId}, asesor asignado {UsuarioId}.",
         conversacion.nConversacion,
         conversacion.nUsuarioAsignado);
 }

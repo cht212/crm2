@@ -81,6 +81,8 @@ public class OportunidadesController : ControllerBase
                 etapa = o.cEtapa,
                 probabilidad = o.nProbabilidad,
                 fechaCierreEstimada = o.dFechaCierreEstimada,
+                fechaCierreReal = o.dFechaCierreReal,
+                motivoPerdida = o.cMotivoPerdida,
                 conversacionId = o.nConversacion,
                 cliente = new { id = o.Cliente.nCliente, nombre = o.Cliente.cNombre },
                 asesor = o.UsuarioAsignado == null ? null : o.UsuarioAsignado.cNombre,
@@ -201,6 +203,21 @@ public class OportunidadesController : ControllerBase
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
+        if (dto.Monto <= 0)
+        {
+            return BadRequest("El monto debe ser mayor a cero.");
+        }
+
+        if (!dto.FechaCierreEstimada.HasValue)
+        {
+            return BadRequest("La fecha estimada de cierre es obligatoria.");
+        }
+
+        if (dto.FechaCierreEstimada.Value.Date < DateTime.Today)
+        {
+            return BadRequest("La fecha estimada de cierre no puede estar en el pasado.");
+        }
+
         var clienteExiste = await _context.Clientes.AnyAsync(c => c.nCliente == dto.ClienteId);
         if (!clienteExiste) return BadRequest("El cliente no existe.");
 
@@ -284,7 +301,10 @@ public class OportunidadesController : ControllerBase
         }
 
         await _context.SaveChangesAsync();
-        await _auditoria.RegistrarAsync("Oportunidad", id, "CAMBIO_ETAPA", etapaAnterior, etapa, UsuarioActualId);
+        var nuevoValorAuditoria = etapa == "PERDIDA"
+            ? $"{etapa}: {oportunidad.cMotivoPerdida}"
+            : etapa;
+        await _auditoria.RegistrarAsync("Oportunidad", id, "CAMBIO_ETAPA", etapaAnterior, nuevoValorAuditoria, UsuarioActualId);
 
         return Ok(new { success = true, id, etapa });
     }
@@ -335,7 +355,7 @@ public sealed class CrearOportunidadDto
     [StringLength(200)]
     public string? Titulo { get; set; }
 
-    [Range(0, double.MaxValue, ErrorMessage = "El monto no puede ser negativo.")]
+    [Range(0.01, double.MaxValue, ErrorMessage = "El monto debe ser mayor a cero.")]
     public decimal Monto { get; set; }
 
     public string? Moneda { get; set; }
@@ -343,6 +363,7 @@ public sealed class CrearOportunidadDto
     [Range(0, 100)]
     public int? Probabilidad { get; set; }
 
+    [Required(ErrorMessage = "La fecha estimada de cierre es obligatoria.")]
     public DateTime? FechaCierreEstimada { get; set; }
 }
 

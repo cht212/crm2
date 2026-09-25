@@ -15,7 +15,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-await DatabaseInitializer.InitializeAsync(app.Services, builder.Configuration);
+await DatabaseInitializer.InitializeAsync(app.Services, builder.Configuration, app.Logger);
 
 app.UseCrmExceptionHandler();
 

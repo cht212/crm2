@@ -1,5 +1,4 @@
-﻿// Archivo generado desde Script.js para separar responsabilidades del CRM.
-// Mantiene variables y funciones globales para compatibilidad con la vista actual.
+// Módulo frontend del CRM.
 
         async function cargarModuloContactos(vista, filtros = {}) {
             const params = new URLSearchParams();
@@ -135,28 +134,8 @@
             });
         }
 
-        function exportarContactosCsv(contactos) {
-            const encabezados = ["Nombre", "Telefono", "Email", "Documento", "Conversaciones", "Ultima actividad"];
-            const filas = contactos.map(contacto => [
-                contacto.nombre || "",
-                contacto.telefono || "",
-                contacto.email || "",
-                contacto.documento || "",
-                contacto.conversaciones ?? "",
-                contacto.ultimoMensaje ? new Date(contacto.ultimoMensaje).toLocaleString("es-PE") : ""
-            ]);
-            const escaparCsv = valor => `"${String(valor).replace(/"/g, '""')}"`;
-            const csv = [encabezados, ...filas]
-                .map(fila => fila.map(escaparCsv).join(","))
-                .join("\r\n");
-            const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = `contactos-crm-${new Date().toISOString().slice(0, 10)}.csv`;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            URL.revokeObjectURL(url);
-            notificar("Contactos exportados.", "success");
-        }
+        // La exportación de contactos ahora se resuelve en el servidor vía
+        // descargarArchivo("/api/crm/contactos/exportar..."), enlazada más
+        // arriba en #contactsExportButton. Esta función generaba el CSV en
+        // el cliente con datos parciales (sin filtros ni etiquetas) y ya no
+        // tenía ningún llamador.
