@@ -10,12 +10,12 @@
                 ["datos", "Datos"],
                 ["notas", "Notas"],
                 ["tareas", "Tareas"],
-                ["ventas", "Ventas"],
+                ["ventas", "Oportunidades"],
                 ["actividad", "Actividad"]
             ];
 
             document.getElementById("details").innerHTML = `
-                <div class="details-title">Ficha del cliente</div>
+                <div class="details-title"><span>Ficha del cliente</span><button id="mobileDetailsClose" class="mobile-details-close" type="button" aria-label="Cerrar ficha"><i data-lucide="x"></i></button></div>
                 <div class="crm-card compact-profile">
                     ${avatar}
                     <div class="contact-name">${escapeHtml(cliente.nombre || "Sin nombre")}</div>
@@ -42,6 +42,10 @@
                     mostrarFichaCliente(conversacionSeleccionada);
                 });
             });
+            document.getElementById("mobileDetailsClose")?.addEventListener("click", () => {
+                document.body.classList.remove("mobile-contact-details-open");
+            });
+            if (window.lucide) window.lucide.createIcons();
             document.getElementById("refreshMetaProfileButton")?.addEventListener("click", () => {
                 actualizarPerfilMeta(conversacion.id);
             });
@@ -107,7 +111,7 @@
                             <small>${tareasVencidas ? `${tareasVencidas} vencida(s)` : "Al día"}</small>
                         </article>
                         <article>
-                            <span>Ventas</span>
+                            <span>Oportunidades</span>
                             <strong>${formatearNumero(ventasAbiertas)}</strong>
                             <small>${formatearMoneda(ventaAbiertaMonto)} abiertas</small>
                         </article>

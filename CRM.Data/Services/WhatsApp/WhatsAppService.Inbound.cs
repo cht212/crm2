@@ -16,9 +16,11 @@ public async Task<long> ProcesarMensajeEntranteAsync(
     string? nombre,
     string mensaje,
     string tipo,
-    string? whatsappId)
+    string? whatsappId,
+    string? originPhoneNumberId = null)
 {
     telefono = telefono.Trim();
+    var legacyDefaultPhoneNumberId = _numbers.DefaultPhoneNumberId;
 
     // =====================================================
     // 1. EVITAR MENSAJES DUPLICADOS
@@ -103,6 +105,9 @@ public async Task<long> ProcesarMensajeEntranteAsync(
         await _context.Conversaciones
             .Where(c =>
                 c.nCliente == cliente.nCliente &&
+                c.cCanal == CanalSocial.WhatsApp &&
+                (c.cPhoneNumberId == originPhoneNumberId ||
+                 (c.cPhoneNumberId == null && originPhoneNumberId == legacyDefaultPhoneNumberId)) &&
                 (
                     c.cEstado == "NUEVO" ||
                     c.cEstado == "ABIERTO" ||
@@ -129,6 +134,7 @@ public async Task<long> ProcesarMensajeEntranteAsync(
             cCanal = CanalSocial.WhatsApp,
 
             cExternalThreadId = telefono,
+            cPhoneNumberId = originPhoneNumberId,
 
             dFechaInicio = DateTime.Now,
 
@@ -147,6 +153,7 @@ public async Task<long> ProcesarMensajeEntranteAsync(
     }
     else
     {
+        conversacion.cPhoneNumberId ??= originPhoneNumberId;
         // =================================================
         // Actualizar conversacion
         // =================================================
@@ -335,7 +342,8 @@ private async Task EnviarRespuestaBotAsync(
         {
             whatsappId = await _whatsAppCloudApiService.SendTextMessageAsync(
                 telefono,
-                texto);
+                texto,
+                conversacion.cPhoneNumberId);
         }
         catch (Exception ex)
         {

@@ -864,6 +864,8 @@ public sealed class MetaGraphApiService
             alcance,
             impresiones,
             interacciones,
+            0,
+            0,
             seguidores,
             metrics.Errors,
             DateTimeOffset.UtcNow);
@@ -922,6 +924,8 @@ public sealed class MetaGraphApiService
             alcance,
             visitasPerfil + clicksSitio,
             visitasPerfil,
+            clicksSitio,
+            0,
             metrics.Errors,
             DateTimeOffset.UtcNow);
     }
@@ -1349,6 +1353,8 @@ public sealed record MetaChannelInsight(
     long Impresiones,
     long Interacciones,
     long VisitasPerfil,
+    long Clicks,
+    long Seguidores,
     IReadOnlyList<string> Errors,
     DateTimeOffset RevisadoEn)
 {
@@ -1357,7 +1363,7 @@ public sealed record MetaChannelInsight(
         string nombre,
         string mensaje,
         IReadOnlyList<string> requisitosFaltantes) =>
-        new(canal, nombre, false, "NO_CONFIGURADO", mensaje, requisitosFaltantes, 0, 0, 0, 0, [], DateTimeOffset.UtcNow);
+        new(canal, nombre, false, "NO_CONFIGURADO", mensaje, requisitosFaltantes, 0, 0, 0, 0, 0, 0, [], DateTimeOffset.UtcNow);
 }
 
 public sealed record MetaInsightMetrics(

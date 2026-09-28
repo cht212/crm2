@@ -39,6 +39,7 @@ async function enviarMensaje() {
     const conversacionId = conversacionSeleccionada.id;
     const temporalId = agregarMensajeOptimista(texto);
     try {
+        await asegurarConversacionTomada();
         const response = await api(`/api/whatsapp/conversaciones/${conversacionId}/mensajes`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -66,6 +67,14 @@ async function enviarMensaje() {
         boton.disabled = false;
         input.focus();
     }
+}
+
+async function asegurarConversacionTomada() {
+    if (!conversacionSeleccionada) return;
+    const asignado = conversacionSeleccionada.usuarioAsignadoId || conversacionSeleccionada.usuarioAsignado?.id || conversacionSeleccionada.usuarioAsignado;
+    if (asignado) return;
+    const response = await api(`/api/crm/conversaciones/${conversacionSeleccionada.id}/tomar`, { method: "PUT" });
+    if (!response.ok) throw new Error("No se pudo asignar la conversación antes de responder.");
 }
 
 function actualizarPreviewArchivo() {
@@ -121,6 +130,12 @@ async function enviarArchivo() {
     }
 
     const archivo = fileInput.files[0];
+    try {
+        await asegurarConversacionTomada();
+    } catch (error) {
+        notificar(error.message, "error");
+        return;
+    }
     const datos = new FormData();
     datos.append("archivo", archivo);
     datos.append("usuarioId", sesionActual?.id ? String(sesionActual.id) : "");

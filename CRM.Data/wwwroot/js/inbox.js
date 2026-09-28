@@ -149,6 +149,35 @@
             return Number.isNaN(tiempo) ? 0 : tiempo;
         }
 
+        function obtenerVistaPreviaUltimoMensaje(conversacion) {
+            const tipo = (conversacion.ultimoMensajeTipo || "text").toLowerCase();
+            const direccion = (conversacion.ultimoMensajeDireccion || "").toUpperCase();
+            const prefijo = direccion === "S"
+                ? (tipo === "bot" ? "Bot: " : "Tú: ")
+                : "";
+            const texto = String(conversacion.ultimoMensajeTexto || "").trim();
+
+            if (tipo === "image") return `${prefijo}📷 Foto`;
+            if (tipo === "audio" || tipo === "voice") return `${prefijo}🎤 Audio`;
+            if (tipo === "video") return `${prefijo}🎥 Video`;
+            if (tipo === "sticker") return `${prefijo}Sticker`;
+            if (tipo === "location") return `${prefijo}📍 Ubicación`;
+            if (tipo === "contacts" || tipo === "contact") return `${prefijo}👤 Contacto`;
+
+            if (tipo === "document" || tipo === "application/pdf") {
+                let nombre = "Documento";
+                try {
+                    const archivo = JSON.parse(texto);
+                    nombre = archivo?.nombre || nombre;
+                } catch {
+                    // Los adjuntos antiguos pueden contener solamente la URL.
+                }
+                return `${prefijo}📎 ${nombre}`;
+            }
+
+            return texto ? `${prefijo}${texto}` : "Sin mensajes todavía";
+        }
+
         function procesarNotificacionesMensajesCliente(nuevasConversaciones) {
             const miId = Number(sesionActual?.id || 0);
             nuevasConversaciones.forEach(conversacion => {
@@ -207,15 +236,17 @@
             if (!contenedor) return;
             const red = obtenerRedPorCanal(inboxCanalActivo === "TODOS" ? "TODOS" : inboxCanalActivo);
             contenedor.innerHTML = `
-                <div class="inbox-channel-context">
+                <div class="inbox-channel-context" role="img" title="${escapeAttribute(red.nombre)}" aria-label="Red activa: ${escapeAttribute(red.nombre)}">
                     ${crearLogoRed(red.clase)}
-                    <span>${escapeHtml(red.nombre)}</span>
                 </div>`;
         }
 
         function sincronizarSubmenuComunicaciones() {
             const grupo = document.querySelector('[data-nav-group="comunicaciones"]');
             grupo?.classList.toggle("expanded", comunicacionesMenuAbierto);
+            const toggle = grupo?.querySelector(".nav-group-toggle");
+            toggle?.setAttribute("aria-expanded", String(comunicacionesMenuAbierto));
+            if (toggle) toggle.title = comunicacionesMenuAbierto ? "Ocultar canales" : "Mostrar canales de comunicación";
             document.querySelectorAll(".nav-subitem[data-channel]").forEach(item => {
                 item.classList.toggle("active", normalizarCanal(item.dataset.channel) === inboxCanalActivo);
             });
@@ -245,6 +276,7 @@
 
         function limpiarConversacionSeleccionada() {
             conversacionSeleccionada = null;
+            document.getElementById("chatHeader").classList.remove("chat-header--conversation");
             ultimoAvisoEscribiendo = 0;
             document.getElementById("chatHeader").innerHTML = `
                 <div class="chat-name">Selecciona una conversacion</div>
@@ -325,6 +357,7 @@
 
             resultado.forEach(conversacion => {
                 const red = obtenerRedPorCanal(obtenerCanalConversacion(conversacion));
+                const vistaPrevia = obtenerVistaPreviaUltimoMensaje(conversacion);
                 const textoAtencion = conversacion.requiereAsignacion || !conversacion.usuarioAsignadoId
                     ? "Sin asesor"
                     : "Respuesta pendiente";
@@ -336,6 +369,9 @@
                     (conversacionSeleccionada && conversacionSeleccionada.id === conversacion.id ? " active" : "") +
                     (conversacion.requiereAtencion ? " needs-attention" : "");
                 elemento.innerHTML = `
+                            <div class="conversation-row">
+                            <span class="conversation-avatar">${escapeHtml(obtenerIniciales(conversacion.nombre || conversacion.telefono || "C"))}</span>
+                            <div class="conversation-body">
                             <div class="conversation-top">
                                 <div class="conversation-name">${escapeHtml(conversacion.nombre || "Sin nombre")}</div>
                                 <div class="conversation-time">${formatearFecha(conversacion.ultimoMensaje)}</div>
@@ -344,10 +380,11 @@
                                 ${crearLogoRed(red.clase)}
                                 <span>${escapeHtml(red.nombre)}</span>
                             </div>
-                            <div class="conversation-phone">${escapeHtml(conversacion.telefono || "")}</div>
-                            <div class="conversation-preview">${escapeHtml(textoAsignado || "Ultima actividad del cliente")}</div>
+                            <div class="conversation-preview" title="${escapeAttribute(vistaPrevia)}">${escapeHtml(vistaPrevia)}</div>
+                            ${textoAsignado ? `<div class="conversation-advisor">${escapeHtml(textoAsignado)}</div>` : ""}
                             ${conversacion.requiereAtencion ? `<div class="conversation-alert">${textoAtencion}</div>` : ""}
-                            <div class="conversation-status">${escapeHtml(conversacion.estado || "")}</div>`;
+                            <div class="conversation-status">${escapeHtml(conversacion.estado || "")}</div>
+                            </div></div>`;
                 elemento.addEventListener("click", () => seleccionarConversacion(conversacion.id));
                 lista.appendChild(elemento);
             });
@@ -355,9 +392,11 @@
 
         async function seleccionarConversacion(id, opciones = {}) {
             const refrescarFicha = opciones.refrescarFicha !== false;
+            document.body.classList.remove("mobile-contact-details-open");
             const response = await api(`/api/whatsapp/conversaciones/${id}`);
             if (!response.ok) throw new Error("No se pudo cargar la conversacion");
             conversacionSeleccionada = await response.json();
+            document.body.classList.add("mobile-chat-open");
             ultimoAvisoEscribiendo = 0;
             mostrarConversaciones();
             mostrarConversacion({ refrescarFicha });
@@ -369,33 +408,54 @@
             const cliente = conversacion.cliente;
             const red = obtenerRedPorCanal(obtenerCanalConversacion(conversacion));
             const botActivo = (conversacion.bot?.estado || "ACTIVO").toUpperCase() === "ACTIVO";
-            const asignadoId = conversacion.usuarioAsignado?.id;
-            const asignadoAMi = asignadoId && sesionActual?.id && Number(asignadoId) === Number(sesionActual.id);
-            const puedeTomar = !asignadoId || !asignadoAMi;
+            const asesor = conversacion.usuarioAsignado;
+            const nombreAsesor = typeof asesor === "string" ? asesor : asesor?.nombre || asesor?.usuario || "Sin asesor";
+            const detalleContacto = [cliente.telefono, nombreAsesor].filter(Boolean).join(" · ");
+            document.getElementById("chatHeader").classList.add("chat-header--conversation");
             document.getElementById("chatHeader").innerHTML = `
+                        <button id="mobileChatBack" class="mobile-chat-back" type="button" aria-label="Volver a conversaciones"><i data-lucide="arrow-left"></i></button>
                         <div class="chat-title-row">
-                            <div>
+                            <div class="chat-contact-summary" role="button" tabindex="0" title="Ver ficha del cliente">
+                                ${renderClienteAvatar(cliente, "chat-contact-avatar")}
+                                <div class="chat-contact-copy">
                                 <div class="chat-name">${escapeHtml(cliente.nombre || "Sin nombre")}</div>
-                                <div class="chat-phone">${escapeHtml(cliente.telefono || "")}${conversacion.usuarioAsignado ? ` · ${escapeHtml(conversacion.usuarioAsignado.nombre || conversacion.usuarioAsignado.usuario || "Asesor")}` : " · Sin asesor"}</div>
+                                <div class="chat-phone" title="${escapeAttribute(detalleContacto)}">${escapeHtml(detalleContacto)}</div>
+                                </div>
                             </div>
                             <div class="chat-channel-actions">
-                                ${puedeTomar ? `<button id="takeConversationButton" class="chat-action-button" type="button">${asignadoId ? "Tomar" : "Tomar chat"}</button>` : ""}
-                                <span class="chat-channel-badge">${crearLogoRed(red.clase)}${escapeHtml(red.nombre)}</span>
                                 <button id="chatBotToggle" class="chat-bot-toggle ${botActivo ? "active" : "paused"}" type="button" title="${botActivo ? "Bot activo" : "Bot pausado"}">
                                     <span class="bot-toggle-dot"></span>
                                     <span>${botActivo ? "Bot activo" : "Bot pausado"}</span>
                                 </button>
+                                <span class="chat-channel-badge" role="img" title="${escapeAttribute(red.nombre)}" aria-label="${escapeAttribute(red.nombre)}">${crearLogoRed(red.clase)}</span>
                             </div>
                         </div>`;
+            document.getElementById("mobileChatBack")?.addEventListener("click", () => {
+                if (modoDetalleConversacion) {
+                    abrirModulo(moduloRetornoDetalle);
+                    return;
+                }
+                document.body.classList.remove("mobile-chat-open");
+                document.body.classList.remove("mobile-contact-details-open");
+                if (!window.matchMedia("(max-width: 1100px)").matches) {
+                    limpiarConversacionSeleccionada();
+                    mostrarConversaciones();
+                }
+            });
+            const abrirFichaDesdeChat = () => {
+                document.body.classList.add("mobile-contact-details-open");
+                mostrarFichaCliente(conversacion);
+            };
+            document.querySelector(".chat-contact-summary")?.addEventListener("click", abrirFichaDesdeChat);
+            document.querySelector(".chat-contact-summary")?.addEventListener("keydown", event => {
+                if (event.key === "Enter" || event.key === " ") { event.preventDefault(); abrirFichaDesdeChat(); }
+            });
+            if (window.lucide) window.lucide.createIcons();
             document.getElementById("leadDetailId").textContent =
                 `Conversación #${conversacion.id} · ${cliente.nombre || "Sin nombre"}`;
             document.getElementById("chatBotToggle")?.addEventListener("click", () => {
                 cambiarBotConversacion(conversacion.id, botActivo ? "PAUSADO" : "ACTIVO");
             });
-            document.getElementById("takeConversationButton")?.addEventListener("click", () => {
-                tomarConversacion(conversacion.id);
-            });
-
             renderizarMensajesConversacion(conversacion.mensajes || []);
             renderizarPlantillasRapidas();
             input.disabled = false;

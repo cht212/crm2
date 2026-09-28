@@ -48,6 +48,16 @@ public static class DatabaseInitializer
             return;
         }
 
+        var environment = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
+        if (environment.IsProduction() &&
+            bootstrapPassword.Equals("change-me-now", StringComparison.Ordinal))
+        {
+            const string message =
+                "No se puede crear el usuario bootstrap en produccion con la contrasena por defecto.";
+            logger?.LogCritical(message);
+            throw new InvalidOperationException(message);
+        }
+
         var admin = new CRM.Data.Models.CrmUsuario
         {
             cUsuario = bootstrapUsername.Trim(),

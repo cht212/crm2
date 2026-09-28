@@ -777,7 +777,7 @@ public class CrmManagementController : ControllerBase
     }
 
     [HttpGet("comentarios")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administrador,Supervisor")]
     public async Task<IActionResult> Comentarios([FromQuery] string? canal = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 100)
     {
         page = page < 1 ? 1 : page;
@@ -965,6 +965,11 @@ public class CrmManagementController : ControllerBase
         var clientesQuery = _context.Clientes.AsNoTracking().AsQueryable();
         if (fechaDesde.HasValue) clientesQuery = clientesQuery.Where(cliente => cliente.dFechaRegistro >= fechaDesde.Value);
         if (fechaHastaExclusiva.HasValue) clientesQuery = clientesQuery.Where(cliente => cliente.dFechaRegistro < fechaHastaExclusiva.Value);
+        if (usuarioId.HasValue)
+        {
+            clientesQuery = clientesQuery.Where(cliente =>
+                cliente.Conversaciones.Any(conversacion => conversacion.nUsuarioAsignado == usuarioId.Value));
+        }
 
         var conversacionesQuery = _context.Conversaciones.AsNoTracking().AsQueryable();
         if (fechaDesde.HasValue) conversacionesQuery = conversacionesQuery.Where(conversacion => conversacion.dFechaInicio >= fechaDesde.Value);

@@ -6,6 +6,26 @@
             });
         }
 
+        const mobileMenuButton = document.getElementById("mobileMenuButton");
+        const mobileMenuBackdrop = document.getElementById("mobileMenuBackdrop");
+        const mobileMenu = document.querySelector(".workspace-nav");
+        function cerrarMenuMovil() {
+            document.body.classList.remove("mobile-menu-open");
+            mobileMenuButton?.setAttribute("aria-expanded", "false");
+        }
+        mobileMenuButton?.addEventListener("click", () => {
+            const abierto = document.body.classList.toggle("mobile-menu-open");
+            mobileMenuButton.setAttribute("aria-expanded", String(abierto));
+        });
+        mobileMenuBackdrop?.addEventListener("click", cerrarMenuMovil);
+        mobileMenu?.querySelectorAll("button").forEach(button => {
+            button.addEventListener("click", () => {
+                if (window.matchMedia("(max-width: 1100px)").matches && !button.classList.contains("nav-group-toggle")) {
+                    cerrarMenuMovil();
+                }
+            });
+        });
+
         function actualizarEstadoNavegacion(colapsada) {
             nav.classList.toggle("collapsed", colapsada);
             navToggle.title = colapsada ? "Expandir menú" : "Contraer menú";
@@ -19,6 +39,10 @@
 
         actualizarEstadoNavegacion(false);
         navToggle.addEventListener("click", () => {
+            if (window.matchMedia("(max-width: 1100px)").matches) {
+                cerrarMenuMovil();
+                return;
+            }
             actualizarEstadoNavegacion(!nav.classList.contains("collapsed"));
         });
         navBrandMark.addEventListener("click", () => {
@@ -26,6 +50,12 @@
         });
         if (window.lucide) window.lucide.createIcons();
         limpiarIconosDePanelExtra();
+
+        document.querySelectorAll("[data-social-brand]").forEach(item => {
+            const source = document.querySelector(`.nav-subitem[data-channel="${item.dataset.socialBrand}"] .brand-logo`);
+            const slot = item.querySelector(".social-brand-slot");
+            if (source && slot) slot.replaceWith(source.cloneNode(true));
+        });
 
         // obtenerIniciales() vive en utils.js (única fuente; antes estaba
         // duplicada aquí y en customer-panel.js con el mismo código).
@@ -43,7 +73,7 @@
                     avatar.style.backgroundImage = `url("${url}")`;
                     avatar.classList.add("has-photo");
                 } else {
-                    avatar.textContent = iniciales;
+                    avatar.innerHTML = '<svg class="profile-user-icon" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="10" r="5"></circle><path d="M6 27c.8-5.6 4.3-8.5 10-8.5S25.2 21.4 26 27"></path></svg>';
                     avatar.classList.remove("has-photo");
                 }
             });
@@ -56,12 +86,17 @@
             pintarAvatarPerfil(localStorage.getItem(claveFotoPerfil()));
         }
 
-        function aplicarTemaCRM(oscuro) {
+        const themeMenuButton = document.getElementById("themeMenuButton");
+        const themeMenuDropdown = document.getElementById("themeMenuDropdown");
+
+        function aplicarTemaCRM(oscuro, guardar = true) {
             document.documentElement.classList.toggle("theme-dark", oscuro);
-            try {
-                localStorage.setItem("crm.theme", oscuro ? "dark" : "light");
-            } catch {
-                // El tema sigue aplicado aunque el navegador bloquee localStorage.
+            if (guardar) {
+                try {
+                    localStorage.setItem("crm.theme", oscuro ? "dark" : "light");
+                } catch {
+                    // El tema sigue aplicado aunque el navegador bloquee localStorage.
+                }
             }
 
             const botonTema = document.getElementById("themeToggleButton");
@@ -70,7 +105,40 @@
             if (window.lucide) window.lucide.createIcons();
         }
 
-        aplicarTemaCRM(document.documentElement.classList.contains("theme-dark"));
+        function aplicarModoTema(modo) {
+            const modoNormalizado = ["system", "light", "dark"].includes(modo) ? modo : "system";
+            try { localStorage.setItem("crm.theme", modoNormalizado); } catch { }
+            const oscuro = modoNormalizado === "dark" || (modoNormalizado === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+            aplicarTemaCRM(oscuro, false);
+            document.querySelectorAll(".theme-choice").forEach(choice => choice.classList.toggle("active", choice.dataset.themeChoice === modoNormalizado));
+            if (themeMenuButton) {
+                themeMenuButton.classList.toggle("active", modoNormalizado !== "system");
+                themeMenuButton.setAttribute("title", modoNormalizado === "dark" ? "Oscuro" : modoNormalizado === "light" ? "Claro" : "Sistema");
+                themeMenuButton.setAttribute("aria-label", `Tema: ${modoNormalizado === "dark" ? "oscuro" : modoNormalizado === "light" ? "claro" : "sistema"}`);
+                themeMenuButton.innerHTML = `<i data-lucide="${modoNormalizado === "dark" ? "moon" : modoNormalizado === "light" ? "sun" : "laptop-minimal"}"></i>`;
+                if (window.lucide) window.lucide.createIcons();
+            }
+        }
+
+        const modoGuardado = localStorage.getItem("crm.theme") || "system";
+        aplicarModoTema(modoGuardado);
+
+        themeMenuButton?.addEventListener("click", event => {
+            event.stopPropagation();
+            const abierto = themeMenuDropdown.classList.toggle("hidden");
+            themeMenuButton.setAttribute("aria-expanded", String(!abierto));
+            themeMenuButton.classList.toggle("open", !abierto);
+            if (!abierto && window.lucide) window.lucide.createIcons();
+        });
+        themeMenuDropdown?.querySelectorAll("[data-theme-choice]").forEach(choice => {
+            choice.addEventListener("click", event => {
+                event.stopPropagation();
+                aplicarModoTema(choice.dataset.themeChoice);
+                themeMenuDropdown.classList.add("hidden");
+                themeMenuButton?.setAttribute("aria-expanded", "false");
+                themeMenuButton?.classList.remove("open");
+            });
+        });
 
         function alternarMenuPerfil(abierto = null) {
             const debeAbrir = abierto == null ? profileDropdown.classList.contains("hidden") : abierto;
@@ -86,6 +154,11 @@
 
         document.addEventListener("click", event => {
             if (!event.target.closest(".profile-menu")) alternarMenuPerfil(false);
+            if (!event.target.closest(".theme-menu")) {
+                themeMenuDropdown?.classList.add("hidden");
+                themeMenuButton?.setAttribute("aria-expanded", "false");
+                themeMenuButton?.classList.remove("open");
+            }
             if (!event.target.closest(".notification-menu") && typeof alternarCentroNotificaciones === "function") {
                 alternarCentroNotificaciones(false);
             }
@@ -132,7 +205,7 @@
 
         document.getElementById("themeToggleButton")?.addEventListener("click", event => {
             event.stopPropagation();
-            aplicarTemaCRM(!document.documentElement.classList.contains("theme-dark"));
+            aplicarModoTema(document.documentElement.classList.contains("theme-dark") ? "light" : "dark");
         });
 
         logoutButton.addEventListener("click", async () => {

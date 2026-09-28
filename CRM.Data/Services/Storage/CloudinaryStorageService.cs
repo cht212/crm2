@@ -235,12 +235,7 @@ public sealed class CloudinaryStorageService
                     (int)response.StatusCode,
                     responseBody);
 
-                return await SaveLocalAsync(
-                    fileBytes,
-                    fileName,
-                    contentType,
-                    "Cloudinary rechazó el archivo.",
-                    cancellationToken);
+                throw new InvalidOperationException("Cloudinary rechazó el archivo.");
             }
 
             // ========================================================
@@ -273,12 +268,7 @@ public sealed class CloudinaryStorageService
                     "Cloudinary no devolvió secure_url. Response={Response}",
                     responseBody);
 
-                return await SaveLocalAsync(
-                    fileBytes,
-                    fileName,
-                    contentType,
-                    "Cloudinary no devolvió secure_url.",
-                    cancellationToken);
+                throw new InvalidOperationException("Cloudinary no devolvió secure_url.");
             }
 
             // ========================================================
@@ -342,12 +332,7 @@ public sealed class CloudinaryStorageService
                 ex,
                 "CLOUDINARY => Error de conexión.");
 
-            return await SaveLocalAsync(
-                fileBytes,
-                fileName,
-                contentType,
-                "No se pudo conectar con Cloudinary.",
-                cancellationToken);
+            throw new InvalidOperationException("No se pudo conectar con Cloudinary.", ex);
         }
     }
 
@@ -392,6 +377,11 @@ public sealed class CloudinaryStorageService
         return ms.ToArray();
     }
 
+    public async Task<CloudinaryUploadResult> SaveIncomingLocalAsync(
+        byte[] fileBytes, string fileName, string contentType,
+        CancellationToken cancellationToken = default) =>
+        await SaveLocalAsync(fileBytes, fileName, contentType, "Cloudinary no disponible", cancellationToken);
+
     private async Task<CloudinaryUploadResult> SaveLocalAsync(
         byte[] fileBytes,
         string fileName,
@@ -408,15 +398,14 @@ public sealed class CloudinaryStorageService
 
         var safeName = string.Concat(baseName.Select(ch =>
             char.IsLetterOrDigit(ch) || ch is '-' or '_' ? ch : '-'));
-        var storedName = $"{safeName}-{Guid.NewGuid():N}{extension}";
-        var relativeFolder = Path.Combine("uploads", "whatsapp", DateTime.UtcNow.ToString("yyyyMMdd"));
-        var absoluteFolder = Path.Combine(_environment.WebRootPath, relativeFolder);
+        var storedName = $"{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
+        var absoluteFolder = Path.Combine(_environment.ContentRootPath, "App_Data", "private-uploads");
         Directory.CreateDirectory(absoluteFolder);
 
         var absolutePath = Path.Combine(absoluteFolder, storedName);
         await File.WriteAllBytesAsync(absolutePath, fileBytes, cancellationToken);
 
-        var relativeUrl = "/" + Path.Combine(relativeFolder, storedName).Replace('\\', '/');
+        var relativeUrl = $"/api/archivos/local/{storedName}";
         _logger.LogWarning(
             "Archivo guardado localmente porque Cloudinary no está disponible. Reason={Reason}, Url={Url}",
             reason,

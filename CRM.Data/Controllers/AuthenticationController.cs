@@ -1,4 +1,6 @@
-using System.Collections.Concurrent;
+using System.Data;
+using System.Security.Cryptography;
+using System.Text;
 using System.Security.Claims;
 using CRM.Data.Data;
 using CRM.Data.Models;
@@ -16,16 +18,7 @@ namespace CRM.Data.Controllers;
 [Route("api/auth")]
 public sealed class AuthenticationController : ControllerBase
 {
-    // ---------------------------------------------------------------
-    // Bloqueo simple de intentos fallidos (mitiga fuerza bruta).
-    //
-    // Es una solución en memoria: no persiste entre reinicios y no se
-    // comparte entre instancias si en algún momento se escala a más de
-    // un servidor. Para producción a mayor escala conviene moverlo a
-    // una tabla o a un almacén distribuido (Redis), pero esto ya cubre
-    // el caso de un único servidor, que es el escenario actual.
-    // ---------------------------------------------------------------
-    private static readonly ConcurrentDictionary<string, (int Intentos, DateTime BloqueadoHasta)> IntentosFallidos = new();
+    // Estado compartido por todas las instancias mediante SQL Server.
     private const int MaxIntentos = 5;
     private static readonly TimeSpan TiempoBloqueo = TimeSpan.FromMinutes(15);
 
@@ -48,10 +41,12 @@ public sealed class AuthenticationController : ControllerBase
             return BadRequest(new { success = false, message = "Usuario y contraseña son obligatorios." });
         }
 
-        var claveIntento = dto.Usuario.Trim().ToLowerInvariant();
-        if (IntentosFallidos.TryGetValue(claveIntento, out var estado) && estado.BloqueadoHasta > DateTime.UtcNow)
+        var claveIntento = Convert.ToHexString(SHA256.HashData(
+            Encoding.UTF8.GetBytes(dto.Usuario.Trim().ToUpperInvariant())));
+        var estado = await _context.LoginAttempts.AsNoTracking().FirstOrDefaultAsync(x => x.Key == claveIntento);
+        if (estado?.BlockedUntilUtc > DateTime.UtcNow)
         {
-            var minutosRestantes = Math.Ceiling((estado.BloqueadoHasta - DateTime.UtcNow).TotalMinutes);
+            var minutosRestantes = Math.Ceiling((estado.BlockedUntilUtc.Value - DateTime.UtcNow).TotalMinutes);
             return StatusCode(StatusCodes.Status429TooManyRequests, new
             {
                 success = false,
@@ -63,18 +58,18 @@ public sealed class AuthenticationController : ControllerBase
             item.cUsuario == dto.Usuario.Trim() && item.cEstado == 'A');
         if (usuario == null || string.IsNullOrWhiteSpace(usuario.cPasswordHash))
         {
-            RegistrarIntentoFallido(claveIntento);
+            await RegistrarIntentoFallidoAsync(claveIntento);
             return Unauthorized(new { success = false, message = "Usuario o contraseña incorrectos." });
         }
 
         var result = _hasher.VerifyHashedPassword(usuario, usuario.cPasswordHash, dto.Password);
         if (result == PasswordVerificationResult.Failed)
         {
-            RegistrarIntentoFallido(claveIntento);
+            await RegistrarIntentoFallidoAsync(claveIntento);
             return Unauthorized(new { success = false, message = "Usuario o contraseña incorrectos." });
         }
 
-        IntentosFallidos.TryRemove(claveIntento, out _);
+        await _context.LoginAttempts.Where(x => x.Key == claveIntento).ExecuteDeleteAsync();
 
         var claims = new List<Claim>
         {
@@ -91,17 +86,25 @@ public sealed class AuthenticationController : ControllerBase
         return Ok(new { success = true, usuario = usuario.cNombre, rol = usuario.cRol });
     }
 
-    private static void RegistrarIntentoFallido(string claveIntento)
+    private async Task RegistrarIntentoFallidoAsync(string key)
     {
-        IntentosFallidos.AddOrUpdate(
-            claveIntento,
-            _ => (1, DateTime.MinValue),
-            (_, actual) =>
-            {
-                var intentos = actual.Intentos + 1;
-                var bloqueadoHasta = intentos >= MaxIntentos ? DateTime.UtcNow.Add(TiempoBloqueo) : DateTime.MinValue;
-                return (intentos, bloqueadoHasta);
-            });
+        await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+        var attempt = await _context.LoginAttempts
+            .FromSqlInterpolated($"SELECT * FROM crm_login_attempt WITH (UPDLOCK, HOLDLOCK) WHERE c_key = {key}")
+            .SingleOrDefaultAsync();
+        var now = DateTime.UtcNow;
+        if (attempt == null)
+        {
+            attempt = new LoginAttempt { Key = key };
+            _context.LoginAttempts.Add(attempt);
+        }
+        if (attempt.BlockedUntilUtc <= now || now - attempt.UpdatedUtc > TiempoBloqueo)
+            attempt.Failures = 0;
+        attempt.Failures++;
+        attempt.BlockedUntilUtc = attempt.Failures >= MaxIntentos ? now.Add(TiempoBloqueo) : null;
+        attempt.UpdatedUtc = now;
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
     }
 
     [Authorize]

@@ -79,7 +79,16 @@ public class WhatsAppAttachmentsController : ControllerBase
             return Forbid();
         }
 
-        var resultado = await _storage.UploadAsync(archivo, "crm-hpd", cancellationToken);
+        CloudinaryUploadResult resultado;
+        try
+        {
+            resultado = await _storage.UploadAsync(archivo, "crm-hpd", cancellationToken);
+        }
+        catch (InvalidOperationException)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                new { message = "El almacenamiento de archivos no está disponible. Intenta nuevamente." });
+        }
         var urlPublica = resultado.SecureUrl;
         var contenido = JsonSerializer.Serialize(new
         {

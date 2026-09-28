@@ -233,6 +233,7 @@ public class DashboardController : ControllerBase
             oportunidadesQuery = oportunidadesQuery.Where(oportunidad => oportunidad.nUsuarioAsignado == usuarioId.Value);
         }
 
+        var totalClientesNuevos = await clientesQuery.CountAsync(cliente => cliente.dFechaRegistro >= inicioHoy);
         var clientesNuevos = await clientesQuery
             .Where(cliente => cliente.dFechaRegistro >= inicioHoy)
             .OrderByDescending(cliente => cliente.dFechaRegistro)
@@ -250,7 +251,7 @@ public class DashboardController : ControllerBase
             })
             .ToListAsync();
 
-        var mensajesPendientes = await conversacionesQuery
+        var mensajesPendientesQuery = conversacionesQuery
             .Where(conversacion =>
                 conversacion.cEstado != "CERRADO" &&
                 conversacion.cEstado != "PERDIDO" &&
@@ -259,7 +260,9 @@ public class DashboardController : ControllerBase
                 (!conversacion.Mensajes.Any(mensaje => mensaje.cDireccion == 'S' && mensaje.cTipo != "bot") ||
                  conversacion.dUltimoMensajeCliente > conversacion.Mensajes
                     .Where(mensaje => mensaje.cDireccion == 'S' && mensaje.cTipo != "bot")
-                    .Max(mensaje => (DateTime?)mensaje.dFecha)))
+                    .Max(mensaje => (DateTime?)mensaje.dFecha)));
+        var totalMensajesPendientes = await mensajesPendientesQuery.CountAsync();
+        var mensajesPendientes = await mensajesPendientesQuery
             .OrderByDescending(conversacion => conversacion.dUltimoMensajeCliente)
             .Take(50)
             .Select(conversacion => new
@@ -273,8 +276,10 @@ public class DashboardController : ControllerBase
             })
             .ToListAsync();
 
-        var tareasHoy = await tareasQuery
-            .Where(tarea => tarea.cEstado == "PENDIENTE" && tarea.dFechaVencimiento < inicioManana)
+        var tareasHoyQuery = tareasQuery
+            .Where(tarea => tarea.cEstado == "PENDIENTE" && tarea.dFechaVencimiento < inicioManana);
+        var totalTareasHoy = await tareasHoyQuery.CountAsync();
+        var tareasHoy = await tareasHoyQuery
             .OrderBy(tarea => tarea.dFechaVencimiento)
             .Take(50)
             .Select(tarea => new
@@ -289,14 +294,16 @@ public class DashboardController : ControllerBase
             })
             .ToListAsync();
 
-        var oportunidadesAccion = await oportunidadesQuery
+        var oportunidadesAccionQuery = oportunidadesQuery
             .Where(oportunidad =>
                 oportunidad.cEtapa != "GANADA" &&
                 oportunidad.cEtapa != "PERDIDA" &&
                 ((!oportunidad.dFechaActualizacion.HasValue || oportunidad.dFechaActualizacion < ahora.AddDays(-3)) ||
                  (oportunidad.dFechaCierreEstimada.HasValue && oportunidad.dFechaCierreEstimada <= limiteOportunidades) ||
                  oportunidad.cEtapa == "PROPUESTA" ||
-                 oportunidad.cEtapa == "NEGOCIACION"))
+                 oportunidad.cEtapa == "NEGOCIACION"));
+        var totalOportunidadesAccion = await oportunidadesAccionQuery.CountAsync();
+        var oportunidadesAccion = await oportunidadesAccionQuery
             .OrderBy(oportunidad => oportunidad.dFechaCierreEstimada ?? DateTime.MaxValue)
             .ThenBy(oportunidad => oportunidad.dFechaActualizacion ?? oportunidad.dFechaCreacion)
             .Take(50)
@@ -314,8 +321,10 @@ public class DashboardController : ControllerBase
             })
             .ToListAsync();
 
-        var tareasFuturas = await tareasQuery
-            .Where(tarea => tarea.cEstado == "PENDIENTE" && tarea.dFechaVencimiento >= limiteFuturo)
+        var tareasFuturasQuery = tareasQuery
+            .Where(tarea => tarea.cEstado == "PENDIENTE" && tarea.dFechaVencimiento >= limiteFuturo);
+        var totalTareasFuturas = await tareasFuturasQuery.CountAsync();
+        var tareasFuturas = await tareasFuturasQuery
             .OrderBy(tarea => tarea.dFechaVencimiento)
             .Take(50)
             .Select(tarea => new
@@ -339,13 +348,169 @@ public class DashboardController : ControllerBase
                 mensajesPendientes,
                 tareas = tareasHoy,
                 oportunidades = oportunidadesAccion,
-                total = clientesNuevos.Count + mensajesPendientes.Count + tareasHoy.Count + oportunidadesAccion.Count
+                totalClientesNuevos,
+                totalMensajesPendientes,
+                totalTareas = totalTareasHoy,
+                totalOportunidades = totalOportunidadesAccion,
+                total = totalClientesNuevos + totalMensajesPendientes + totalTareasHoy + totalOportunidadesAccion
             },
             futuro = new
             {
                 tareas = tareasFuturas,
-                total = tareasFuturas.Count
+                total = totalTareasFuturas
             }
+        });
+    }
+
+    [HttpGet("administracion")]
+    [Authorize(Roles = "Administrador,Supervisor")]
+    public async Task<IActionResult> Administracion(
+        [FromQuery] DateTime? desde = null,
+        [FromQuery] DateTime? hasta = null,
+        [FromQuery] int? usuarioId = null)
+    {
+        var ahora = DateTime.Now;
+        var fechaDesde = (desde ?? new DateTime(ahora.Year, ahora.Month, 1)).Date;
+        var fechaHasta = (hasta ?? ahora).Date;
+        if (fechaDesde > fechaHasta || (fechaHasta - fechaDesde).TotalDays > 366)
+        {
+            return BadRequest("El rango debe ser valido y no superar 366 dias.");
+        }
+
+        if (usuarioId.HasValue && !await _context.Usuarios.AsNoTracking()
+                .AnyAsync(usuario => usuario.nUsuario == usuarioId.Value && usuario.cEstado == 'A'))
+        {
+            return NotFound("El usuario seleccionado no existe o no esta activo.");
+        }
+
+        var fechaHastaExclusiva = fechaHasta.AddDays(1);
+        var duracion = fechaHastaExclusiva - fechaDesde;
+        var anteriorHastaExclusiva = fechaDesde;
+        var anteriorDesde = fechaDesde - duracion;
+
+        var oportunidades = _context.Oportunidades.AsNoTracking().AsQueryable();
+        var conversaciones = _context.Conversaciones.AsNoTracking().AsQueryable();
+        var tareas = _context.Tareas.AsNoTracking().AsQueryable();
+        if (usuarioId.HasValue)
+        {
+            oportunidades = oportunidades.Where(item => item.nUsuarioAsignado == usuarioId.Value);
+            conversaciones = conversaciones.Where(item => item.nUsuarioAsignado == usuarioId.Value);
+            tareas = tareas.Where(item => item.nAsignadoA == usuarioId.Value);
+        }
+
+        var cierresPeriodo = oportunidades.Where(item =>
+            item.dFechaCierreReal.HasValue &&
+            item.dFechaCierreReal >= fechaDesde &&
+            item.dFechaCierreReal < fechaHastaExclusiva);
+        var cierresPeriodoDatos = await cierresPeriodo
+            .GroupBy(item => item.cEtapa)
+            .Select(grupo => new
+            {
+                etapa = grupo.Key,
+                cantidad = grupo.Count(),
+                monto = grupo.Sum(item => item.nMonto)
+            })
+            .ToListAsync();
+
+        var ganadas = cierresPeriodoDatos.FirstOrDefault(item => item.etapa == "GANADA");
+        var perdidas = cierresPeriodoDatos.FirstOrDefault(item => item.etapa == "PERDIDA");
+        var ganadasCantidad = ganadas?.cantidad ?? 0;
+        var perdidasCantidad = perdidas?.cantidad ?? 0;
+        var montoGanado = ganadas?.monto ?? 0m;
+
+        var montoGanadoAnterior = await oportunidades
+            .Where(item => item.cEtapa == "GANADA" &&
+                item.dFechaCierreReal.HasValue &&
+                item.dFechaCierreReal >= anteriorDesde &&
+                item.dFechaCierreReal < anteriorHastaExclusiva)
+            .SumAsync(item => (decimal?)item.nMonto) ?? 0m;
+
+        var abiertas = oportunidades.Where(item => item.cEtapa != "GANADA" && item.cEtapa != "PERDIDA");
+        var oportunidadesAbiertas = await abiertas.CountAsync();
+        var montoAbierto = await abiertas.SumAsync(item => (decimal?)item.nMonto) ?? 0m;
+        var forecastPonderado = await abiertas
+            .SumAsync(item => (decimal?)(item.nMonto * item.nProbabilidad / 100m)) ?? 0m;
+        var cierresProximos = await abiertas.CountAsync(item =>
+            item.dFechaCierreEstimada.HasValue &&
+            item.dFechaCierreEstimada >= ahora.Date &&
+            item.dFechaCierreEstimada < ahora.Date.AddDays(8));
+        var oportunidadesSinFecha = await abiertas.CountAsync(item => !item.dFechaCierreEstimada.HasValue);
+        var oportunidadesEstancadas = await abiertas.CountAsync(item =>
+            (!item.dFechaActualizacion.HasValue && item.dFechaCreacion < ahora.AddDays(-3)) ||
+            (item.dFechaActualizacion.HasValue && item.dFechaActualizacion < ahora.AddDays(-3)));
+
+        var motivosPerdida = await cierresPeriodo
+            .Where(item => item.cEtapa == "PERDIDA")
+            .GroupBy(item => string.IsNullOrWhiteSpace(item.cMotivoPerdida) ? "Sin motivo registrado" : item.cMotivoPerdida!)
+            .Select(grupo => new { motivo = grupo.Key, cantidad = grupo.Count(), monto = grupo.Sum(item => item.nMonto) })
+            .OrderByDescending(item => item.cantidad)
+            .Take(5)
+            .ToListAsync();
+
+        var activas = conversaciones.Where(item =>
+            item.cEstado != "CERRADO" && item.cEstado != "PERDIDO" && item.cEstado != "NO_RESPONDIO");
+        var pendientesRespuesta = activas.Where(item =>
+            item.dUltimoMensajeCliente.HasValue &&
+            (!item.Mensajes.Any(mensaje => mensaje.cDireccion == 'S' && mensaje.cTipo != "bot") ||
+             item.dUltimoMensajeCliente > item.Mensajes
+                .Where(mensaje => mensaje.cDireccion == 'S' && mensaje.cTipo != "bot")
+                .Max(mensaje => (DateTime?)mensaje.dFecha)));
+        var totalPendientesRespuesta = await pendientesRespuesta.CountAsync();
+        var esperaMasAntigua = await pendientesRespuesta.MinAsync(item => item.dUltimoMensajeCliente);
+        var sinAsignar = await activas.CountAsync(item => !item.nUsuarioAsignado.HasValue);
+        var conversacionesActivas = await activas.CountAsync();
+
+        var tareasVencidas = await tareas.CountAsync(item =>
+            item.cEstado == "PENDIENTE" && item.dFechaVencimiento < ahora);
+        var tareasVencenHoy = await tareas.CountAsync(item =>
+            item.cEstado == "PENDIENTE" &&
+            item.dFechaVencimiento >= ahora &&
+            item.dFechaVencimiento < ahora.Date.AddDays(1));
+
+        var desdeFallos = ahora.AddHours(-24);
+        var mensajesFallidos = await _context.Mensajes.AsNoTracking().CountAsync(mensaje =>
+            mensaje.dFecha >= desdeFallos && mensaje.cEstado != null &&
+            (mensaje.cEstado.Contains("FALLIDO") || mensaje.cEstado.Contains("ERROR") || mensaje.cEstado.Contains("LOCAL")));
+        var eventosFallidos = await _context.ActividadLogs.AsNoTracking().CountAsync(log =>
+            log.dFecha >= desdeFallos &&
+            (log.cAccion.Contains("ERROR") || log.cAccion.Contains("FALLO")));
+
+        decimal? variacionVentas = montoGanadoAnterior > 0
+            ? Math.Round(((montoGanado - montoGanadoAnterior) / montoGanadoAnterior) * 100m, 1)
+            : null;
+        var cierresTotales = ganadasCantidad + perdidasCantidad;
+
+        return Ok(new
+        {
+            periodo = new { desde = fechaDesde, hasta = fechaHasta, generadoEn = ahora },
+            comercial = new
+            {
+                montoGanado,
+                montoGanadoAnterior,
+                variacionVentas,
+                ganadas = ganadasCantidad,
+                perdidas = perdidasCantidad,
+                winRate = cierresTotales == 0 ? 0 : Math.Round(ganadasCantidad * 100m / cierresTotales, 1),
+                oportunidadesAbiertas,
+                montoAbierto,
+                forecastPonderado,
+                cierresProximos,
+                oportunidadesSinFecha,
+                oportunidadesEstancadas,
+                motivosPerdida
+            },
+            atencion = new
+            {
+                conversacionesActivas,
+                pendientesRespuesta = totalPendientesRespuesta,
+                sinAsignar,
+                esperaMasAntigua,
+                minutosEsperaMaxima = esperaMasAntigua.HasValue
+                    ? Math.Max(0, (int)(ahora - esperaMasAntigua.Value).TotalMinutes)
+                    : 0
+            },
+            seguimiento = new { tareasVencidas, tareasVencenHoy },
+            sistema = new { fallosUltimas24Horas = mensajesFallidos + eventosFallidos }
         });
     }
 }

@@ -1,6 +1,6 @@
 # Documentación técnica del CRM HPD
 
-Fecha: 24 de septiembre de 2026
+Fecha: 28 de septiembre de 2026
 
 ## 1. Propósito de esta guía
 
@@ -8,7 +8,7 @@ Esta guía es una versión técnica resumida del CRM HPD.
 
 Su objetivo no es reemplazar el uso operativo del sistema, sino dar una referencia útil para administradores y desarrolladores sobre la estructura real del proyecto y los puntos que conviene revisar cuando hay fallos o cambios de configuración.
 
-La guía de operación diaria está en [MANUAL_USO_CRM_HPD.md](MANUAL_USO_CRM_HPD.md).
+
 
 ## 2. Resumen del sistema
 
@@ -20,11 +20,30 @@ Sus componentes principales son:
 - autenticación por cookies
 - controladores API
 - Entity Framework Core
-- SQL Server LocalDB
+- SQL Server en desarrollo local
+- Azure SQL Database recomendado para produccion
 - frontend HTML, CSS y JavaScript
 - subida de archivos con Cloudinary
+- despliegue recomendado en Azure App Service
 - integración con WhatsApp y APIs externas
 - configuración local en App_Data y appsettings.json
+
+### Infraestructura recomendada para produccion
+
+La opcion recomendada para produccion es Azure, porque el proyecto esta construido con ASP.NET Core y SQL Server.
+
+Arquitectura sugerida:
+
+- Azure App Service: alojamiento del backend ASP.NET Core y frontend estatico.
+- Azure SQL Database: base de datos productiva.
+- Cloudinary: publicacion de imagenes y documentos usados por WhatsApp.
+- Variables de entorno o secret manager: claves, tokens y cadenas de conexion.
+- Dominio HTTPS propio: URL estable para usuarios y webhooks.
+- Health checks: `/api/health/live` para disponibilidad y `/api/health/ready` para validar base de datos.
+
+AWS tambien puede alojar el CRM, pero requiere mas configuracion: Elastic Beanstalk, ECS o App Runner para la aplicacion, RDS SQL Server para la base de datos, certificados, reglas de red y balanceo segun el caso.
+
+SiteGround GoGeek no se recomienda para este CRM completo. Es una buena opcion para WordPress, PHP, sitios estaticos o bases MySQL/PostgreSQL, pero no es la ruta adecuada para una aplicacion ASP.NET Core con SQL Server y webhooks de negocio.
 
 ## 3. Estructura principal del proyecto
 
@@ -199,6 +218,8 @@ Sirve para:
 
 - Verificar que la aplicacion responde.
 - Usarse en monitoreo simple.
+- Exponer `/api/health/live` para saber si el proceso esta vivo.
+- Exponer `/api/health/ready` para validar que la base de datos responde.
 
 ## 6. Data
 
@@ -600,6 +621,7 @@ Incluye:
 - Autenticacion por cookies.
 - Rate limiting.
 - CORS.
+- Forwarded headers para funcionar correctamente detras de proxy, tunel o hosting HTTPS.
 
 ### `ApplicationBuilderExtensions.cs`
 
@@ -637,6 +659,7 @@ Puede:
 - Aplicar migraciones.
 - Crear usuario administrador inicial.
 - Crear datos base si no existen.
+- Bloquear la creacion de administrador con `change-me-now` cuando el entorno es `Production`.
 
 ## 12. Migrations
 
@@ -810,7 +833,7 @@ Seguridad:
 
 1. Cliente escribe por WhatsApp.
 2. Meta envia webhook al endpoint publico.
-3. ngrok o tunel reenvia al backend local.
+3. En desarrollo, ngrok o un tunel reenvia al backend local. En produccion, Meta llama al dominio HTTPS del hosting.
 4. Backend valida y procesa payload.
 5. Busca o crea cliente.
 6. Busca o crea conversacion.
@@ -910,7 +933,7 @@ Riesgos:
 
 - Secretos en `appsettings.json`.
 - Tokens expuestos en capturas.
-- ngrok como tunel temporal.
+- ngrok como tunel temporal si se usa fuera de desarrollo.
 - CRM conectado directamente al ERP con credenciales amplias.
 - Falta de 2FA.
 - Falta de backups probados.
@@ -919,7 +942,8 @@ Recomendaciones:
 
 - Rotar secretos expuestos.
 - Mover secretos a variables de entorno o secret manager.
-- Usar Cloudflare Tunnel o hosting formal.
+- Usar Azure App Service + Azure SQL como ruta recomendada de produccion.
+- Usar Cloudflare Tunnel solo si el CRM permanece local y no se despliega en nube.
 - Usar Cloudflare Access con 2FA.
 - Usar WAF y rate limiting externo.
 - Separar CRM y ERP.
@@ -978,11 +1002,12 @@ Resultado reciente:
 
 ## 24. Pendientes tecnicos recomendados
 
-- Mover secretos fuera de `appsettings.json`.
+- Mover secretos fuera de `appsettings.json` cuando se pase a produccion formal.
 - Rotar App Secret y tokens expuestos.
 - Agregar pruebas automatizadas de permisos por rol/pertenencia.
-- Implementar Cloudflare Tunnel o hosting formal.
-- Configurar Cloudflare Access/2FA.
+- Definir despliegue final: Azure App Service + Azure SQL recomendado.
+- Configurar dominio, HTTPS, variables de entorno y health checks.
+- Configurar 2FA/WAF si se usa Cloudflare delante del dominio.
 - Crear API puente ERP.
 - Mejorar exportaciones Excel/PDF.
 - Agregar monitoreo y logs consultables.

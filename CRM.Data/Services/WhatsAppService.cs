@@ -11,6 +11,7 @@ public partial class WhatsAppService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly BotSettingsService _botSettings;
     private readonly ILogger<WhatsAppService> _logger;
+    private readonly WhatsAppNumberRegistry _numbers;
 
     public WhatsAppService(
         CrmDbContext context,
@@ -18,6 +19,7 @@ public partial class WhatsAppService
         MetaMessagingService metaMessagingService,
         IServiceScopeFactory scopeFactory,
         BotSettingsService botSettings,
+        WhatsAppNumberRegistry numbers,
         ILogger<WhatsAppService> logger)
     {
         _context = context;
@@ -26,5 +28,6 @@ public partial class WhatsAppService
         _scopeFactory = scopeFactory;
         _botSettings = botSettings;
         _logger = logger;
+        _numbers = numbers;
     }
 }

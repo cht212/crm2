@@ -16,6 +16,7 @@ const POLLING_MS = 15000;
         let tareasFiltroActivo = "mias";
         let ventasEtapaFiltro = "TODAS";
         let reportesFiltros = { desde: "", hasta: "", usuarioId: "" };
+        let marketingFiltros = { desde: "", hasta: "", canal: "TODOS" };
         let botCanalActivo = "whatsapp";
         let comunicacionesMenuAbierto = false;
         let moduloActual = "dashboard";

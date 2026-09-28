@@ -24,6 +24,11 @@
             modoDetalleConversacion = false;
             document.getElementById("leadDetailBar")?.classList.add("hidden");
 
+            // La ficha móvil usa clases globales en <body> con display
+            // prioritario. Si quedan activas al navegar, pueden imponerse al
+            // estado hidden del nuevo módulo y mantener la ficha superpuesta.
+            document.body.classList.remove("mobile-contact-details-open", "mobile-chat-open");
+
             const vista = document.getElementById("moduleView");
             const sidebar = document.querySelector(".sidebar");
             const chat = document.querySelector(".chat");
@@ -68,6 +73,9 @@
                         break;
                     case "reportes":
                         await cargarModuloReportes(vista);
+                        break;
+                    case "marketing":
+                        await cargarModuloMarketing(vista);
                         break;
                     case "bot":
                         await cargarModuloBot(vista);

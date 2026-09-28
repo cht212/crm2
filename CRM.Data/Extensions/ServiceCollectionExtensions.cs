@@ -2,6 +2,7 @@ using CRM.Data.Data;
 using CRM.Data.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -33,9 +34,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<CrmAccessService>();
         services.AddScoped<SocialInboundService>();
         services.AddScoped<MetaWebhookService>();
+        services.AddHttpClient<SocialPublicationsService>();
         services.AddSingleton<BotSettingsService>();
         services.AddSingleton<QuickReplyTemplatesService>();
         services.AddSingleton<SocialIntegrationService>();
+        services.AddSingleton<WhatsAppNumberRegistry>();
         services.AddScoped<IPasswordHasher<CRM.Data.Models.CrmUsuario>, PasswordHasher<CRM.Data.Models.CrmUsuario>>();
 
         services.AddHttpClient<CloudinaryStorageService>()
@@ -135,6 +138,27 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    public static IServiceCollection AddCrmForwardedHeaders(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders =
+                ForwardedHeaders.XForwardedFor |
+                ForwardedHeaders.XForwardedProto |
+                ForwardedHeaders.XForwardedHost;
+
+            // ASP.NET Core trusts loopback proxies by default. Add only the
+            // addresses of the ingress used by the deployment.
+            foreach (var address in configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? [])
+            {
+                if (System.Net.IPAddress.TryParse(address, out var proxy))
+                    options.KnownProxies.Add(proxy);
+            }
+        });
+
+        return services;
+    }
+
     public static IServiceCollection AddCrmCors(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -195,10 +219,7 @@ public static class ServiceCollectionExtensions
             return $"user:{userId}";
         }
 
-        var forwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-        var ip = !string.IsNullOrWhiteSpace(forwardedFor)
-            ? forwardedFor.Split(',')[0].Trim()
-            : context.Connection.RemoteIpAddress?.ToString();
+        var ip = context.Connection.RemoteIpAddress?.ToString();
 
         return $"ip:{ip ?? "unknown"}";
     }

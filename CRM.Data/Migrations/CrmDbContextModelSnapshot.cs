@@ -253,6 +253,11 @@ namespace CRM.Data.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("c_external_thread_id");
 
+                    b.Property<string>("cPhoneNumberId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("c_phone_number_id");
+
                     b.Property<DateTime?>("dBotPausadoDesde")
                         .HasColumnType("datetime2")
                         .HasColumnName("d_bot_pausado_desde");
@@ -288,6 +293,16 @@ namespace CRM.Data.Migrations
                     b.HasIndex("nUsuarioAsignado");
 
                     b.ToTable("crm_conversacion", (string)null);
+                });
+
+            modelBuilder.Entity("CRM.Data.Models.LoginAttempt", b =>
+                {
+                    b.Property<string>("Key").HasMaxLength(64).HasColumnType("nvarchar(64)").HasColumnName("c_key");
+                    b.Property<int>("Failures").HasColumnType("int").HasColumnName("n_failures");
+                    b.Property<DateTime?>("BlockedUntilUtc").HasColumnType("datetime2").HasColumnName("d_blocked_until_utc");
+                    b.Property<DateTime>("UpdatedUtc").HasColumnType("datetime2").HasColumnName("d_updated_utc");
+                    b.HasKey("Key");
+                    b.ToTable("crm_login_attempt");
                 });
 
             modelBuilder.Entity("CRM.Data.Models.CrmUsuario", b =>

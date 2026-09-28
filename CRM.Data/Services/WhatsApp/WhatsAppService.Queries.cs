@@ -214,6 +214,27 @@ public async Task<object> ObtenerTodasConversacionesAsync(
                 ultimoMensaje =
                     c.dUltimoMensaje,
 
+                ultimoMensajeTexto =
+                    c.Mensajes
+                        .OrderByDescending(m => m.dFecha)
+                        .ThenByDescending(m => m.nMensaje)
+                        .Select(m => m.cMensaje)
+                        .FirstOrDefault(),
+
+                ultimoMensajeTipo =
+                    c.Mensajes
+                        .OrderByDescending(m => m.dFecha)
+                        .ThenByDescending(m => m.nMensaje)
+                        .Select(m => m.cTipo)
+                        .FirstOrDefault(),
+
+                ultimoMensajeDireccion =
+                    c.Mensajes
+                        .OrderByDescending(m => m.dFecha)
+                        .ThenByDescending(m => m.nMensaje)
+                        .Select(m => (char?)m.cDireccion)
+                        .FirstOrDefault(),
+
                 ultimoMensajeCliente =
                     c.dUltimoMensajeCliente,
 

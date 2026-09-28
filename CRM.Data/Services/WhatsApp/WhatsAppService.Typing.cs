@@ -41,7 +41,10 @@ public async Task<bool> MostrarEscribiendoAsync(long conversacionId)
         return false;
     }
 
+    var originPhoneNumberId = await _context.Conversaciones.AsNoTracking()
+        .Where(c => c.nConversacion == conversacionId)
+        .Select(c => c.cPhoneNumberId).FirstOrDefaultAsync();
     return await _whatsAppCloudApiService.MostrarEscribiendoAsync(
-        ultimoEntrante.cWhatsappId);
+        ultimoEntrante.cWhatsappId, originPhoneNumberId);
 }
 }

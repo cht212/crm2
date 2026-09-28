@@ -16,29 +16,29 @@ namespace CRM.Data.Controllers
         private readonly WhatsAppService _whatsappService;
         private readonly WhatsAppCloudApiService _whatsAppCloudApiService;
         private readonly CloudinaryStorageService _storage;
-        private readonly IWebHostEnvironment _environment;
         private readonly IConfiguration _configuration;
         private readonly SocialIntegrationService _socialIntegrations;
         private readonly CrmAccessService _access;
+        private readonly WhatsAppNumberRegistry _numbers;
         private readonly ILogger<WhatsAppController> _logger;
 
         public WhatsAppController(
             WhatsAppService whatsappService,
             WhatsAppCloudApiService whatsAppCloudApiService,
             CloudinaryStorageService storage,
-            IWebHostEnvironment environment,
             IConfiguration configuration,
             SocialIntegrationService socialIntegrations,
             CrmAccessService access,
+            WhatsAppNumberRegistry numbers,
             ILogger<WhatsAppController> logger)
         {
             _whatsappService = whatsappService;
             _whatsAppCloudApiService = whatsAppCloudApiService;
             _storage = storage;
-            _environment = environment;
             _configuration = configuration;
             _socialIntegrations = socialIntegrations;
             _access = access;
+            _numbers = numbers;
             _logger = logger;
         }
 
@@ -199,6 +199,15 @@ namespace CRM.Data.Controllers
                             continue;
                         }
 
+                        var originPhoneNumberId = value.TryGetProperty("metadata", out var metadata) &&
+                            metadata.TryGetProperty("phone_number_id", out var idNode)
+                                ? idNode.GetString() : null;
+                        if (!_numbers.Contains(originPhoneNumberId))
+                        {
+                            _logger.LogWarning("Webhook para Phone Number ID no configurado: {PhoneNumberId}", originPhoneNumberId);
+                            continue;
+                        }
+
 
                         // -------------------------------------------------
                         // contactos
@@ -239,7 +248,8 @@ namespace CRM.Data.Controllers
                         {
                             await ProcesarMensajeMeta(
                                 message,
-                                nombreContacto
+                                nombreContacto,
+                                originPhoneNumberId!
                             );
                         }
                     }
@@ -287,7 +297,8 @@ namespace CRM.Data.Controllers
 
         private async Task ProcesarMensajeMeta(
             JsonElement message,
-            string? nombreContacto)
+            string? nombreContacto,
+            string originPhoneNumberId)
         {
             try
             {
@@ -421,7 +432,8 @@ namespace CRM.Data.Controllers
                         nombreContacto,
                         texto,
                         tipoGuardado,
-                        whatsappId
+                        whatsappId,
+                        originPhoneNumberId
                     );
 
 
@@ -561,22 +573,10 @@ namespace CRM.Data.Controllers
             {
                 _logger.LogWarning(
                     ex,
-                    "Cloudinary no pudo guardar el archivo entrante. Se usará almacenamiento local temporal. Archivo: {FileName}",
+                    "Cloudinary no pudo guardar el archivo entrante. Se usará almacenamiento privado local. Archivo: {FileName}",
                     fileName);
 
-                var safeFileName = $"{Path.GetFileNameWithoutExtension(fileName)}-{Guid.NewGuid():N}{Path.GetExtension(fileName)}";
-                var relativeFolder = Path.Combine("uploads", "whatsapp", DateTime.UtcNow.ToString("yyyyMMdd"));
-                var absoluteFolder = Path.Combine(_environment.WebRootPath, relativeFolder);
-                Directory.CreateDirectory(absoluteFolder);
-
-                var absolutePath = Path.Combine(absoluteFolder, safeFileName);
-                await System.IO.File.WriteAllBytesAsync(absolutePath, mediaFile.Content);
-
-                var relativeUrl = "/" + Path.Combine(relativeFolder, safeFileName).Replace('\\', '/');
-                return new CloudinaryUploadResult(
-                    relativeUrl,
-                    $"local/{safeFileName}",
-                    mediaFile.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase) ? "image" : "raw");
+                return await _storage.SaveIncomingLocalAsync(mediaFile.Content, fileName, mediaFile.ContentType);
             }
         }
 

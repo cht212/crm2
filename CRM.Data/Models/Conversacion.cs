@@ -11,6 +11,7 @@ namespace CRM.Data.Models
         public string cEstado { get; set; } = "NUEVO";
         public string cCanal { get; set; } = CanalSocial.WhatsApp;
         public string? cExternalThreadId { get; set; }
+        public string? cPhoneNumberId { get; set; }
         public string cBotEstado { get; set; } = "ACTIVO";
         public DateTime dFechaInicio { get; set; } = DateTime.Now;
         public DateTime? dUltimoMensaje { get; set; }

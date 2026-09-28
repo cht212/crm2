@@ -7,21 +7,33 @@
     <script>
         try {
             const tema = localStorage.getItem("crm.theme");
-            const oscuro = tema === "dark" || (!tema && window.matchMedia?.("(prefers-color-scheme: dark)").matches);
+            const oscuro = tema === "dark" || (tema !== "light" && window.matchMedia?.("(prefers-color-scheme: dark)").matches);
             if (oscuro) document.documentElement.classList.add("theme-dark");
         } catch { }
     </script>
-    <link rel="stylesheet" href="MaterializeReference.css?v=20260925-colores-etapa-v1">
+    <link rel="stylesheet" href="MaterializeReference.css?v=20260928-sidebar-top-v1">
 </head>
 <body>
     <div class="app">
         <header class="header">
             <div>
-                <span class="header-caption">CRM - Centro de atención</span>
+                <button id="mobileMenuButton" class="mobile-menu-button" type="button" aria-label="Abrir menú" aria-expanded="false">
+                    <i data-lucide="menu"></i>
+                </button>
             </div>
             <div class="status">
                 <span class="status-dot"></span>
                 <span id="status">Conectando...</span>
+                <div class="theme-menu">
+                    <button id="themeMenuButton" class="header-icon-button" type="button" aria-label="Seleccionar tema" aria-expanded="false" title="Tema">
+                        <i data-lucide="laptop-minimal"></i>
+                    </button>
+                    <div id="themeMenuDropdown" class="theme-dropdown hidden" role="menu" aria-label="Tema de la interfaz">
+                        <button type="button" class="theme-choice" data-theme-choice="system" role="menuitem"><i data-lucide="laptop-minimal"></i><span>Sistema</span></button>
+                        <button type="button" class="theme-choice" data-theme-choice="light" role="menuitem"><i data-lucide="sun"></i><span>Claro</span></button>
+                        <button type="button" class="theme-choice" data-theme-choice="dark" role="menuitem"><i data-lucide="moon"></i><span>Oscuro</span></button>
+                    </div>
+                </div>
                 <div class="notification-menu">
                     <button id="notificationButton" class="notification-button" type="button" aria-label="Abrir notificaciones" aria-expanded="false">
                         <i data-lucide="bell"></i>
@@ -73,13 +85,13 @@
                 <div class="nav-top">
                     <button class="nav-item active" data-module="dashboard" title="Dashboard"><i data-lucide="layout-dashboard"></i><span class="nav-label">Dashboard</span></button>
                     <div class="nav-group" data-nav-group="comunicaciones">
-                        <button class="nav-item nav-group-toggle" data-module="inbox" title="Comunicaciones">
+                        <button class="nav-item nav-group-toggle" data-module="inbox" title="Comunicaciones" aria-expanded="false" aria-controls="communicationsChannels">
                             <i data-lucide="messages-square"></i>
                             <span class="nav-label">Comunicaciones</span>
                             <span id="communicationsBadge" class="nav-badge hidden">0</span>
                             <i class="nav-chevron" data-lucide="chevron-up"></i>
                         </button>
-                        <div class="nav-submenu">
+                        <div id="communicationsChannels" class="nav-submenu communications-rail" role="group" aria-label="Canales de comunicación">
                             <button class="nav-subitem active" data-module="inbox" data-channel="TODOS" type="button">
                                 <span class="brand-logo all"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="7" r="3.1"></circle><circle cx="17" cy="7" r="3.1"></circle><circle cx="7" cy="17" r="3.1"></circle><circle cx="17" cy="17" r="3.1"></circle></svg></span>
                                 <span>Todas</span>
@@ -107,21 +119,31 @@
                     <button class="nav-item" data-module="leads" title="Leads"><i data-lucide="kanban"></i><span class="nav-label">Leads</span></button>
                     <button class="nav-item" data-module="ventas" title="Ventas"><i data-lucide="badge-dollar-sign"></i><span class="nav-label">Ventas</span></button>
                     <button class="nav-item" data-module="reportes" title="Reportes"><i data-lucide="chart-no-axes-combined"></i><span class="nav-label">Reportes</span></button>
+                    <button id="marketingNav" class="nav-item hidden" data-module="marketing" title="Marketing"><i data-lucide="chart-spline"></i><span class="nav-label">Marketing</span></button>
                     <button id="botNav" class="nav-item hidden" data-module="bot" title="Bot"><i data-lucide="bot-message-square"></i><span class="nav-label">Bot</span></button>
                     <button id="connectionsNav" class="nav-item hidden" data-module="conexiones" title="Conexiones"><i data-lucide="plug-zap"></i><span class="nav-label">Conexiones</span></button>
                     <button id="activityNav" class="nav-item hidden" data-module="actividad" title="Actividad"><i data-lucide="history"></i><span class="nav-label">Actividad</span></button>
                     <button id="failuresNav" class="nav-item hidden" data-module="fallos" title="Fallos"><i data-lucide="triangle-alert"></i><span class="nav-label">Fallos</span></button>
                     <button id="usersNav" class="nav-item hidden" data-module="usuarios" title="Usuarios"><i data-lucide="users-round"></i><span class="nav-label">Usuarios</span></button>
                 </div>
+                <div class="mobile-menu-socials" aria-label="Redes sociales">
+                    <a href="#" data-social-brand="FACEBOOK" aria-label="Facebook"><span class="social-brand-slot"></span></a>
+                    <a href="#" data-social-brand="INSTAGRAM" aria-label="Instagram"><span class="social-brand-slot"></span></a>
+                    <a href="#" data-social-brand="TIKTOK" aria-label="TikTok"><span class="social-brand-slot"></span></a>
+                    <a href="#" data-social-brand="WHATSAPP" aria-label="WhatsApp"><span class="social-brand-slot"></span></a>
+                </div>
             </nav>
+            <button id="mobileMenuBackdrop" class="mobile-menu-backdrop" type="button" aria-label="Cerrar menú"></button>
             <aside class="sidebar hidden">
                 <div class="sidebar-header">
                     <div class="sidebar-heading">
-                        <div class="sidebar-title">Comunicaciones</div>
+                        <div class="sidebar-heading-main">
+                            <div class="sidebar-title">Comunicaciones</div>
+                            <div id="inboxNetworkFilters" class="inbox-network-filters" aria-label="Red activa"></div>
+                        </div>
                         <div id="conversationCount" class="conversation-count">0 chats</div>
                     </div>
                     <input id="searchInput" class="search" type="text" placeholder="Buscar cliente...">
-                    <div id="inboxNetworkFilters" class="inbox-network-filters" aria-label="Filtrar bandeja por red"></div>
                     <div class="filters">
                         <button class="filter-button active" data-filter="all">Todas</button>
                         <button class="filter-button" data-filter="new">Nuevas</button>
@@ -129,22 +151,22 @@
                         <button class="filter-button" data-filter="mine">Mis chats</button>
                         <button class="filter-button" data-filter="unassigned">Sin asesor</button>
                         <button class="filter-button" data-filter="pending">Pendientes</button>
-                    </div>
-                    <div class="inbox-assignee-menu">
-                        <button id="inboxAdvisorToggle" class="inbox-advisor-toggle" type="button" aria-label="Filtrar conversaciones por asesor" aria-expanded="false">
-                            <span id="inboxAdvisorAvatar" class="inbox-advisor-avatar">A</span>
-                            <span id="inboxAdvisorLabel" class="inbox-advisor-label">Sin filtro</span>
-                            <i data-lucide="chevron-down"></i>
-                        </button>
-                        <div id="inboxAdvisorMenu" class="inbox-advisor-menu hidden" role="menu" aria-label="Lista de asesores">
-                            <button class="inbox-advisor-item active" type="button" data-user-id="" data-user-label="Sin filtro">
-                                <span class="inbox-advisor-avatar mini">A</span>
-                                <span>Sin filtro</span>
+                        <div class="inbox-assignee-menu">
+                            <button id="inboxAdvisorToggle" class="inbox-advisor-toggle" type="button" aria-label="Filtrar conversaciones por asesor" aria-expanded="false">
+                                <span id="inboxAdvisorAvatar" class="inbox-advisor-avatar">A</span>
+                                <span id="inboxAdvisorLabel" class="inbox-advisor-label">Sin filtro</span>
+                                <i data-lucide="chevron-down"></i>
                             </button>
-                            <button class="inbox-advisor-item" type="button" data-user-id="unassigned" data-user-label="Sin asesor">
-                                <span class="inbox-advisor-avatar mini neutral">U</span>
-                                <span>Sin asesor</span>
-                            </button>
+                            <div id="inboxAdvisorMenu" class="inbox-advisor-menu hidden" role="menu" aria-label="Lista de asesores">
+                                <button class="inbox-advisor-item active" type="button" data-user-id="" data-user-label="Sin filtro">
+                                    <span class="inbox-advisor-avatar mini">A</span>
+                                    <span>Sin filtro</span>
+                                </button>
+                                <button class="inbox-advisor-item" type="button" data-user-id="unassigned" data-user-label="Sin asesor">
+                                    <span class="inbox-advisor-avatar mini neutral">U</span>
+                                    <span>Sin asesor</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -194,19 +216,19 @@
     </div>
 
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="js/state.js?v=20260924-facebook-visual"></script>
-    <script src="js/layout-profile.js?v=20260925-limpieza-v1"></script>
-    <script src="js/api-session.js?v=20260924-operativo-v2"></script>
-    <script src="js/inbox.js?v=20260925-limpieza-v1"></script>
-    <script src="js/customer-panel.js?v=20260925-limpieza-v1"></script>
-    <script src="js/messaging-attachments.js?v=20260924-facebook-visual"></script>
+    <script src="js/state.js?v=20260928-marketing-network-v3"></script>
+    <script src="js/layout-profile.js?v=20260928-mobile-menu-v4"></script>
+    <script src="js/api-session.js?v=20260928-marketing-v1"></script>
+    <script src="js/inbox.js?v=20260928-communications-rail-v1"></script>
+    <script src="js/customer-panel.js?v=20260928-mobile-ficha-v2"></script>
+    <script src="js/messaging-attachments.js?v=20260928-auto-take-v2"></script>
     <script src="js/utils.js?v=20260925-limpieza-v1"></script>
-    <script src="js/module-router.js?v=20260924-operativo-v2"></script>
+    <script src="js/module-router.js?v=20260928-marketing-v1"></script>
     <script src="js/contacts.js?v=20260925-limpieza-v1"></script>
     <script src="js/tasks-sales.js?v=20260925-limpieza-v1"></script>
-    <script src="js/dashboard.js?v=20260925-logo-oficial-v1"></script>
+    <script src="js/dashboard.js?v=20260928-instagram-logo-v4"></script>
     <script src="js/leads.js?v=20260924-facebook-visual"></script>
-    <script src="js/activity-reports.js?v=20260924-facebook-visual"></script>
+    <script src="js/activity-reports.js?v=20260928-marketing-network-v3"></script>
     <script src="js/connections.js?v=20260924-operativo-v2"></script>
     <script src="js/bot.js?v=20260925-operativo-v1"></script>
     <script src="js/quality-modules.js?v=20260924-operativo-v2"></script>

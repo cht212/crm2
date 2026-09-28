@@ -43,13 +43,13 @@ public static class CrmRolePermissions
     private static readonly HashSet<string> ModuloAdministrador =
     [
         "dashboard", "inbox", "contactos", "tareas", "leads", "ventas",
-        "reportes", "actividad", "fallos", "bot", "conexiones", "usuarios"
+        "reportes", "marketing", "actividad", "fallos", "bot", "conexiones", "usuarios"
     ];
 
     private static readonly HashSet<string> ModuloSupervisor =
     [
         "dashboard", "inbox", "contactos", "tareas", "leads", "ventas",
-        "reportes", "actividad", "bot"
+        "reportes", "marketing", "actividad", "bot"
     ];
 
     private static readonly HashSet<string> ModuloAsesor =

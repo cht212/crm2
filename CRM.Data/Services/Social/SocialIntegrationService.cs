@@ -112,6 +112,24 @@ public sealed class SocialIntegrationService
                 if (item.Value == null) continue;
 
                 var value = item.Value.Trim();
+                if (item.Key.Equals("WhatsApp:Numbers", StringComparison.OrdinalIgnoreCase) &&
+                    !string.IsNullOrWhiteSpace(value))
+                {
+                    try
+                    {
+                        var numbers = JsonSerializer.Deserialize<List<WhatsAppNumber>>(value,
+                            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (numbers == null || numbers.Count == 0 ||
+                            numbers.Any(n => string.IsNullOrWhiteSpace(n.PhoneNumberId) ||
+                                !n.PhoneNumberId.All(char.IsDigit)) ||
+                            numbers.Select(n => n.PhoneNumberId).Distinct(StringComparer.Ordinal).Count() != numbers.Count)
+                            throw new ArgumentException("La lista de numeros debe contener Phone Number IDs numericos y unicos.");
+                    }
+                    catch (JsonException)
+                    {
+                        throw new ArgumentException("WhatsApp:Numbers debe ser una lista JSON valida.");
+                    }
+                }
                 if (string.IsNullOrWhiteSpace(value))
                 {
                     _values.Remove(item.Key);
@@ -148,7 +166,8 @@ public sealed class SocialIntegrationService
         {
             Required("WhatsApp:WebhookVerifyToken"),
             Required("WhatsApp:AccessToken"),
-            Required("WhatsApp:PhoneNumberId"),
+            new SocialRequiredConfig("WhatsApp:Numbers o WhatsApp:PhoneNumberId",
+                HasValue("WhatsApp:Numbers") || HasValue("WhatsApp:PhoneNumberId")),
             Required("WhatsApp:BusinessAccountId")
         };
 
@@ -299,7 +318,8 @@ public sealed class SocialIntegrationService
                 new("TikTok:ClientSecret", "TikTok Client Secret", true, true),
                 new("TikTok:WebhookSecret", "TikTok Webhook Secret", true, true),
                 new("TikTok:AdvertiserId", "TikTok Advertiser ID", false, true),
-                new("TikTok:AccessToken", "Access Token", true, true)
+                new("TikTok:AccessToken", "Business API Access Token", true, true),
+                new("TikTok:DisplayAccessToken", "Display API Access Token (video.list)", true, false)
             ],
             _ =>
             [
@@ -307,6 +327,7 @@ public sealed class SocialIntegrationService
                 new("WhatsApp:AppSecret", "Meta App Secret para firma del webhook", true, true),
                 new("WhatsApp:AccessToken", "Access Token", true, true),
                 new("WhatsApp:PhoneNumberId", "Phone Number ID", false, true),
+                new("WhatsApp:Numbers", "Numeros del WABA (JSON: [{\"phoneNumberId\":\"ID\",\"displayNumber\":\"+51...\"}])", false, false),
                 new("WhatsApp:BusinessAccountId", "Business Account ID", false, true),
                 new("WhatsApp:ApiVersion", "API Version", false, false),
                 new("WhatsApp:SendMessagesToMeta", "Enviar mensajes a Meta true/false", false, false)

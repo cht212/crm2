@@ -24,10 +24,21 @@ namespace CRM.Data.Data
         public DbSet<ReglaAutomatica> ReglasAutomaticas { get; set; }
         public DbSet<KpiDashboard> KpisDashboard { get; set; }
         public DbSet<ReporteExportacion> ReportesExportacion { get; set; }
+        public DbSet<LoginAttempt> LoginAttempts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<LoginAttempt>(entity =>
+            {
+                entity.ToTable("crm_login_attempt");
+                entity.HasKey(x => x.Key);
+                entity.Property(x => x.Key).HasColumnName("c_key").HasMaxLength(64);
+                entity.Property(x => x.Failures).HasColumnName("n_failures");
+                entity.Property(x => x.BlockedUntilUtc).HasColumnName("d_blocked_until_utc");
+                entity.Property(x => x.UpdatedUtc).HasColumnName("d_updated_utc");
+            });
 
             // Mapeo de nombres de tablas exactos en SQL Server según nuestro diseño inicial
             modelBuilder.Entity<Cliente>().ToTable("crm_cliente");
@@ -50,6 +61,7 @@ namespace CRM.Data.Data
             modelBuilder.Entity<Conversacion>().Property(c => c.cEstado).HasColumnName("c_estado");
             modelBuilder.Entity<Conversacion>().Property(c => c.cCanal).HasColumnName("c_canal");
             modelBuilder.Entity<Conversacion>().Property(c => c.cExternalThreadId).HasColumnName("c_external_thread_id");
+            modelBuilder.Entity<Conversacion>().Property(c => c.cPhoneNumberId).HasColumnName("c_phone_number_id").HasMaxLength(100);
             modelBuilder.Entity<Conversacion>().Property(c => c.cBotEstado).HasColumnName("c_bot_estado");
             modelBuilder.Entity<Conversacion>().Property(c => c.dFechaInicio).HasColumnName("d_fecha_inicio");
             modelBuilder.Entity<Conversacion>().Property(c => c.dUltimoMensaje).HasColumnName("d_ultimo_mensaje");

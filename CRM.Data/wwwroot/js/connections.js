@@ -33,7 +33,7 @@
                     descripcion: "Canal activo para mensajes, archivos y webhooks de Meta.",
                     estado: whatsappListo ? "Conectado" : "Incompleto",
                     detalle: whatsappListo
-                        ? `API ${escapeHtml(whatsapp.apiVersion || "")} · Envio a Meta ${whatsapp.sendMessagesToMeta ? "activo" : "desactivado"}`
+                        ? `API ${escapeHtml(whatsapp.apiVersion || "")} · ${Number(whatsapp.numbers?.length || 0)} número(s) · Envío a Meta ${whatsapp.sendMessagesToMeta ? "activo" : "desactivado"}`
                         : "Faltan token, phone number id, business account id o verify token.",
                     accion: "Copiar webhook",
                     webhook: true,
@@ -240,11 +240,14 @@
                                         ${(config.fields || []).map(field => `
                                             <label>
                                                 <span>${escapeHtml(field.label)}${field.required ? " *" : ""}</span>
-                                                <input
+                                                ${field.key === "WhatsApp:Numbers" ? `<textarea
+                                                    name="${escapeAttribute(field.key)}"
+                                                    rows="5"
+                                                    placeholder='[{"phoneNumberId":"123456789","displayNumber":"+51..."}]'>${escapeHtml(field.value || "")}</textarea>` : `<input
                                                     name="${escapeAttribute(field.key)}"
                                                     type="${field.secret && !mostrarClaves ? "password" : "text"}"
                                                     value="${escapeAttribute(field.value || "")}"
-                                                    placeholder="${field.configured ? "Configurado, deja igual para conservar" : ""}">
+                                                    placeholder="${field.configured ? "Configurado, deja igual para conservar" : ""}">`}
                                                 <small>${escapeHtml(field.key)}</small>
                                             </label>`).join("")}
                                     </div>
@@ -276,7 +279,8 @@
                             body: JSON.stringify({ values })
                         });
                         if (!guardar.ok) {
-                            notificar("No se pudo guardar la configuración.", "error");
+                            const error = await guardar.json().catch(() => ({}));
+                            notificar(error.message || "No se pudo guardar la configuración.", "error");
                             return;
                         }
                         cerrarModal();

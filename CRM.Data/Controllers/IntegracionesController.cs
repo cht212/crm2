@@ -22,6 +22,8 @@ public sealed class IntegracionesController : ControllerBase
     private readonly MetaWebhookService _metaWebhook;
     private readonly AuditoriaService _auditoria;
     private readonly ILogger<IntegracionesController> _logger;
+    private readonly SocialPublicationsService _publications;
+    private readonly WhatsAppNumberRegistry _numbers;
 
     public IntegracionesController(
         IConfiguration configuration,
@@ -31,6 +33,8 @@ public sealed class IntegracionesController : ControllerBase
         MetaGraphApiService metaGraph,
         MetaWebhookService metaWebhook,
         AuditoriaService auditoria,
+        SocialPublicationsService publications,
+        WhatsAppNumberRegistry numbers,
         ILogger<IntegracionesController> logger)
     {
         _configuration = configuration;
@@ -41,6 +45,8 @@ public sealed class IntegracionesController : ControllerBase
         _metaWebhook = metaWebhook;
         _auditoria = auditoria;
         _logger = logger;
+        _publications = publications;
+        _numbers = numbers;
     }
 
     [HttpGet("estado")]
@@ -64,7 +70,8 @@ public sealed class IntegracionesController : ControllerBase
             {
                 verifyToken = TieneValor("WhatsApp:WebhookVerifyToken"),
                 accessToken = TieneValor("WhatsApp:AccessToken"),
-                phoneNumberId = TieneValor("WhatsApp:PhoneNumberId"),
+                phoneNumberId = _numbers.GetNumbers().Count > 0,
+                numbers = _numbers.GetNumbers(),
                 businessAccountId = TieneValor("WhatsApp:BusinessAccountId"),
                 apiVersion = _configuration["WhatsApp:ApiVersion"] ?? "v25.0",
                 sendMessagesToMeta =
@@ -128,9 +135,17 @@ public sealed class IntegracionesController : ControllerBase
     [Authorize(Roles = "Administrador,Supervisor")]
     public IActionResult GuardarConfiguracion(string canal, SocialIntegrationSaveDto dto)
     {
-        var updated = _socialIntegrations.SaveConfiguration(
-            canal,
-            dto.Values ?? new Dictionary<string, string?>());
+        SocialChannelConfiguration updated;
+        try
+        {
+            updated = _socialIntegrations.SaveConfiguration(
+                canal,
+                dto.Values ?? new Dictionary<string, string?>());
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
 
         return Ok(new
         {
@@ -196,6 +211,18 @@ public sealed class IntegracionesController : ControllerBase
     {
         var dashboard = await _metaGraph.ObtenerDashboardAsync(desde, hasta);
         return Ok(dashboard);
+    }
+
+    [HttpGet("publicaciones/estadisticas")]
+    [Authorize(Roles = "Administrador,Supervisor")]
+    public async Task<IActionResult> EstadisticasPublicaciones(
+        [FromQuery] DateOnly? desde, [FromQuery] DateOnly? hasta, CancellationToken cancellationToken)
+    {
+        var end = hasta ?? DateOnly.FromDateTime(DateTime.UtcNow);
+        var start = desde ?? end.AddDays(-30);
+        if (start > end || end.DayNumber - start.DayNumber > 365 || end > DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1))
+            return BadRequest(new { message = "El rango debe ser valido y no superar 365 dias." });
+        return Ok(await _publications.GetReportAsync(start, end, cancellationToken));
     }
 
     [HttpGet("meta/facebook/feed")]

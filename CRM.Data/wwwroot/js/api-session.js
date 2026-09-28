@@ -33,6 +33,7 @@
             document.getElementById("usersNav") && (document.getElementById("usersNav").hidden = true);
             document.getElementById("activityNav") && (document.getElementById("activityNav").hidden = true);
             document.getElementById("failuresNav") && (document.getElementById("failuresNav").hidden = true);
+            document.getElementById("marketingNav") && (document.getElementById("marketingNav").hidden = true);
         }
 
         async function iniciarAplicacion() {
@@ -122,6 +123,7 @@
                 "leads",
                 "ventas",
                 "reportes",
+                "marketing",
                 "bot",
                 "conexiones",
                 "actividad",
@@ -136,6 +138,7 @@
                 "leads",
                 "ventas",
                 "reportes",
+                "marketing",
                 "bot",
                 "actividad"
             ]),
@@ -201,4 +204,6 @@
             document.getElementById("activityNav") && (document.getElementById("activityNav").hidden = !permitidos.has("actividad"));
             document.getElementById("failuresNav")?.classList.toggle("hidden", !permitidos.has("fallos"));
             document.getElementById("failuresNav") && (document.getElementById("failuresNav").hidden = !permitidos.has("fallos"));
+            document.getElementById("marketingNav")?.classList.toggle("hidden", !permitidos.has("marketing"));
+            document.getElementById("marketingNav") && (document.getElementById("marketingNav").hidden = !permitidos.has("marketing"));
         }

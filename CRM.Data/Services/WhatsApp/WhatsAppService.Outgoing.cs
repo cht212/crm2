@@ -113,6 +113,7 @@ public async Task<long> ProcesarMensajeSalienteAsync(
             nuevoMensaje.nMensaje,
             conversacion.Cliente.cTelefono,
             conversacion.cExternalThreadId,
+            conversacion.cPhoneNumberId,
             canal,
             mensaje,
             tipo,
@@ -133,6 +134,7 @@ private async Task EnviarMensajeMetaEnSegundoPlanoAsync(
     long mensajeId,
     string telefono,
     string? externalThreadId,
+    string? originPhoneNumberId,
     string canal,
     string mensaje,
     string tipo,
@@ -152,6 +154,7 @@ private async Task EnviarMensajeMetaEnSegundoPlanoAsync(
             canal,
             telefono,
             externalThreadId,
+            originPhoneNumberId,
             mensaje,
             tipo,
             whatsappId);
@@ -192,6 +195,7 @@ private async Task<string?> EnviarAMetaAsync(
         CanalSocial.WhatsApp,
         telefono,
         null,
+        null,
         mensaje,
         tipo,
         whatsappId);
@@ -203,6 +207,7 @@ private async Task<string?> EnviarAMetaAsync(
     string canal,
     string telefono,
     string? externalThreadId,
+    string? originPhoneNumberId,
     string mensaje,
     string tipo,
     string? whatsappId)
@@ -224,7 +229,8 @@ private async Task<string?> EnviarAMetaAsync(
     {
         return await cloudApi.SendTextMessageAsync(
             telefono,
-            mensaje);
+            mensaje,
+            originPhoneNumberId);
     }
 
     if (TryReadAttachment(mensaje, out var url, out var nombre))
@@ -243,7 +249,8 @@ private async Task<string?> EnviarAMetaAsync(
             tipo,
             url,
             nombre,
-            null);
+            null,
+            originPhoneNumberId);
     }
 
     return whatsappId;

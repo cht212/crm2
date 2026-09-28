@@ -10,17 +10,20 @@ public sealed class WhatsAppCloudApiService
     private readonly IConfiguration _configuration;
     private readonly SocialIntegrationService _socialIntegrations;
     private readonly ILogger<WhatsAppCloudApiService> _logger;
+    private readonly WhatsAppNumberRegistry _numbers;
 
     public WhatsAppCloudApiService(
         HttpClient httpClient,
         IConfiguration configuration,
         SocialIntegrationService socialIntegrations,
+        WhatsAppNumberRegistry numbers,
         ILogger<WhatsAppCloudApiService> logger)
     {
         _httpClient = httpClient;
         _configuration = configuration;
         _socialIntegrations = socialIntegrations;
         _logger = logger;
+        _numbers = numbers;
     }
 
     public bool ShouldSendToMeta =>
@@ -30,7 +33,7 @@ public sealed class WhatsAppCloudApiService
 
     private bool IsConfigured =>
         !string.IsNullOrWhiteSpace(GetValue("WhatsApp:AccessToken")) &&
-        !string.IsNullOrWhiteSpace(GetValue("WhatsApp:PhoneNumberId"));
+        _numbers.DefaultPhoneNumberId != null;
 
     // =========================================================
     // INDICADOR DE "ESCRIBIENDO..." (typing indicator)
@@ -49,6 +52,7 @@ public sealed class WhatsAppCloudApiService
 
     public async Task<bool> MostrarEscribiendoAsync(
         string ultimoMensajeEntranteWhatsappId,
+        string? originPhoneNumberId = null,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(ultimoMensajeEntranteWhatsappId))
@@ -57,7 +61,7 @@ public sealed class WhatsAppCloudApiService
         }
 
         var accessToken = Required("WhatsApp:AccessToken");
-        var phoneNumberId = Required("WhatsApp:PhoneNumberId");
+        var phoneNumberId = ResolvePhoneNumberId(originPhoneNumberId);
         var apiVersion = GetValue("WhatsApp:ApiVersion");
         if (string.IsNullOrWhiteSpace(apiVersion))
         {
@@ -98,6 +102,7 @@ public sealed class WhatsAppCloudApiService
     public Task<string?> SendTextMessageAsync(
         string to,
         string text,
+        string? originPhoneNumberId = null,
         CancellationToken cancellationToken = default)
     {
         var payload = new
@@ -113,7 +118,7 @@ public sealed class WhatsAppCloudApiService
             }
         };
 
-        return SendMessageAsync(payload, cancellationToken);
+        return SendMessageAsync(payload, originPhoneNumberId, cancellationToken);
     }
 
     public async Task<WhatsAppMediaDownload> DownloadMediaAsync(
@@ -167,6 +172,7 @@ public sealed class WhatsAppCloudApiService
         string url,
         string? fileName,
         string? caption,
+        string? originPhoneNumberId = null,
         CancellationToken cancellationToken = default)
     {
         var normalizedType = type.Equals("image", StringComparison.OrdinalIgnoreCase)
@@ -186,15 +192,16 @@ public sealed class WhatsAppCloudApiService
             [normalizedType] = media
         };
 
-        return SendMessageAsync(payload, cancellationToken);
+        return SendMessageAsync(payload, originPhoneNumberId, cancellationToken);
     }
 
     private async Task<string?> SendMessageAsync(
         object payload,
+        string? originPhoneNumberId,
         CancellationToken cancellationToken)
     {
         var accessToken = Required("WhatsApp:AccessToken");
-        var phoneNumberId = Required("WhatsApp:PhoneNumberId");
+        var phoneNumberId = ResolvePhoneNumberId(originPhoneNumberId);
         var apiVersion = GetValue("WhatsApp:ApiVersion");
         if (string.IsNullOrWhiteSpace(apiVersion))
         {
@@ -246,6 +253,14 @@ public sealed class WhatsAppCloudApiService
         }
 
         return value;
+    }
+
+    private string ResolvePhoneNumberId(string? requested)
+    {
+        var id = requested ?? _numbers.DefaultPhoneNumberId;
+        if (!_numbers.Contains(id))
+            throw new InvalidOperationException("El numero de WhatsApp no esta configurado para este WABA.");
+        return id!;
     }
 
     private string? GetValue(string key) =>
