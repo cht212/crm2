@@ -38,7 +38,9 @@ async function enviarMensaje() {
     boton.disabled = true;
     input.value = "";
     const conversacionId = conversacionSeleccionada.id;
-    const temporalId = agregarMensajeOptimista(texto);
+    const respuestaSeleccionada = mensajeRespuestaSeleccionado;
+    limpiarRespuestaSeleccionada();
+    const temporalId = agregarMensajeOptimista(texto, respuestaSeleccionada);
     try {
         await asegurarConversacionTomada();
         const response = await api(`/api/whatsapp/conversaciones/${conversacionId}/mensajes`, {
@@ -47,7 +49,8 @@ async function enviarMensaje() {
             body: JSON.stringify({
                 mensaje: texto,
                 usuarioId: sesionActual?.id ? Number(sesionActual.id) : null,
-                tipo: "text"
+                tipo: "text",
+                replyToMessageId: respuestaSeleccionada?.id ? Number(respuestaSeleccionada.id) : null
             })
         });
         if (!response.ok) throw new Error("No se pudo enviar el mensaje");
@@ -63,6 +66,7 @@ async function enviarMensaje() {
             renderizarMensajesConversacion(conversacionSeleccionada.mensajes);
         }
         input.value = texto;
+        if (respuestaSeleccionada) seleccionarMensajeParaResponder(respuestaSeleccionada);
         notificar("No se pudo enviar el mensaje.", "error");
     } finally {
         envioEnCurso = false;

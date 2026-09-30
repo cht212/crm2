@@ -39,17 +39,30 @@
 
         async function cargarUsuariosInbox() {
             try {
-                const response = await api("/api/crm/usuarios");
-                if (!response.ok) return;
-                const usuarios = await response.json();
+                const esAsesor = esRol("asesor");
+                // El asesor no necesita consultar el directorio completo: la
+                // API ya limita la bandeja a sus conversaciones y a las que
+                // están disponibles para tomar.
+                const usuarios = esAsesor
+                    ? [{
+                        id: Number(sesionActual?.id || 0),
+                        usuario: sesionActual?.usuario || "Asesor",
+                        nombre: sesionActual?.usuario || "Asesor",
+                        rol: sesionActual?.rol || "Asesor"
+                    }]
+                    : await (async () => {
+                        const response = await api("/api/crm/usuarios");
+                        if (!response.ok) return [];
+                        return await response.json();
+                    })();
+                usuariosCache = usuarios;
                 const menu = document.getElementById("inboxAdvisorMenu");
-                if (normalizarRol(rolActual) === "asesor" && sesionActual?.id && !asesorFiltroActivo) {
+                if (esAsesor && sesionActual?.id) {
                     asesorFiltroActivo = String(sesionActual.id);
                 }
                 const valorActual = asesorFiltroActivo || "";
                 if (!menu) return;
 
-                const esAsesor = esRol("asesor");
                 const opciones = esAsesor
                     ? []
                     : [
@@ -157,6 +170,9 @@
                 : "";
             const texto = String(conversacion.ultimoMensajeTexto || "").trim();
 
+            if (tipo === "comment") {
+                return `${prefijo}💬 Comentario: ${texto.replace(/^Comentario:\s*/i, "")}`;
+            }
             if (tipo === "image") return `${prefijo}📷 Foto`;
             if (tipo === "audio" || tipo === "voice") return `${prefijo}🎤 Audio`;
             if (tipo === "video") return `${prefijo}🎥 Video`;
@@ -276,6 +292,7 @@
 
         function limpiarConversacionSeleccionada() {
             conversacionSeleccionada = null;
+            limpiarRespuestaSeleccionada();
             document.getElementById("chatHeader").classList.remove("chat-header--conversation");
             ultimoAvisoEscribiendo = 0;
             document.getElementById("chatHeader").innerHTML = `
@@ -329,9 +346,14 @@
                     (filtroActivo === "mine" && sesionActual?.id && Number(c.usuarioAsignadoId) === Number(sesionActual.id)) ||
                     (filtroActivo === "unassigned" && !c.usuarioAsignadoId) ||
                     (filtroActivo === "pending" && c.requiereAtencion);
-                const coincideAsesor = asesorFiltroActivo === "" ||
-                    (asesorFiltroActivo === "unassigned" && !c.usuarioAsignadoId) ||
-                    (asesorFiltroActivo && Number(c.usuarioAsignadoId) === Number(asesorFiltroActivo));
+                // Para un asesor, la autorización y el alcance ya fueron
+                // aplicados en el servidor. Repetir el filtro aquí hacía que
+                // el contador tuviera chats pero la lista apareciera vacía.
+                const coincideAsesor = esRol("asesor")
+                    ? true
+                    : asesorFiltroActivo === "" ||
+                        (asesorFiltroActivo === "unassigned" && !c.usuarioAsignadoId) ||
+                        (asesorFiltroActivo && Number(c.usuarioAsignadoId) === Number(asesorFiltroActivo));
                 const coincideBusqueda =
                     (c.nombre || "").toLowerCase().includes(filtro) ||
                     (c.telefono || "").includes(filtro);
@@ -358,6 +380,7 @@
             resultado.forEach(conversacion => {
                 const red = obtenerRedPorCanal(obtenerCanalConversacion(conversacion));
                 const vistaPrevia = obtenerVistaPreviaUltimoMensaje(conversacion);
+                const esComentario = String(conversacion.ultimoMensajeTipo || "").toLowerCase() === "comment";
                 const textoAtencion = conversacion.requiereAsignacion || !conversacion.usuarioAsignadoId
                     ? "Sin asesor"
                     : "Respuesta pendiente";
@@ -367,7 +390,8 @@
                 const elemento = document.createElement("div");
                 elemento.className = "conversation" +
                     (conversacionSeleccionada && conversacionSeleccionada.id === conversacion.id ? " active" : "") +
-                    (conversacion.requiereAtencion ? " needs-attention" : "");
+                    (conversacion.requiereAtencion ? " needs-attention" : "") +
+                    (esComentario ? " has-public-comment" : "");
                 elemento.innerHTML = `
                             <div class="conversation-row">
                             <span class="conversation-avatar">${escapeHtml(obtenerIniciales(conversacion.nombre || conversacion.telefono || "C"))}</span>
@@ -379,6 +403,7 @@
                             <div class="conversation-channel">
                                 ${crearLogoRed(red.clase)}
                                 <span>${escapeHtml(red.nombre)}</span>
+                                ${esComentario ? '<span class="conversation-origin-badge">Comentario público</span>' : ""}
                             </div>
                             <div class="conversation-preview" title="${escapeAttribute(vistaPrevia)}">${escapeHtml(vistaPrevia)}</div>
                             ${textoAsignado ? `<div class="conversation-advisor">${escapeHtml(textoAsignado)}</div>` : ""}
@@ -393,6 +418,7 @@
         async function seleccionarConversacion(id, opciones = {}) {
             const refrescarFicha = opciones.refrescarFicha !== false;
             document.body.classList.remove("mobile-contact-details-open");
+            if (Number(conversacionSeleccionada?.id || 0) !== Number(id)) limpiarRespuestaSeleccionada();
             const response = await api(`/api/whatsapp/conversaciones/${id}`);
             if (!response.ok) throw new Error("No se pudo cargar la conversacion");
             conversacionSeleccionada = await response.json();
@@ -409,7 +435,14 @@
             const red = obtenerRedPorCanal(obtenerCanalConversacion(conversacion));
             const botActivo = (conversacion.bot?.estado || "ACTIVO").toUpperCase() === "ACTIVO";
             const asesor = conversacion.usuarioAsignado;
+            const asesorId = Number(asesor?.id || 0);
+            const puedeSolicitarReasignacion = esRol("asesor") &&
+                asesorId === Number(sesionActual?.id || 0);
+            const puedeControlarBot = tienePermiso("conversaciones.atender") &&
+                (!esRol("asesor") || asesorId === Number(sesionActual?.id || 0));
             const nombreAsesor = typeof asesor === "string" ? asesor : asesor?.nombre || asesor?.usuario || "Sin asesor";
+            const contieneComentarios = (conversacion.mensajes || []).some(mensaje =>
+                String(mensaje.tipo || "").toLowerCase() === "comment");
             const detalleContacto = [cliente.telefono, nombreAsesor].filter(Boolean).join(" · ");
             document.getElementById("chatHeader").classList.add("chat-header--conversation");
             document.getElementById("chatHeader").innerHTML = `
@@ -423,10 +456,14 @@
                                 </div>
                             </div>
                             <div class="chat-channel-actions">
-                                <button id="chatBotToggle" class="chat-bot-toggle ${botActivo ? "active" : "paused"}" type="button" title="${botActivo ? "Bot activo" : "Bot pausado"}">
+                                ${puedeSolicitarReasignacion ? `<button id="requestReassignmentButton" class="chat-transfer-button" type="button" title="Solicitar transferencia">
+                                    <i data-lucide="user-round-cog"></i><span>Transferir</span>
+                                </button>` : ""}
+                                ${puedeControlarBot ? `<button id="chatBotToggle" class="chat-bot-toggle ${botActivo ? "active" : "paused"}" type="button" title="${botActivo ? "Bot activo" : "Bot pausado"}">
                                     <span class="bot-toggle-dot"></span>
                                     <span>${botActivo ? "Bot activo" : "Bot pausado"}</span>
-                                </button>
+                                </button>` : ""}
+                                ${contieneComentarios ? '<span class="chat-public-comment-badge" title="Esta conversación contiene comentarios públicos"><i data-lucide="message-square-text"></i><span>Comentario público</span></span>' : ""}
                                 <span class="chat-channel-badge" role="img" title="${escapeAttribute(red.nombre)}" aria-label="${escapeAttribute(red.nombre)}">${crearLogoRed(red.clase)}</span>
                                 <button id="toggleCustomerDetails" class="chat-details-toggle" type="button"
                                     title="${fichaClienteColapsada ? "Mostrar ficha del cliente" : "Ocultar ficha del cliente"}"
@@ -462,6 +499,9 @@
             document.getElementById("chatBotToggle")?.addEventListener("click", () => {
                 cambiarBotConversacion(conversacion.id, botActivo ? "PAUSADO" : "ACTIVO");
             });
+            document.getElementById("requestReassignmentButton")?.addEventListener("click", () => {
+                solicitarReasignacionDesdeChat(conversacion.id);
+            });
             document.getElementById("toggleCustomerDetails")?.addEventListener("click", alternarFichaCliente);
             document.querySelector(".main")?.classList.toggle("customer-details-collapsed", fichaClienteColapsada);
             renderizarMensajesConversacion(conversacion.mensajes || []);
@@ -470,10 +510,48 @@
             input.disabled = !puedeEnviar;
             boton.disabled = !puedeEnviar;
             attachButton.disabled = !puedeEnviar;
-            if (!puedeEnviar) input.placeholder = "Solo lectura: solicita permiso para enviar mensajes";
+            input.placeholder = !puedeEnviar
+                ? "Solo lectura: solicita permiso para enviar mensajes"
+                : contieneComentarios
+                    ? "Mensaje privado al contacto (no responde el comentario público)"
+                    : "Escribir mensaje...";
             if (refrescarFicha) {
                 mostrarFichaCliente(conversacion);
             }
+        }
+
+        async function reasignarConversacionDesdeChat(conversacionId, usuarioId) {
+            const response = await api(`/api/crm/conversaciones/${conversacionId}/asignar`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ usuarioId: usuarioId ? Number(usuarioId) : null })
+            });
+            if (!response.ok) {
+                notificar(await obtenerMensajeError(response, "No se pudo transferir la conversación."), "error");
+                await seleccionarConversacion(conversacionId);
+                return;
+            }
+
+            await cargarConversaciones();
+            await seleccionarConversacion(conversacionId);
+            notificar("Conversación transferida.", "success");
+        }
+
+        async function solicitarReasignacionDesdeChat(conversacionId) {
+            if (!window.confirm("La conversación quedará sin asesor y disponible para reasignación. ¿Continuar?")) return;
+
+            const response = await api(`/api/crm/conversaciones/${conversacionId}/solicitar-reasignacion`, {
+                method: "POST"
+            });
+            if (!response.ok) {
+                notificar(await obtenerMensajeError(response, "No se pudo solicitar la transferencia."), "error");
+                return;
+            }
+
+            const resultado = await response.json();
+            limpiarConversacionSeleccionada();
+            await cargarConversaciones();
+            notificar(resultado.mensaje || "Transferencia solicitada.", "success");
         }
 
         function alternarFichaCliente() {
@@ -574,12 +652,32 @@
                 const esImagen = tipoMensaje === "image" || tipoMensaje === "sticker";
                 const esSticker = tipoMensaje === "sticker";
                 const esAudio = tipoMensaje === "audio" || tipoMensaje === "voice";
-                elemento.className = `message ${entrante ? "incoming" : "outgoing"}${esImagen ? " has-image" : ""}${esSticker ? " has-sticker" : ""}${esAudio ? " has-audio" : ""}`;
+                const esComentario = tipoMensaje === "comment";
+                elemento.className = `message ${entrante ? "incoming" : "outgoing"}${esImagen ? " has-image" : ""}${esSticker ? " has-sticker" : ""}${esAudio ? " has-audio" : ""}${esComentario ? " public-comment" : ""}`;
                 const ticks = entrante ? "" : crearTicksMensaje(mensaje);
-                const autor = entrante ? "Cliente" : (mensaje.tipo === "bot" ? "Bot" : "CRM");
-                elemento.innerHTML = crearContenidoMensaje(mensaje) +
+                const autor = esComentario ? "Comentario público" : (entrante ? "Cliente" : (mensaje.tipo === "bot" ? "Bot" : "CRM"));
+                elemento.dataset.messageId = mensaje.id;
+                const puedeResponder = String(conversacionSeleccionada?.canal || "WHATSAPP").toUpperCase() === "WHATSAPP" &&
+                    Boolean(mensaje.externalId || mensaje.whatsappId);
+                elemento.innerHTML = crearCitaMensaje(mensaje.respuestaA) + crearContenidoMensaje(mensaje) +
+                    (puedeResponder ? `<button type="button" class="message-reply-button" data-reply-message="${mensaje.id}" title="Responder este mensaje" aria-label="Responder este mensaje"><i data-lucide="reply"></i></button>` : "") +
                     `<div class="message-info"><span>${autor} · ${formatearFecha(mensaje.fecha)}</span>${ticks}</div>`;
                 mensajes.appendChild(elemento);
+            });
+            mensajes.querySelectorAll("[data-reply-message]").forEach(botonRespuesta => {
+                botonRespuesta.addEventListener("click", event => {
+                    event.stopPropagation();
+                    const mensaje = listaMensajes.find(item => String(item.id) === botonRespuesta.dataset.replyMessage);
+                    seleccionarMensajeParaResponder(mensaje);
+                });
+            });
+            mensajes.querySelectorAll("[data-scroll-message]").forEach(cita => {
+                cita.addEventListener("click", () => {
+                    const original = mensajes.querySelector(`[data-message-id="${CSS.escape(cita.dataset.scrollMessage)}"]`);
+                    original?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    original?.classList.add("message-highlight");
+                    window.setTimeout(() => original?.classList.remove("message-highlight"), 1200);
+                });
             });
             mensajes.querySelectorAll("[data-image-preview]").forEach(botonImagen => {
                 botonImagen.addEventListener("click", () => {
@@ -594,7 +692,42 @@
             mensajes.scrollTop = mensajes.scrollHeight;
         }
 
-        function agregarMensajeOptimista(texto) {
+        function resumenMensajeParaCita(mensaje) {
+            if (!mensaje) return "Mensaje";
+            const tipo = String(mensaje.tipo || "text").toLowerCase();
+            if (tipo === "text" || tipo === "bot") return String(mensaje.mensaje || "Mensaje").slice(0, 140);
+            const nombres = { image: "Imagen", sticker: "Sticker", audio: "Audio", voice: "Audio", video: "Video", document: "Documento", "application/pdf": "Documento PDF" };
+            return nombres[tipo] || "Archivo adjunto";
+        }
+
+        function crearCitaMensaje(respuestaA) {
+            if (!respuestaA) return "";
+            const autor = respuestaA.direccion === "E" ? "Cliente" : "Tú";
+            return `<button type="button" class="message-quote" data-scroll-message="${respuestaA.id}">
+                        <strong>${autor}</strong><span>${escapeHtml(resumenMensajeParaCita(respuestaA))}</span>
+                    </button>`;
+        }
+
+        function seleccionarMensajeParaResponder(mensaje) {
+            if (!mensaje || !replyPreview) return;
+            mensajeRespuestaSeleccionado = mensaje;
+            const autor = mensaje.direccion === "E" ? "Cliente" : "Tú";
+            replyPreview.innerHTML = `<div><strong>Responder a ${autor}</strong><span>${escapeHtml(resumenMensajeParaCita(mensaje))}</span></div>
+                <button type="button" id="cancelReplyButton" aria-label="Cancelar respuesta"><i data-lucide="x"></i></button>`;
+            replyPreview.classList.remove("hidden");
+            document.getElementById("cancelReplyButton")?.addEventListener("click", limpiarRespuestaSeleccionada);
+            if (window.lucide) window.lucide.createIcons();
+            input.focus();
+        }
+
+        function limpiarRespuestaSeleccionada() {
+            mensajeRespuestaSeleccionado = null;
+            if (!replyPreview) return;
+            replyPreview.innerHTML = "";
+            replyPreview.classList.add("hidden");
+        }
+
+        function agregarMensajeOptimista(texto, respuestaA = null) {
             if (!conversacionSeleccionada) return null;
 
             const mensajeTemporal = {
@@ -603,6 +736,12 @@
                 tipo: "text",
                 estado: "ENVIANDO",
                 mensaje: texto,
+                respuestaA: respuestaA ? {
+                    id: respuestaA.id,
+                    direccion: respuestaA.direccion,
+                    tipo: respuestaA.tipo,
+                    mensaje: respuestaA.mensaje
+                } : null,
                 fecha: new Date().toISOString()
             };
 
@@ -617,6 +756,10 @@
 
         function crearContenidoMensaje(mensaje) {
             const tipo = String(mensaje.tipo || "").toLowerCase();
+            if (tipo === "comment") {
+                const texto = String(mensaje.mensaje || "").replace(/^Comentario:\s*/i, "");
+                return `<div class="public-comment-label"><i data-lucide="message-square-text"></i><span>Comentario en publicación</span></div><div>${escapeHtml(texto)}</div>`;
+            }
             const esAdjunto = ["image", "sticker", "document", "application/pdf", "audio", "voice", "video"].includes(tipo);
             if (!esAdjunto) {
                 return `<div>${escapeHtml(mensaje.mensaje || "")}</div>`;

@@ -37,17 +37,18 @@ public sealed class SocialIntegrationService
                 "Meta Graph API + Messenger/Page webhooks",
                 $"{baseUrl}/api/integraciones/meta/webhook",
                 "Meta:Facebook"),
-            BuildTikTok(baseUrl)
+            BuildTikTok(baseUrl),
+            BuildWebsite()
         ];
     }
 
     public SocialChannelStatus? GetChannel(HttpRequest request, string canal) =>
         GetChannels(request).FirstOrDefault(channel =>
-            channel.Canal.Equals(CanalSocial.Normalizar(canal), StringComparison.OrdinalIgnoreCase));
+            channel.Canal.Equals(NormalizeIntegrationChannel(canal), StringComparison.OrdinalIgnoreCase));
 
     public SocialOauthStart BuildOauthStart(HttpRequest request, string canal)
     {
-        var normalized = CanalSocial.Normalizar(canal);
+        var normalized = NormalizeIntegrationChannel(canal);
         var channel = GetChannel(request, normalized);
         if (channel == null)
         {
@@ -85,7 +86,7 @@ public sealed class SocialIntegrationService
 
     public SocialChannelConfiguration GetConfiguration(string canal, bool revealSecrets = false)
     {
-        var normalized = CanalSocial.Normalizar(canal);
+        var normalized = NormalizeIntegrationChannel(canal);
         return new SocialChannelConfiguration(
             normalized,
             GetFields(normalized)
@@ -101,7 +102,7 @@ public sealed class SocialIntegrationService
 
     public SocialChannelConfiguration SaveConfiguration(string canal, IReadOnlyDictionary<string, string?> values)
     {
-        var normalized = CanalSocial.Normalizar(canal);
+        var normalized = NormalizeIntegrationChannel(canal);
         var allowed = GetFields(normalized).Select(field => field.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         lock (_sync)
@@ -112,6 +113,13 @@ public sealed class SocialIntegrationService
                 if (item.Value == null) continue;
 
                 var value = item.Value.Trim();
+                if (item.Key.EndsWith(":PublicUrl", StringComparison.OrdinalIgnoreCase) &&
+                    !string.IsNullOrWhiteSpace(value) &&
+                    (!Uri.TryCreate(value, UriKind.Absolute, out var publicUri) ||
+                     (publicUri.Scheme != Uri.UriSchemeHttp && publicUri.Scheme != Uri.UriSchemeHttps)))
+                {
+                    throw new ArgumentException("La URL pública debe comenzar con http:// o https://.");
+                }
                 if (item.Key.Equals("WhatsApp:Numbers", StringComparison.OrdinalIgnoreCase) &&
                     !string.IsNullOrWhiteSpace(value))
                 {
@@ -155,7 +163,7 @@ public sealed class SocialIntegrationService
     private string ApiVersion => GetValue("Meta:ApiVersion") ?? "v25.0";
 
     private const string MetaScopes =
-        "pages_show_list,pages_messaging,pages_read_engagement,pages_manage_metadata,read_insights,instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments";
+        "pages_show_list,pages_messaging,pages_read_engagement,pages_read_user_content,pages_manage_engagement,pages_manage_posts,pages_manage_metadata,read_insights,instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments";
 
     private const string TikTokScopes =
         "user.info.basic,business.basic,video.list,comment.list";
@@ -179,7 +187,8 @@ public sealed class SocialIntegrationService
             $"{baseUrl}/api/whatsapp/webhook",
             null,
             required,
-            ["graph.facebook.com", "lookaside.fbsbx.com", "*.r2.cloudflarestorage.com"]);
+            ["graph.facebook.com", "lookaside.fbsbx.com", "*.r2.cloudflarestorage.com"],
+            GetValue("WhatsApp:PublicUrl"));
     }
 
     private SocialChannelStatus BuildMetaChannel(
@@ -217,7 +226,8 @@ public sealed class SocialIntegrationService
             required,
             canal == CanalSocial.Instagram
                 ? ["graph.instagram.com", "graph.facebook.com"]
-                : ["graph.facebook.com", "www.facebook.com"]);
+                : ["graph.facebook.com", "www.facebook.com"],
+            GetValue($"{prefix}:PublicUrl"));
     }
 
     private SocialChannelStatus BuildTikTok(string baseUrl)
@@ -239,7 +249,23 @@ public sealed class SocialIntegrationService
             $"{baseUrl}/api/integraciones/tiktok/webhook",
             "/api/integraciones/tiktok/oauth/start",
             required,
-            ["open.tiktokapis.com", "business-api.tiktok.com", "www.tiktok.com"]);
+            ["open.tiktokapis.com", "business-api.tiktok.com", "www.tiktok.com"],
+            GetValue("TikTok:PublicUrl"));
+    }
+
+    private SocialChannelStatus BuildWebsite()
+    {
+        var url = GetValue("Website:PublicUrl");
+        return new SocialChannelStatus(
+            "WEBSITE",
+            "Página web",
+            "Sitio web corporativo",
+            !string.IsNullOrWhiteSpace(url),
+            "",
+            null,
+            [new SocialRequiredConfig("Website:PublicUrl", !string.IsNullOrWhiteSpace(url))],
+            [],
+            url);
     }
 
     private SocialRequiredConfig Required(string key) =>
@@ -248,7 +274,20 @@ public sealed class SocialIntegrationService
     private string? GetValue(string key) =>
         _values.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value)
             ? value
-            : _configuration[key];
+            : _configuration[key] ?? GetDefaultValue(key);
+
+    private static string NormalizeIntegrationChannel(string? canal) =>
+        string.Equals(canal?.Trim(), "WEBSITE", StringComparison.OrdinalIgnoreCase)
+            ? "WEBSITE"
+            : CanalSocial.Normalizar(canal);
+
+    private static string? GetDefaultValue(string key) => key switch
+    {
+        "Meta:Facebook:PublicUrl" => "https://www.facebook.com/profile.php?id=61594244270955&locale=es_LA",
+        "Meta:Instagram:PublicUrl" => "https://www.instagram.com/hpdglassgroupoficial/",
+        "Website:PublicUrl" => "https://www.hpdglass.com/",
+        _ => null
+    };
 
     private bool HasValue(string key) => !string.IsNullOrWhiteSpace(GetValue(key));
 
@@ -293,6 +332,7 @@ public sealed class SocialIntegrationService
         {
             CanalSocial.Instagram =>
             [
+                new("Meta:Instagram:PublicUrl", "URL", false, false),
                 new("Meta:AppId", "Meta App ID", false, true),
                 new("Meta:AppSecret", "Meta App Secret", true, true),
                 new("Meta:WebhookVerifyToken", "Meta Webhook Verify Token", true, true),
@@ -305,6 +345,7 @@ public sealed class SocialIntegrationService
             ],
             CanalSocial.Facebook =>
             [
+                new("Meta:Facebook:PublicUrl", "URL", false, false),
                 new("Meta:AppId", "Meta App ID", false, true),
                 new("Meta:AppSecret", "Meta App Secret", true, true),
                 new("Meta:WebhookVerifyToken", "Meta Webhook Verify Token", true, true),
@@ -314,6 +355,7 @@ public sealed class SocialIntegrationService
             ],
             CanalSocial.TikTok =>
             [
+                new("TikTok:PublicUrl", "URL", false, false),
                 new("TikTok:ClientKey", "TikTok Client Key", false, true),
                 new("TikTok:ClientSecret", "TikTok Client Secret", true, true),
                 new("TikTok:WebhookSecret", "TikTok Webhook Secret", true, true),
@@ -321,8 +363,13 @@ public sealed class SocialIntegrationService
                 new("TikTok:AccessToken", "Business API Access Token", true, true),
                 new("TikTok:DisplayAccessToken", "Display API Access Token (video.list)", true, false)
             ],
+            "WEBSITE" =>
+            [
+                new("Website:PublicUrl", "URL", false, true)
+            ],
             _ =>
             [
+                new("WhatsApp:PublicUrl", "URL", false, false),
                 new("WhatsApp:WebhookVerifyToken", "Webhook Verify Token", true, true),
                 new("WhatsApp:AppSecret", "Meta App Secret para firma del webhook", true, true),
                 new("WhatsApp:AccessToken", "Access Token", true, true),

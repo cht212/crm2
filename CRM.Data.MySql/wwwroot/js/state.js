@@ -1,6 +1,8 @@
 // Módulo frontend del CRM.
 
-const POLLING_MS = 15000;
+// Respaldo para navegadores/proxies que interrumpan SSE. Los cambios normales
+// llegan por /api/realtime/events y ya no requieren consultar cada 15 segundos.
+const POLLING_MS = 60000;
         let conversaciones = [];
         let conversacionSeleccionada = null;
         let actualizacionEnCurso = false;
@@ -34,6 +36,7 @@ const POLLING_MS = 15000;
         let fichaClienteColapsada = false;
         let envioEnCurso = false;
         let archivosPendientes = [];
+        let mensajeRespuestaSeleccionado = null;
 
         const lista = document.getElementById("conversationList");
         const mensajes = document.getElementById("messages");
@@ -43,6 +46,7 @@ const POLLING_MS = 15000;
         const quickReplies = document.getElementById("quickReplies");
         const fileInput = document.getElementById("fileInput");
         const attachButton = document.getElementById("attachButton");
+        const replyPreview = document.getElementById("replyPreview");
         const fileName = document.getElementById("fileName");
         const attachmentPreview = document.getElementById("attachmentPreview");
         const attachmentList = document.getElementById("attachmentList");

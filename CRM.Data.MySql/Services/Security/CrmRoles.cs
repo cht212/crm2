@@ -6,13 +6,15 @@ public static class CrmRoles
     public const string Auditor = "Auditor";
     public const string Supervisor = "Supervisor";
     public const string Asesor = "Asesor";
+    public const string Marketing = "Marketing";
 
     public static readonly string[] All =
     [
         Administrador,
         Auditor,
         Supervisor,
-        Asesor
+        Asesor,
+        Marketing
     ];
 
     public static string Normalize(string? role)
@@ -30,6 +32,7 @@ public static class CrmRoles
             "auditor" => Auditor,
             "supervisor" => Supervisor,
             "asesor" => Asesor,
+            "marketing" => Marketing,
             _ => trimmed
         };
     }
@@ -66,6 +69,11 @@ public static class CrmRolePermissions
         "reportes", "marketing", "actividad", "fallos", "bot", "conexiones", "usuarios"
     ];
 
+    private static readonly HashSet<string> ModuloMarketing =
+    [
+        "marketing"
+    ];
+
     public static bool CanAccessModule(string? role, string modulo)
     {
         var normalizedRole = CrmRoles.Normalize(role);
@@ -94,6 +102,11 @@ public static class CrmRolePermissions
         if (normalizedRole.Equals(CrmRoles.Asesor, StringComparison.OrdinalIgnoreCase))
         {
             return ModuloAsesor.Contains(module, StringComparer.OrdinalIgnoreCase);
+        }
+
+        if (normalizedRole.Equals(CrmRoles.Marketing, StringComparison.OrdinalIgnoreCase))
+        {
+            return ModuloMarketing.Contains(module, StringComparer.OrdinalIgnoreCase);
         }
 
         return false;
@@ -125,6 +138,11 @@ public static class CrmRolePermissions
         }
 
         if (normalizedRole.Equals(CrmRoles.Asesor, StringComparison.OrdinalIgnoreCase))
+        {
+            return normalizedAction is "ver" or "crear" or "editar";
+        }
+
+        if (normalizedRole.Equals(CrmRoles.Marketing, StringComparison.OrdinalIgnoreCase))
         {
             return normalizedAction is "ver" or "crear" or "editar";
         }

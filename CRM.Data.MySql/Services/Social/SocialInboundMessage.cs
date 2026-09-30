@@ -8,4 +8,7 @@ public sealed record SocialInboundMessage(
     string Text,
     string? Type,
     string? ExternalMessageId,
-    string? ProfilePictureUrl = null);
+    string? ProfilePictureUrl = null,
+    bool AllowBotReply = true,
+    string? ParentExternalId = null,
+    DateTimeOffset? OccurredAt = null);

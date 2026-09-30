@@ -8,7 +8,8 @@ public sealed record SocialChannelStatus(
     string WebhookUrl,
     string? OauthStartUrl,
     IReadOnlyList<SocialRequiredConfig> RequiredConfig,
-    IReadOnlyList<string> NetworkAllowList);
+    IReadOnlyList<string> NetworkAllowList,
+    string? PublicUrl);
 
 public sealed record SocialRequiredConfig(string Key, bool Configured);
 

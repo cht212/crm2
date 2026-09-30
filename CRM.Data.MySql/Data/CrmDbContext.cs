@@ -87,6 +87,7 @@ namespace CRM.Data.Data
             modelBuilder.Entity<Mensaje>().Property(m => m.cWhatsappId).HasColumnName("c_whatsapp_id");
             modelBuilder.Entity<Mensaje>().Property(m => m.cCanal).HasColumnName("c_canal").HasMaxLength(32);
             modelBuilder.Entity<Mensaje>().Property(m => m.cExternalId).HasColumnName("c_external_id").HasMaxLength(450);
+            modelBuilder.Entity<Mensaje>().Property(m => m.cReplyToExternalId).HasColumnName("c_reply_to_external_id").HasMaxLength(450);
             modelBuilder.Entity<Mensaje>().Property(m => m.cDireccion).HasColumnName("c_direccion");
             modelBuilder.Entity<Mensaje>().Property(m => m.cTipo).HasColumnName("c_tipo");
             modelBuilder.Entity<Mensaje>().Property(m => m.cMensaje).HasColumnName("c_mensaje");

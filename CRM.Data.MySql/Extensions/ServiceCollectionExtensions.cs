@@ -16,7 +16,10 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddDbContextPool<CrmDbContext>(options =>
+        services.AddSingleton<CrmRealtimeNotifier>();
+        services.AddSingleton<CrmRealtimeSaveChangesInterceptor>();
+
+        services.AddDbContextPool<CrmDbContext>((serviceProvider, options) =>
         {
             var connectionString = configuration.GetConnectionString("DefaultConnection");
             if (string.IsNullOrWhiteSpace(connectionString))
@@ -26,6 +29,7 @@ public static class ServiceCollectionExtensions
             }
 
             options.UseMySQL(connectionString);
+            options.AddInterceptors(serviceProvider.GetRequiredService<CrmRealtimeSaveChangesInterceptor>());
             options.ConfigureWarnings(warnings =>
                 warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
         }, poolSize: 32);
@@ -35,6 +39,7 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddCrmApplicationServices(this IServiceCollection services)
     {
+        services.AddMemoryCache();
         services.AddHttpContextAccessor();
         services.AddScoped<WhatsAppService>();
         services.AddScoped<AuditoriaService>();
@@ -42,6 +47,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<CrmPermissionService>();
         services.AddScoped<SocialInboundService>();
         services.AddScoped<MetaWebhookService>();
+        services.AddHostedService<SocialInboxRecoveryWorker>();
         services.AddHttpClient<SocialPublicationsService>();
         services.AddSingleton<BotSettingsService>();
         services.AddSingleton<QuickReplyTemplatesService>();
@@ -213,10 +219,10 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    // HttpClientHandler evita que WinHTTP solicite un certificado de cliente
+    // del almacén de Windows (error 12185) al conectar con las APIs de Meta.
     private static HttpMessageHandler CreateExternalHttpHandler() =>
-        OperatingSystem.IsWindows()
-            ? new System.Net.Http.WinHttpHandler()
-            : new HttpClientHandler();
+        new HttpClientHandler();
 
     private static string GetClientPartition(HttpContext context)
     {

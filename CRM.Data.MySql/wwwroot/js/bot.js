@@ -8,12 +8,14 @@
                 options: []
             };
             let plantillasRapidas = [];
+            let estadoIntegraciones = { canales: [] };
             let aviso = "";
 
             try {
-                const [botResponse, templatesResponse] = await Promise.all([
+                const [botResponse, templatesResponse, integrationsResponse] = await Promise.all([
                     api("/api/bot/whatsapp"),
-                    api("/api/plantillas-rapidas/admin")
+                    api("/api/plantillas-rapidas/admin"),
+                    api("/api/integraciones/estado")
                 ]);
                 if (!botResponse.ok) throw new Error("Bot no disponible");
                 bot = await botResponse.json();
@@ -21,23 +23,60 @@
                     const templatesData = await templatesResponse.json();
                     plantillasRapidas = Array.isArray(templatesData.templates) ? templatesData.templates : [];
                 }
+                if (integrationsResponse.ok) {
+                    estadoIntegraciones = await integrationsResponse.json();
+                }
             } catch (error) {
                 console.error(error);
                 aviso = '<div class="bot-warning">No se pudo leer la configuración actual del bot. Se muestran valores base.</div>';
             }
 
+            const integracionConectada = canal => {
+                if (canal === "whatsapp") {
+                    const estado = estadoIntegraciones.whatsapp || {};
+                    return Boolean(estado.verifyToken && estado.accessToken && estado.phoneNumberId && estado.businessAccountId);
+                }
+                const encontrado = (estadoIntegraciones.canales || []).find(item =>
+                    String(item.canal || "").toLowerCase() === canal);
+                return Boolean(encontrado?.connected);
+            };
+            const crearCanalMensajeria = (id, nombre, descripcion) => {
+                const conectado = integracionConectada(id);
+                return {
+                    id,
+                    clase: id,
+                    nombre,
+                    estado: !conectado ? "Sin conexión" : bot.enabled ? "Activo" : "Bot apagado",
+                    descripcion,
+                    listo: conectado,
+                    soportado: true
+                };
+            };
             const canalesBot = [
+                crearCanalMensajeria(
+                    "whatsapp",
+                    "WhatsApp",
+                    "Recibe mensajes mediante el webhook de Meta y responde con la configuración global del bot."),
+                crearCanalMensajeria(
+                    "facebook",
+                    "Facebook",
+                    "Messenger recibe mensajes y recupera conversaciones recientes si hubo una interrupción."),
+                crearCanalMensajeria(
+                    "instagram",
+                    "Instagram",
+                    "Instagram recibe mensajes y recupera conversaciones recientes si hubo una interrupción."),
                 {
-                    id: "whatsapp",
-                    clase: "whatsapp",
-                    nombre: "WhatsApp",
-                    estado: bot.enabled ? "Activo" : "Apagado",
-                    descripcion: "Canal activo en producción. Responde al primer mensaje y deriva la conversación al asesor con menos carga.",
-                    listo: true
+                    id: "tiktok",
+                    clase: "tiktok",
+                    nombre: "TikTok",
+                    estado: "Sin mensajería directa",
+                    descripcion: "La conexión actual de TikTok permite publicaciones e indicadores, pero todavía no mensajes directos.",
+                    listo: false,
+                    soportado: false
                 }
             ];
-            if (!canalesBot.some(canal => canal.id === botCanalActivo)) {
-                botCanalActivo = "whatsapp";
+            if (!canalesBot.some(canal => canal.id === botCanalActivo && canal.soportado)) {
+                botCanalActivo = canalesBot.find(canal => canal.soportado)?.id || "whatsapp";
             }
             const opcionesBot = bot.options?.length ? bot.options : [
                 { key: "1", title: "Hablar con un asesor", response: "Listo, ya derivamos tu conversación con un asesor. En breve te atenderán.", derivesToAdvisor: true }
@@ -104,7 +143,7 @@
                     </div>
                     <div class="bot-channel-grid compact">
                         ${canalesBot.map(canal => `
-                            <button type="button" class="bot-channel-card ${canal.id === botCanalActivo ? "ready active" : "ready"}" data-bot-channel="${canal.id}">
+                            <button type="button" class="bot-channel-card ${canal.listo ? "ready" : "warning"} ${canal.id === botCanalActivo ? "active" : ""}" data-bot-channel="${canal.id}" ${canal.soportado ? "" : "disabled"}>
                                 ${crearLogoRed(canal.clase)}
                                 <div>
                                     <strong>${escapeHtml(canal.nombre)}</strong>
@@ -118,8 +157,8 @@
                         <div class="bot-card-header">
                             <div class="bot-icon"><i data-lucide="bot-message-square"></i></div>
                             <div>
-                                <h2>Respuesta automática de ${escapeHtml(canalActivo.nombre)}</h2>
-                                <p>En este momento el bot está operativo solo para WhatsApp. Los demás canales se mantienen fuera de producción para evitar flujos incompletos.</p>
+                                <h2>Respuesta automática multicanal</h2>
+                                <p>Esta configuración se comparte entre WhatsApp, Facebook e Instagram. Cada canal responde cuando su conexión está completa.</p>
                             </div>
                         </div>
                         <form id="botSettingsForm" class="bot-form">
@@ -145,7 +184,7 @@
                     <article class="bot-card">
                         <span class="panel-kicker">Derivación económica</span>
                         <div class="bot-flow">
-                            <div><strong>1</strong><span>Cliente escribe por WhatsApp.</span></div>
+                            <div><strong>1</strong><span>Cliente escribe por WhatsApp, Facebook o Instagram.</span></div>
                             <div><strong>2</strong><span>El CRM crea/actualiza cliente y conversación.</span></div>
                             <div><strong>3</strong><span>Se asigna automáticamente al asesor con menos carga.</span></div>
                             <div><strong>4</strong><span>El bot envía un solo menú corto de opciones.</span></div>
@@ -187,12 +226,12 @@
                 </section>
                 <section class="bot-channel-section">
                     <div>
-                        <span class="panel-kicker">Canal disponible</span>
-                        <h2>Automatización en producción</h2>
+                        <span class="panel-kicker">Canales de mensajería</span>
+                        <h2>Automatización y disponibilidad</h2>
                     </div>
                     <div class="bot-channel-grid">
                         ${canalesBot.map(canal => `
-                            <article class="bot-channel-card ready">
+                            <article class="bot-channel-card ${canal.listo ? "ready" : "warning"}">
                                 ${crearLogoRed(canal.clase)}
                                 <div>
                                     <strong>${escapeHtml(canal.nombre)}</strong>

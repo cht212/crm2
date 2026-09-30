@@ -37,7 +37,7 @@ public class EtiquetasController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor")]
     public async Task<IActionResult> Crear([FromBody] CrearEtiquetaDto dto)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);

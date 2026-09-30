@@ -11,7 +11,13 @@
             if (oscuro) document.documentElement.classList.add("theme-dark");
         } catch { }
     </script>
-    <link rel="stylesheet" href="MaterializeReference.css?v=20260929-full-chat-no-gap-v1">
+    <!-- El orden mantiene la cascada histórica. Agrega los cambios al módulo correspondiente. -->
+    <link rel="stylesheet" href="css/00-foundation.css?v=20260930-profile-avatar-v2">
+    <link rel="stylesheet" href="css/10-inbox.css?v=20260930-css-modules-v1">
+    <link rel="stylesheet" href="css/20-crm-modules.css?v=20260930-assignee-avatar-v2">
+    <link rel="stylesheet" href="css/30-theme-dashboard.css?v=20260930-css-modules-v1">
+    <link rel="stylesheet" href="css/40-marketing.css?v=20260930-publication-insights-v3">
+    <link rel="stylesheet" href="css/50-responsive-overrides.css?v=20260930-css-modules-v1">
 </head>
 <body>
     <div class="app">
@@ -126,11 +132,11 @@
                     <button id="failuresNav" class="nav-item hidden" data-module="fallos" title="Fallos"><i data-lucide="triangle-alert"></i><span class="nav-label">Fallos</span></button>
                     <button id="usersNav" class="nav-item hidden" data-module="usuarios" title="Usuarios"><i data-lucide="users-round"></i><span class="nav-label">Usuarios</span></button>
                 </div>
-                <div class="mobile-menu-socials" aria-label="Redes sociales">
-                    <a href="#" data-social-brand="FACEBOOK" aria-label="Facebook"><span class="social-brand-slot"></span></a>
-                    <a href="#" data-social-brand="INSTAGRAM" aria-label="Instagram"><span class="social-brand-slot"></span></a>
-                    <a href="#" data-social-brand="TIKTOK" aria-label="TikTok"><span class="social-brand-slot"></span></a>
-                    <a href="#" data-social-brand="WHATSAPP" aria-label="WhatsApp"><span class="social-brand-slot"></span></a>
+                <div class="mobile-menu-socials" aria-label="Enlaces externos">
+                    <a href="https://www.facebook.com/profile.php?id=61594244270955&amp;locale=es_LA" target="_blank" rel="noopener noreferrer" data-social-brand="FACEBOOK" aria-label="Abrir Facebook"><span class="social-brand-slot"></span></a>
+                    <a href="https://www.instagram.com/hpdglassgroupoficial/" target="_blank" rel="noopener noreferrer" data-social-brand="INSTAGRAM" aria-label="Abrir Instagram"><span class="social-brand-slot"></span></a>
+                    <a data-social-brand="TIKTOK" aria-label="TikTok: URL pendiente" aria-disabled="true"><span class="social-brand-slot"></span></a>
+                    <a href="https://www.hpdglass.com/" target="_blank" rel="noopener noreferrer" data-social-brand="WEBSITE" aria-label="Abrir página web"><span class="social-brand-slot"><span class="brand-logo website"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M2.7 8h18.6M2 12h20M2.7 16h18.6M12 2v20M12 2C8.8 5 7.2 8.3 7.2 12S8.8 19 12 22M12 2c3.2 3 4.8 6.3 4.8 10S15.2 19 12 22"></path></svg></span></span></a>
                 </div>
             </nav>
             <button id="mobileMenuBackdrop" class="mobile-menu-backdrop" type="button" aria-label="Cerrar menú"></button>
@@ -149,7 +155,6 @@
                         <button class="filter-button" data-filter="new">Nuevas</button>
                         <button class="filter-button" data-filter="open">Abiertas</button>
                         <button class="filter-button" data-filter="mine">Mis chats</button>
-                        <button class="filter-button" data-filter="unassigned">Sin asesor</button>
                         <button class="filter-button" data-filter="pending">Pendientes</button>
                         <div class="inbox-assignee-menu">
                             <button id="inboxAdvisorToggle" class="inbox-advisor-toggle" type="button" aria-label="Filtrar conversaciones por asesor" aria-expanded="false">
@@ -193,6 +198,7 @@
                     <div id="attachmentList" class="attachment-list"></div>
                     <span id="fileName" class="file-name"></span>
                 </div>
+                <div id="replyPreview" class="reply-preview hidden" aria-live="polite"></div>
                 <div class="composer">
                     <input id="fileInput" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp" multiple hidden>
                     <button id="attachButton" class="attach-button" type="button" title="Adjuntar documento" disabled>&#128206;</button>
@@ -211,23 +217,24 @@
     </div>
 
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="js/state.js?v=20260929-customer-details-toggle-v1"></script>
-    <script src="js/layout-profile.js?v=20260928-mobile-menu-v4"></script>
-    <script src="js/api-session.js?v=20260928-marketing-v1"></script>
-    <script src="js/inbox.js?v=20260929-customer-details-toggle-v1"></script>
-    <script src="js/customer-panel.js?v=20260928-mobile-ficha-v2"></script>
-    <script src="js/messaging-attachments.js?v=20260929-multi-attachments-v1"></script>
-    <script src="js/utils.js?v=20260925-limpieza-v1"></script>
-    <script src="js/module-router.js?v=20260928-marketing-v1"></script>
+    <script src="js/state.js?v=20260930-realtime-v1"></script>
+    <script src="js/layout-profile.js?v=20260930-public-links-v1"></script>
+    <script src="js/realtime.js?v=20260930-realtime-v1"></script>
+    <script src="js/api-session.js?v=20260930-realtime-v1"></script>
+    <script src="js/inbox.js?v=20260930-advisor-inbox-v3"></script>
+    <script src="js/customer-panel.js?v=20260930-assignee-in-details-v1"></script>
+    <script src="js/messaging-attachments.js?v=20260930-whatsapp-chat-v1"></script>
+    <script src="js/utils.js?v=20260930-responsive-modules-v1"></script>
+    <script src="js/module-router.js?v=20260930-responsive-modules-v1"></script>
     <script src="js/contacts.js?v=20260925-limpieza-v1"></script>
     <script src="js/tasks-sales.js?v=20260925-limpieza-v1"></script>
-    <script src="js/dashboard.js?v=20260928-instagram-logo-v4"></script>
+    <script src="js/dashboard.js?v=20260930-website-icon-v1"></script>
     <script src="js/leads.js?v=20260924-facebook-visual"></script>
-    <script src="js/activity-reports.js?v=20260928-marketing-network-v3"></script>
-    <script src="js/connections.js?v=20260929-essential-actions-v1"></script>
-    <script src="js/bot.js?v=20260925-operativo-v1"></script>
+    <script src="js/activity-reports.js?v=20260930-publication-insights-v3"></script>
+    <script src="js/connections.js?v=20260930-connection-urls-v3"></script>
+    <script src="js/bot.js?v=20260930-multicanal-v1"></script>
     <script src="js/quality-modules.js?v=20260929-failure-context-v1"></script>
-    <script src="js/users.js?v=20260929-roles-permissions-v1"></script>
-    <script src="js/app.js?v=20260929-media-send-v2"></script>
+    <script src="js/users.js?v=20260930-marketing-role-v1"></script>
+    <script src="js/app.js?v=20260930-responsive-modules-v1"></script>
 </body>
 </html>

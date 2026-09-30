@@ -440,6 +440,11 @@ namespace CRM.Data.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("c_mensaje");
 
+                    b.Property<string>("cReplyToExternalId")
+                        .HasMaxLength(450)
+                        .HasColumnType("varchar(450)")
+                        .HasColumnName("c_reply_to_external_id");
+
                     b.Property<string>("cTipo")
                         .HasColumnType("longtext")
                         .HasColumnName("c_tipo");

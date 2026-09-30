@@ -23,7 +23,8 @@ public async Task<long> ProcesarMensajeSalienteAsync(
     string mensaje,
     long? usuarioId,
     string tipo,
-    string? whatsappId)
+    string? whatsappId,
+    long? replyToMessageId = null)
 {
     Conversacion? conversacion =
         await _context.Conversaciones
@@ -63,6 +64,18 @@ public async Task<long> ProcesarMensajeSalienteAsync(
     }
 
     var canal = CanalSocial.Normalizar(conversacion.cCanal);
+    string? replyToExternalId = null;
+    if (replyToMessageId.HasValue)
+    {
+        replyToExternalId = await _context.Mensajes
+            .Where(m => m.nMensaje == replyToMessageId.Value && m.nConversacion == conversacionId)
+            .Select(m => m.cExternalId ?? m.cWhatsappId)
+            .FirstOrDefaultAsync();
+        if (string.IsNullOrWhiteSpace(replyToExternalId))
+        {
+            throw new InvalidOperationException("El mensaje seleccionado todavía no puede citarse en WhatsApp.");
+        }
+    }
     var intentoEnviarAMeta = canal switch
     {
         CanalSocial.WhatsApp => _whatsAppCloudApiService.ShouldSendToMeta,
@@ -85,6 +98,8 @@ public async Task<long> ProcesarMensajeSalienteAsync(
         cCanal = canal,
 
         cExternalId = whatsappId,
+
+        cReplyToExternalId = replyToExternalId,
 
         cDireccion = 'S',
 
@@ -117,7 +132,8 @@ public async Task<long> ProcesarMensajeSalienteAsync(
             canal,
             mensaje,
             tipo,
-            whatsappId);
+            whatsappId,
+            replyToExternalId);
     }
 
     _logger.LogInformation(
@@ -138,7 +154,8 @@ private async Task EnviarMensajeMetaEnSegundoPlanoAsync(
     string canal,
     string mensaje,
     string tipo,
-    string? whatsappId)
+    string? whatsappId,
+    string? replyToExternalId)
 {
     try
     {
@@ -159,7 +176,8 @@ private async Task EnviarMensajeMetaEnSegundoPlanoAsync(
             originPhoneNumberId,
             mensaje,
             tipo,
-            whatsappId);
+            whatsappId,
+            replyToExternalId);
         var mensajeDb = await context.Mensajes.FirstOrDefaultAsync(m => m.nMensaje == mensajeId);
         if (mensajeDb == null) return;
 
@@ -195,7 +213,8 @@ private async Task<string?> EnviarAMetaAsync(
     string? originPhoneNumberId,
     string mensaje,
     string tipo,
-    string? whatsappId)
+    string? whatsappId,
+    string? replyToExternalId)
 {
     if (canal is CanalSocial.Facebook or CanalSocial.Instagram)
     {
@@ -215,7 +234,8 @@ private async Task<string?> EnviarAMetaAsync(
         return await cloudApi.SendTextMessageAsync(
             telefono,
             mensaje,
-            originPhoneNumberId);
+            originPhoneNumberId,
+            replyToExternalId);
     }
 
     if (TryReadAttachment(mensaje, out var url, out var nombre, out var objectKey, out var mimeType))

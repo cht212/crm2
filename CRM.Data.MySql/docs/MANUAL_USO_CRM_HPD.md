@@ -30,8 +30,10 @@ oportunidades.
 
 Desde la bandeja se puede leer y responder mensajes, enviar archivos, añadir
 notas, asignar responsable, cambiar estado, controlar el bot y crear tareas u
-oportunidades. WhatsApp muestra el número receptor cuando el WABA usa varios
-números.
+oportunidades. Los asesores pueden editar sus contactos, usar todas las etapas
+comerciales, pausar el bot de sus conversaciones y solicitar una transferencia;
+el supervisor puede reasignar directamente desde el chat. WhatsApp muestra el
+número receptor cuando el WABA usa varios números.
 
 ## 5. Tareas, oportunidades y reportes
 

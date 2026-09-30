@@ -103,20 +103,25 @@ public sealed class WhatsAppCloudApiService
         string to,
         string text,
         string? originPhoneNumberId = null,
+        string? replyToMessageId = null,
         CancellationToken cancellationToken = default)
     {
-        var payload = new
+        var payload = new Dictionary<string, object?>
         {
-            messaging_product = "whatsapp",
-            recipient_type = "individual",
-            to,
-            type = "text",
-            text = new
+            ["messaging_product"] = "whatsapp",
+            ["recipient_type"] = "individual",
+            ["to"] = to,
+            ["type"] = "text",
+            ["text"] = new
             {
                 preview_url = false,
                 body = text
             }
         };
+        if (!string.IsNullOrWhiteSpace(replyToMessageId))
+        {
+            payload["context"] = new { message_id = replyToMessageId };
+        }
 
         return SendMessageAsync(payload, originPhoneNumberId, cancellationToken);
     }

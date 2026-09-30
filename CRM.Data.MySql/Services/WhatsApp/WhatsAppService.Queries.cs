@@ -44,9 +44,15 @@ public async Task<object?> ObtenerConversacionAsync(
         await _context.Mensajes
             .AsNoTracking()
             .Where(m =>
-                m.nConversacion == conversacionId)
+                m.nConversacion == conversacionId &&
+                m.cTipo != "comment" &&
+                m.cTipo != "comment_reply")
             .OrderBy(m => m.dFecha)
             .ToListAsync();
+    var mensajesPorExternalId = mensajes
+        .Where(m => !string.IsNullOrWhiteSpace(m.cExternalId))
+        .GroupBy(m => m.cExternalId!, StringComparer.Ordinal)
+        .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
 
     return new
     {
@@ -112,8 +118,10 @@ public async Task<object?> ObtenerConversacionAsync(
             !conversacion.nUsuarioAsignado.HasValue &&
             conversacion.cEstado is "NUEVO" or "ABIERTO" or "EN_ATENCION",
 
-        mensajes =
-            mensajes.Select(m => new
+        mensajes = mensajes.Select(m =>
+        {
+            mensajesPorExternalId.TryGetValue(m.cReplyToExternalId ?? string.Empty, out var mensajeRespondido);
+            return new
             {
                 id = m.nMensaje,
 
@@ -125,6 +133,19 @@ public async Task<object?> ObtenerConversacionAsync(
 
                 externalId =
                     m.cExternalId,
+
+                replyToExternalId =
+                    m.cReplyToExternalId,
+
+                respuestaA = mensajeRespondido == null
+                    ? null
+                    : new
+                    {
+                        id = mensajeRespondido.nMensaje,
+                        direccion = mensajeRespondido.cDireccion,
+                        tipo = mensajeRespondido.cTipo,
+                        mensaje = mensajeRespondido.cMensaje
+                    },
 
                 direccion =
                     m.cDireccion,
@@ -140,7 +161,8 @@ public async Task<object?> ObtenerConversacionAsync(
 
                 fecha =
                     m.dFecha
-            })
+            };
+        })
     };
 }
 
@@ -156,7 +178,10 @@ public async Task<object> ObtenerTodasConversacionesAsync(
         _context.Conversaciones
             .AsNoTracking()
             .Include(c => c.Cliente)
-            .Include(c => c.UsuarioAsignado);
+            .Include(c => c.UsuarioAsignado)
+            .Where(c => c.Mensajes.Any(m =>
+                m.cTipo != "comment" &&
+                m.cTipo != "comment_reply"));
 
     if (usuarioAsignadoId.HasValue)
     {
@@ -212,10 +237,13 @@ public async Task<object> ObtenerTodasConversacionesAsync(
                     (c.cEstado == "NUEVO" || c.cEstado == "ABIERTO" || c.cEstado == "EN_ATENCION"),
 
                 ultimoMensaje =
-                    c.dUltimoMensaje,
+                    c.Mensajes
+                        .Where(m => m.cTipo != "comment" && m.cTipo != "comment_reply")
+                        .Max(m => (DateTime?)m.dFecha),
 
                 ultimoMensajeTexto =
                     c.Mensajes
+                        .Where(m => m.cTipo != "comment" && m.cTipo != "comment_reply")
                         .OrderByDescending(m => m.dFecha)
                         .ThenByDescending(m => m.nMensaje)
                         .Select(m => m.cMensaje)
@@ -223,6 +251,7 @@ public async Task<object> ObtenerTodasConversacionesAsync(
 
                 ultimoMensajeTipo =
                     c.Mensajes
+                        .Where(m => m.cTipo != "comment" && m.cTipo != "comment_reply")
                         .OrderByDescending(m => m.dFecha)
                         .ThenByDescending(m => m.nMensaje)
                         .Select(m => m.cTipo)
@@ -230,25 +259,43 @@ public async Task<object> ObtenerTodasConversacionesAsync(
 
                 ultimoMensajeDireccion =
                     c.Mensajes
+                        .Where(m => m.cTipo != "comment" && m.cTipo != "comment_reply")
                         .OrderByDescending(m => m.dFecha)
                         .ThenByDescending(m => m.nMensaje)
                         .Select(m => (char?)m.cDireccion)
                         .FirstOrDefault(),
 
                 ultimoMensajeCliente =
-                    c.dUltimoMensajeCliente,
+                    c.Mensajes
+                        .Where(m =>
+                            m.cDireccion == 'E' &&
+                            m.cTipo != "comment" &&
+                            m.cTipo != "comment_reply")
+                        .Max(m => (DateTime?)m.dFecha),
 
                 requiereAtencion =
-                    c.dUltimoMensajeCliente != null &&
+                    c.Mensajes.Any(m =>
+                        m.cDireccion == 'E' &&
+                        m.cTipo != "comment" &&
+                        m.cTipo != "comment_reply") &&
                     (
                         !c.Mensajes.Any(m =>
                             m.cDireccion == 'S' &&
-                            m.cTipo != "bot") ||
-                        c.dUltimoMensajeCliente >
+                            m.cTipo != "bot" &&
+                            m.cTipo != "comment" &&
+                            m.cTipo != "comment_reply") ||
+                        c.Mensajes
+                            .Where(m =>
+                                m.cDireccion == 'E' &&
+                                m.cTipo != "comment" &&
+                                m.cTipo != "comment_reply")
+                            .Max(m => (DateTime?)m.dFecha) >
                         c.Mensajes
                             .Where(m =>
                                 m.cDireccion == 'S' &&
-                                m.cTipo != "bot")
+                                m.cTipo != "bot" &&
+                                m.cTipo != "comment" &&
+                                m.cTipo != "comment_reply")
                             .Max(m => (DateTime?)m.dFecha)
                     )
             })

@@ -26,6 +26,7 @@ public sealed class SocialInboundService
     public async Task<long> RegistrarMensajeEntranteAsync(SocialInboundMessage input)
     {
         var canal = CanalSocial.Normalizar(input.Canal);
+        var fechaMensaje = input.OccurredAt?.LocalDateTime ?? DateTime.Now;
         var externalUserId = string.IsNullOrWhiteSpace(input.ExternalUserId)
             ? input.ContactValue
             : input.ExternalUserId.Trim();
@@ -44,12 +45,61 @@ public sealed class SocialInboundService
                     mensaje.cCanal == canal &&
                     mensaje.cDireccion == 'E' &&
                     mensaje.cExternalId == input.ExternalMessageId)
-                .Select(mensaje => (long?)mensaje.nConversacion)
+                .Select(mensaje => new
+                {
+                    mensajeId = mensaje.nMensaje,
+                    conversacionId = mensaje.nConversacion,
+                    clienteId = mensaje.Conversacion.nCliente,
+                    nombreCliente = mensaje.Conversacion.Cliente.cNombre,
+                    fotoCliente = mensaje.Conversacion.Cliente.cFotoPerfilUrl,
+                    parentExternalId = mensaje.cReplyToExternalId
+                })
                 .FirstOrDefaultAsync();
 
-            if (mensajeExistente.HasValue)
+            if (mensajeExistente != null)
             {
-                return mensajeExistente.Value;
+                var foto = NormalizeUrl(input.ProfilePictureUrl);
+                var debeAsociarPublicacion = !string.IsNullOrWhiteSpace(input.ParentExternalId) &&
+                    !input.ParentExternalId.Equals(
+                        mensajeExistente.parentExternalId,
+                        StringComparison.Ordinal);
+                if (DebeActualizarNombre(mensajeExistente.nombreCliente, nombre, contacto, canal) ||
+                    (!string.IsNullOrWhiteSpace(foto) &&
+                     !foto.Equals(mensajeExistente.fotoCliente, StringComparison.OrdinalIgnoreCase)) ||
+                    debeAsociarPublicacion)
+                {
+                    var clienteExistente = await _context.Clientes.FindAsync(mensajeExistente.clienteId);
+                    if (clienteExistente != null)
+                    {
+                        if (DebeActualizarNombre(clienteExistente.cNombre, nombre, contacto, canal))
+                        {
+                            clienteExistente.cNombre = nombre;
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(foto) &&
+                            !foto.Equals(clienteExistente.cFotoPerfilUrl, StringComparison.OrdinalIgnoreCase))
+                        {
+                            clienteExistente.cFotoPerfilUrl = foto;
+                        }
+                    }
+
+                    if (debeAsociarPublicacion)
+                    {
+                        var comentarioExistente = await _context.Mensajes.FindAsync(mensajeExistente.mensajeId);
+                        if (comentarioExistente != null)
+                        {
+                            comentarioExistente.cReplyToExternalId = input.ParentExternalId;
+                            if (input.OccurredAt.HasValue)
+                            {
+                                comentarioExistente.dFecha = input.OccurredAt.Value.LocalDateTime;
+                            }
+                        }
+                    }
+
+                    await _context.SaveChangesAsync();
+                }
+
+                return mensajeExistente.conversacionId;
             }
         }
 
@@ -119,9 +169,9 @@ public sealed class SocialInboundService
                 cBotEstado = canal is CanalSocial.Facebook or CanalSocial.Instagram
                     ? "ACTIVO"
                     : "PAUSADO",
-                dFechaInicio = DateTime.Now,
-                dUltimoMensaje = DateTime.Now,
-                dUltimoMensajeCliente = DateTime.Now
+                dFechaInicio = fechaMensaje,
+                dUltimoMensaje = fechaMensaje,
+                dUltimoMensajeCliente = fechaMensaje
             };
 
             _context.Conversaciones.Add(conversacion);
@@ -137,8 +187,14 @@ public sealed class SocialInboundService
                 conversacion.dBotPausadoDesde = null;
             }
 
-            conversacion.dUltimoMensaje = DateTime.Now;
-            conversacion.dUltimoMensajeCliente = DateTime.Now;
+            if (!conversacion.dUltimoMensaje.HasValue || fechaMensaje > conversacion.dUltimoMensaje.Value)
+            {
+                conversacion.dUltimoMensaje = fechaMensaje;
+            }
+            if (!conversacion.dUltimoMensajeCliente.HasValue || fechaMensaje > conversacion.dUltimoMensajeCliente.Value)
+            {
+                conversacion.dUltimoMensajeCliente = fechaMensaje;
+            }
         }
 
         var mensaje = new Mensaje
@@ -146,12 +202,13 @@ public sealed class SocialInboundService
             nConversacion = conversacion.nConversacion,
             cCanal = canal,
             cExternalId = input.ExternalMessageId,
+            cReplyToExternalId = input.ParentExternalId,
             cWhatsappId = canal == CanalSocial.WhatsApp ? input.ExternalMessageId : null,
             cDireccion = 'E',
             cTipo = input.Type ?? "text",
             cEstado = "RECIBIDO",
             cMensaje = input.Text,
-            dFecha = DateTime.Now
+            dFecha = fechaMensaje
         };
 
         _context.Mensajes.Add(mensaje);
@@ -180,12 +237,14 @@ public sealed class SocialInboundService
             throw;
         }
 
-        var respuestaBot = await ObtenerRespuestaBotAsync(
-            conversacion.nConversacion,
-            conversacion.cBotEstado,
-            conversacionFueCreada,
-            mensaje.cTipo,
-            mensaje.cMensaje);
+        var respuestaBot = input.AllowBotReply
+            ? await ObtenerRespuestaBotAsync(
+                conversacion.nConversacion,
+                conversacion.cBotEstado,
+                conversacionFueCreada,
+                mensaje.cTipo,
+                mensaje.cMensaje)
+            : null;
 
         if (!string.IsNullOrWhiteSpace(respuestaBot))
         {
@@ -304,7 +363,9 @@ public sealed class SocialInboundService
             cTipo = "bot",
             cEstado = !string.IsNullOrWhiteSpace(errorEnvio)
                 ? $"FALLIDO: {errorEnvio}"
-                : intentoEnviarAMeta && string.IsNullOrWhiteSpace(metaId) ? "LOCAL" : "BOT",
+                : !intentoEnviarAMeta
+                    ? "NO_CONFIGURADO"
+                    : string.IsNullOrWhiteSpace(metaId) ? "LOCAL" : "BOT",
             cMensaje = texto,
             dFecha = DateTime.Now
         });
@@ -312,10 +373,19 @@ public sealed class SocialInboundService
         conversacion.dUltimoMensaje = DateTime.Now;
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation(
-            "Respuesta automática del bot registrada para {Canal}, conversación {ConversacionId}.",
-            canal,
-            conversacion.nConversacion);
+        if (!intentoEnviarAMeta)
+        {
+            _logger.LogWarning(
+                "El bot no envió la respuesta de {Canal}: la conexión del canal no está configurada.",
+                canal);
+        }
+        else
+        {
+            _logger.LogInformation(
+                "Respuesta automática del bot registrada para {Canal}, conversación {ConversacionId}.",
+                canal,
+                conversacion.nConversacion);
+        }
     }
 
     private static string? NormalizeUrl(string? url)
@@ -341,6 +411,8 @@ public sealed class SocialInboundService
             nombreActual.Equals(contacto, StringComparison.OrdinalIgnoreCase) ||
             nombreActual.Equals(canal, StringComparison.OrdinalIgnoreCase) ||
             nombreActual.Equals("Facebook", StringComparison.OrdinalIgnoreCase) ||
-            nombreActual.Equals("Instagram", StringComparison.OrdinalIgnoreCase);
+            nombreActual.Equals("Instagram", StringComparison.OrdinalIgnoreCase) ||
+            nombreActual.Equals("Usuario de Facebook", StringComparison.OrdinalIgnoreCase) ||
+            nombreActual.Equals("Usuario de Instagram", StringComparison.OrdinalIgnoreCase);
     }
 }

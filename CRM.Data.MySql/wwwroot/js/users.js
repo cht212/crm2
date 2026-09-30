@@ -13,12 +13,12 @@ async function cargarModuloUsuarios(vista) {
 
     vista.innerHTML = `
         <div class="module-heading"><div><h1>Usuarios</h1><p>Administra cuentas, roles y permisos adicionales.</p></div></div>
-        ${puedeAdministrar ? '<div class="user-permission-help"><strong>Roles y permisos</strong><span>Selecciona Auditor, Supervisor o Asesor en cada cuenta. Usa <b>Administrar permisos</b> para conceder accesos adicionales al rol.</span></div>' : ""}
+        ${puedeAdministrar ? '<div class="user-permission-help"><strong>Roles y permisos</strong><span>Selecciona Auditor, Supervisor, Asesor o Marketing en cada cuenta. Usa <b>Administrar permisos</b> para conceder accesos adicionales al rol.</span></div>' : ""}
         ${puedeAdministrar ? `<form id="newUserForm" class="user-form">
             <label><span>Usuario</span><input name="usuario" placeholder="Usuario de acceso" required></label>
             <label><span>Nombre</span><input name="nombre" placeholder="Nombre completo" required></label>
             <label><span>Contraseña inicial</span><input name="password" type="password" placeholder="Mínimo 8 caracteres" minlength="8" required></label>
-            <label><span>Rol</span><select name="rol"><option value="Asesor">Asesor</option><option value="Supervisor">Supervisor</option><option value="Auditor">Auditor</option></select></label>
+            <label><span>Rol</span><select name="rol"><option value="Asesor">Asesor</option><option value="Marketing">Marketing</option><option value="Supervisor">Supervisor</option><option value="Auditor">Auditor</option></select></label>
             <button type="submit">Crear usuario</button>
         </form>` : '<div class="connection-note"><strong>Solo lectura:</strong> puedes revisar usuarios y roles, pero no cambiar sus accesos.</div>'}
         <div class="table-wrap"><table class="module-table users-table">
@@ -28,7 +28,7 @@ async function cargarModuloUsuarios(vista) {
                 <td>${escapeHtml(usuario.nombre)}</td>
                 <td>${puedeAdministrar && normalizarRol(usuario.rol) !== "administrador"
                     ? `<div class="user-role-action"><select data-user-role="${usuario.id}" aria-label="Rol de ${escapeAttribute(usuario.nombre)}">
-                        ${["Asesor", "Supervisor", "Auditor"].map(rol => `<option value="${rol}" ${normalizarRol(usuario.rol) === normalizarRol(rol) ? "selected" : ""}>${rol}</option>`).join("")}
+                        ${["Asesor", "Marketing", "Supervisor", "Auditor"].map(rol => `<option value="${rol}" ${normalizarRol(usuario.rol) === normalizarRol(rol) ? "selected" : ""}>${rol}</option>`).join("")}
                     </select><button type="button" data-save-role="${usuario.id}">Guardar rol</button></div>`
                     : `<span class="role-badge administrator">${escapeHtml(usuario.rol)}</span>`}</td>
                 <td>${puedeAdministrar ? `<div class="user-password-action">

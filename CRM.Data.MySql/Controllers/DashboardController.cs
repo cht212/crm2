@@ -225,6 +225,13 @@ public class DashboardController : ControllerBase
         var tareasQuery = _access.FiltrarTareas(_context.Tareas.AsNoTracking());
         var oportunidadesQuery = _access.FiltrarOportunidades(_context.Oportunidades.AsNoTracking());
 
+        // Los comentarios públicos pertenecen a Marketing. No deben crear una
+        // acción comercial ni hacer que el autor aparezca como cliente nuevo.
+        clientesQuery = clientesQuery.Where(cliente =>
+            !cliente.Conversaciones.Any(conversacion => conversacion.Mensajes.Any()) ||
+            cliente.Conversaciones.Any(conversacion => conversacion.Mensajes.Any(mensaje =>
+                mensaje.cTipo != "comment" && mensaje.cTipo != "comment_reply")));
+
         if (usuarioId.HasValue && _access.TieneAccesoGlobal)
         {
             clientesQuery = clientesQuery.Where(cliente => cliente.Conversaciones.Any(conversacion => conversacion.nUsuarioAsignado == usuarioId.Value));
@@ -256,14 +263,35 @@ public class DashboardController : ControllerBase
                 conversacion.cEstado != "CERRADO" &&
                 conversacion.cEstado != "PERDIDO" &&
                 conversacion.cEstado != "NO_RESPONDIO" &&
-                conversacion.dUltimoMensajeCliente.HasValue &&
-                (!conversacion.Mensajes.Any(mensaje => mensaje.cDireccion == 'S' && mensaje.cTipo != "bot") ||
-                 conversacion.dUltimoMensajeCliente > conversacion.Mensajes
-                    .Where(mensaje => mensaje.cDireccion == 'S' && mensaje.cTipo != "bot")
+                conversacion.Mensajes.Any(mensaje =>
+                    mensaje.cDireccion == 'E' &&
+                    mensaje.cTipo != "comment" &&
+                    mensaje.cTipo != "comment_reply") &&
+                (!conversacion.Mensajes.Any(mensaje =>
+                    mensaje.cDireccion == 'S' &&
+                    mensaje.cTipo != "bot" &&
+                    mensaje.cTipo != "comment" &&
+                    mensaje.cTipo != "comment_reply") ||
+                 conversacion.Mensajes
+                    .Where(mensaje =>
+                        mensaje.cDireccion == 'E' &&
+                        mensaje.cTipo != "comment" &&
+                        mensaje.cTipo != "comment_reply")
+                    .Max(mensaje => (DateTime?)mensaje.dFecha) > conversacion.Mensajes
+                    .Where(mensaje =>
+                        mensaje.cDireccion == 'S' &&
+                        mensaje.cTipo != "bot" &&
+                        mensaje.cTipo != "comment" &&
+                        mensaje.cTipo != "comment_reply")
                     .Max(mensaje => (DateTime?)mensaje.dFecha)));
         var totalMensajesPendientes = await mensajesPendientesQuery.CountAsync();
         var mensajesPendientes = await mensajesPendientesQuery
-            .OrderByDescending(conversacion => conversacion.dUltimoMensajeCliente)
+            .OrderByDescending(conversacion => conversacion.Mensajes
+                .Where(mensaje =>
+                    mensaje.cDireccion == 'E' &&
+                    mensaje.cTipo != "comment" &&
+                    mensaje.cTipo != "comment_reply")
+                .Max(mensaje => (DateTime?)mensaje.dFecha))
             .Take(50)
             .Select(conversacion => new
             {
@@ -272,7 +300,12 @@ public class DashboardController : ControllerBase
                 nombre = conversacion.Cliente.cNombre,
                 canal = conversacion.cCanal,
                 estado = conversacion.cEstado,
-                fecha = conversacion.dUltimoMensajeCliente
+                fecha = conversacion.Mensajes
+                    .Where(mensaje =>
+                        mensaje.cDireccion == 'E' &&
+                        mensaje.cTipo != "comment" &&
+                        mensaje.cTipo != "comment_reply")
+                    .Max(mensaje => (DateTime?)mensaje.dFecha)
             })
             .ToListAsync();
 
@@ -426,18 +459,30 @@ public class DashboardController : ControllerBase
             .SumAsync(item => (decimal?)item.nMonto) ?? 0m;
 
         var abiertas = oportunidades.Where(item => item.cEtapa != "GANADA" && item.cEtapa != "PERDIDA");
-        var oportunidadesAbiertas = await abiertas.CountAsync();
-        var montoAbierto = await abiertas.SumAsync(item => (decimal?)item.nMonto) ?? 0m;
-        var forecastPonderado = await abiertas
-            .SumAsync(item => (decimal?)(item.nMonto * item.nProbabilidad / 100m)) ?? 0m;
-        var cierresProximos = await abiertas.CountAsync(item =>
-            item.dFechaCierreEstimada.HasValue &&
-            item.dFechaCierreEstimada >= ahora.Date &&
-            item.dFechaCierreEstimada < ahora.Date.AddDays(8));
-        var oportunidadesSinFecha = await abiertas.CountAsync(item => !item.dFechaCierreEstimada.HasValue);
-        var oportunidadesEstancadas = await abiertas.CountAsync(item =>
-            (!item.dFechaActualizacion.HasValue && item.dFechaCreacion < ahora.AddDays(-3)) ||
-            (item.dFechaActualizacion.HasValue && item.dFechaActualizacion < ahora.AddDays(-3)));
+        var limiteEstancadas = ahora.AddDays(-3);
+        var resumenAbiertas = await abiertas
+            .GroupBy(_ => 1)
+            .Select(grupo => new
+            {
+                cantidad = grupo.Count(),
+                monto = grupo.Sum(item => item.nMonto),
+                forecast = grupo.Sum(item => item.nMonto * item.nProbabilidad / 100m),
+                cierresProximos = grupo.Count(item =>
+                    item.dFechaCierreEstimada.HasValue &&
+                    item.dFechaCierreEstimada >= ahora.Date &&
+                    item.dFechaCierreEstimada < ahora.Date.AddDays(8)),
+                sinFecha = grupo.Count(item => !item.dFechaCierreEstimada.HasValue),
+                estancadas = grupo.Count(item =>
+                    (!item.dFechaActualizacion.HasValue && item.dFechaCreacion < limiteEstancadas) ||
+                    (item.dFechaActualizacion.HasValue && item.dFechaActualizacion < limiteEstancadas))
+            })
+            .FirstOrDefaultAsync();
+        var oportunidadesAbiertas = resumenAbiertas?.cantidad ?? 0;
+        var montoAbierto = resumenAbiertas?.monto ?? 0m;
+        var forecastPonderado = resumenAbiertas?.forecast ?? 0m;
+        var cierresProximos = resumenAbiertas?.cierresProximos ?? 0;
+        var oportunidadesSinFecha = resumenAbiertas?.sinFecha ?? 0;
+        var oportunidadesEstancadas = resumenAbiertas?.estancadas ?? 0;
 
         var motivosPerdida = await cierresPeriodo
             .Where(item => item.cEtapa == "PERDIDA")
@@ -450,22 +495,53 @@ public class DashboardController : ControllerBase
         var activas = conversaciones.Where(item =>
             item.cEstado != "CERRADO" && item.cEstado != "PERDIDO" && item.cEstado != "NO_RESPONDIO");
         var pendientesRespuesta = activas.Where(item =>
-            item.dUltimoMensajeCliente.HasValue &&
-            (!item.Mensajes.Any(mensaje => mensaje.cDireccion == 'S' && mensaje.cTipo != "bot") ||
-             item.dUltimoMensajeCliente > item.Mensajes
-                .Where(mensaje => mensaje.cDireccion == 'S' && mensaje.cTipo != "bot")
+            item.Mensajes.Any(mensaje =>
+                mensaje.cDireccion == 'E' &&
+                mensaje.cTipo != "comment" &&
+                mensaje.cTipo != "comment_reply") &&
+            (!item.Mensajes.Any(mensaje =>
+                mensaje.cDireccion == 'S' &&
+                mensaje.cTipo != "bot" &&
+                mensaje.cTipo != "comment" &&
+                mensaje.cTipo != "comment_reply") ||
+             item.Mensajes
+                .Where(mensaje =>
+                    mensaje.cDireccion == 'E' &&
+                    mensaje.cTipo != "comment" &&
+                    mensaje.cTipo != "comment_reply")
+                .Max(mensaje => (DateTime?)mensaje.dFecha) > item.Mensajes
+                .Where(mensaje =>
+                    mensaje.cDireccion == 'S' &&
+                    mensaje.cTipo != "bot" &&
+                    mensaje.cTipo != "comment" &&
+                    mensaje.cTipo != "comment_reply")
                 .Max(mensaje => (DateTime?)mensaje.dFecha)));
         var totalPendientesRespuesta = await pendientesRespuesta.CountAsync();
-        var esperaMasAntigua = await pendientesRespuesta.MinAsync(item => item.dUltimoMensajeCliente);
+        var esperaMasAntigua = await pendientesRespuesta
+            .Select(item => item.Mensajes
+                .Where(mensaje =>
+                    mensaje.cDireccion == 'E' &&
+                    mensaje.cTipo != "comment" &&
+                    mensaje.cTipo != "comment_reply")
+                .Max(mensaje => (DateTime?)mensaje.dFecha))
+            .MinAsync();
         var sinAsignar = await activas.CountAsync(item => !item.nUsuarioAsignado.HasValue);
         var conversacionesActivas = await activas.CountAsync();
 
-        var tareasVencidas = await tareas.CountAsync(item =>
-            item.cEstado == "PENDIENTE" && item.dFechaVencimiento < ahora);
-        var tareasVencenHoy = await tareas.CountAsync(item =>
-            item.cEstado == "PENDIENTE" &&
-            item.dFechaVencimiento >= ahora &&
-            item.dFechaVencimiento < ahora.Date.AddDays(1));
+        var resumenTareas = await tareas
+            .GroupBy(_ => 1)
+            .Select(grupo => new
+            {
+                vencidas = grupo.Count(item =>
+                    item.cEstado == "PENDIENTE" && item.dFechaVencimiento < ahora),
+                vencenHoy = grupo.Count(item =>
+                    item.cEstado == "PENDIENTE" &&
+                    item.dFechaVencimiento >= ahora &&
+                    item.dFechaVencimiento < ahora.Date.AddDays(1))
+            })
+            .FirstOrDefaultAsync();
+        var tareasVencidas = resumenTareas?.vencidas ?? 0;
+        var tareasVencenHoy = resumenTareas?.vencenHoy ?? 0;
 
         var desdeFallos = ahora.AddHours(-24);
         var mensajesFallidos = await _context.Mensajes.AsNoTracking().CountAsync(mensaje =>

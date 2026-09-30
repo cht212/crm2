@@ -3,6 +3,7 @@ using CRM.Data.Models;
 using CRM.Data.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Security.Claims;
@@ -24,6 +25,7 @@ public sealed class IntegracionesController : ControllerBase
     private readonly ILogger<IntegracionesController> _logger;
     private readonly SocialPublicationsService _publications;
     private readonly WhatsAppNumberRegistry _numbers;
+    private readonly IMemoryCache _cache;
 
     public IntegracionesController(
         IConfiguration configuration,
@@ -35,6 +37,7 @@ public sealed class IntegracionesController : ControllerBase
         AuditoriaService auditoria,
         SocialPublicationsService publications,
         WhatsAppNumberRegistry numbers,
+        IMemoryCache cache,
         ILogger<IntegracionesController> logger)
     {
         _configuration = configuration;
@@ -47,6 +50,7 @@ public sealed class IntegracionesController : ControllerBase
         _logger = logger;
         _publications = publications;
         _numbers = numbers;
+        _cache = cache;
     }
 
     [HttpGet("estado")]
@@ -134,6 +138,7 @@ public sealed class IntegracionesController : ControllerBase
 
     [HttpPut("{canal}/configuracion")]
     [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [CrmPermission(CrmPermissionService.ManageIntegrations)]
     public IActionResult GuardarConfiguracion(string canal, SocialIntegrationSaveDto dto)
     {
         SocialChannelConfiguration updated;
@@ -205,18 +210,23 @@ public sealed class IntegracionesController : ControllerBase
     }
 
     [HttpGet("meta/estadisticas")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     [CrmPermission(CrmPermissionService.ModuleMarketing)]
     public async Task<IActionResult> EstadisticasMeta(
         [FromQuery] DateTime? desde = null,
         [FromQuery] DateTime? hasta = null)
     {
-        var dashboard = await _metaGraph.ObtenerDashboardAsync(desde, hasta);
+        var key = $"marketing:meta:{desde?.Date:yyyyMMdd}:{hasta?.Date:yyyyMMdd}";
+        var dashboard = await _cache.GetOrCreateAsync(key, async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2);
+            return await _metaGraph.ObtenerDashboardAsync(desde, hasta);
+        });
         return Ok(dashboard);
     }
 
     [HttpGet("publicaciones/estadisticas")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     [CrmPermission(CrmPermissionService.ModuleMarketing)]
     public async Task<IActionResult> EstadisticasPublicaciones(
         [FromQuery] DateOnly? desde, [FromQuery] DateOnly? hasta, CancellationToken cancellationToken)
@@ -225,11 +235,17 @@ public sealed class IntegracionesController : ControllerBase
         var start = desde ?? end.AddDays(-30);
         if (start > end || end.DayNumber - start.DayNumber > 365 || end > DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1))
             return BadRequest(new { message = "El rango debe ser valido y no superar 365 dias." });
-        return Ok(await _publications.GetReportAsync(start, end, cancellationToken));
+        var key = $"marketing:publicaciones:{start:yyyyMMdd}:{end:yyyyMMdd}";
+        var report = await _cache.GetOrCreateAsync(key, async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2);
+            return await _publications.GetReportAsync(start, end, cancellationToken);
+        });
+        return Ok(report);
     }
 
     [HttpGet("meta/facebook/feed")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     [CrmPermission(CrmPermissionService.ModuleMarketing)]
     public async Task<IActionResult> FeedFacebook(
         [FromQuery] DateTime? desde = null,
@@ -240,7 +256,7 @@ public sealed class IntegracionesController : ControllerBase
     }
 
     [HttpGet("meta/estadisticas/diagnostico")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     [CrmPermission(CrmPermissionService.ModuleMarketing)]
     public async Task<IActionResult> DiagnosticoEstadisticasMeta(
         [FromQuery] DateTime? desde = null,
@@ -311,7 +327,7 @@ public sealed class IntegracionesController : ControllerBase
                 null,
                 "Error interno al procesar el webhook Meta.",
                 null);
-            return Ok(new
+            return StatusCode(StatusCodes.Status500InternalServerError, new
             {
                 success = false,
                 received = true,

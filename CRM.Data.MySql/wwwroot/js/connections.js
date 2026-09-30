@@ -31,6 +31,7 @@
             const canalesBase = [
                 {
                     clase: "whatsapp",
+                    claveUrl: "WhatsApp:PublicUrl",
                     nombre: "WhatsApp",
                     descripcion: "Canal activo para mensajes, archivos y webhooks de Meta.",
                     estado: whatsappListo ? "Conectado" : "Incompleto",
@@ -43,6 +44,7 @@
                 },
                 {
                     clase: "instagram",
+                    claveUrl: "Meta:Instagram:PublicUrl",
                     nombre: "Instagram",
                     descripcion: "Mensajes, comentarios y publicaciones de la cuenta profesional.",
                     estado: "Sin configurar",
@@ -51,6 +53,7 @@
                 },
                 {
                     clase: "facebook",
+                    claveUrl: "Meta:Facebook:PublicUrl",
                     nombre: "Facebook",
                     descripcion: "Messenger, comentarios y publicaciones de la página.",
                     estado: "Sin configurar",
@@ -59,11 +62,22 @@
                 },
                 {
                     clase: "tiktok",
+                    claveUrl: "TikTok:PublicUrl",
                     nombre: "TikTok",
                     descripcion: "Publicaciones e indicadores disponibles mediante la API de TikTok.",
                     estado: "Sin configurar",
                     detalle: "Esta conexión no incluye mensajes directos.",
                     activo: false
+                },
+                {
+                    clase: "website",
+                    claveUrl: "Website:PublicUrl",
+                    nombre: "Página web",
+                    descripcion: "Sitio web corporativo enlazado desde los accesos rápidos del CRM.",
+                    estado: "Sin configurar",
+                    detalle: "Configura la dirección pública del sitio web.",
+                    activo: false,
+                    sinMetricas: true
                 }
             ];
             const canales = canalesBase.map(canal => {
@@ -94,6 +108,7 @@
                         : `Falta: ${faltantes.join(", ") || "credenciales"}`,
                     webhook: Boolean(estadoCanal.webhookUrl),
                     webhookUrl: estadoCanal.webhookUrl,
+                    publicUrl: estadoCanal.publicUrl || "",
                     activo: Boolean(estadoCanal.connected),
                     allowList: estadoCanal.networkAllowList || []
                 };
@@ -129,14 +144,16 @@
                             <p>${canal.descripcion}</p>
                             <small>${canal.detalle}</small>
                             ${canal.allowList?.length ? `<small>Permitir red: ${canal.allowList.map(escapeHtml).join(", ")}</small>` : ""}
-                            <div class="connection-channel-metrics">
+                            ${canal.sinMetricas ? "" : `<div class="connection-channel-metrics">
                                 <span><strong>${formatearNumero(canal.metricas.contactos)}</strong> contactos</span>
                                 <span><strong>${formatearNumero(canal.metricas.conversaciones)}</strong> conversaciones</span>
                                 <span><strong>${formatearNumero(canal.metricas.interacciones)}</strong> interacciones</span>
                                 <span><strong>${formatearNumero(canal.metricas.oportunidades)}</strong> oportunidades</span>
-                            </div>
+                            </div>`}
                             <div class="connection-actions">
-                                ${puedeConfigurar ? `<button type="button" class="connection-action" data-config-channel="${canal.clase}">Configurar</button>` : ""}
+                                ${puedeConfigurar ? `<button type="button" class="connection-action" data-config-public-url="${canal.clase}" data-url-key="${canal.claveUrl}" data-channel-name="${escapeAttribute(canal.nombre)}" data-current-url="${escapeAttribute(canal.publicUrl || "")}">Configurar URL</button>` : ""}
+                                ${canal.publicUrl ? `<a class="connection-action secondary" href="${escapeAttribute(canal.publicUrl)}" target="_blank" rel="noopener noreferrer">Abrir</a>` : ""}
+                                ${puedeConfigurar && canal.clase !== "website" ? `<button type="button" class="connection-action secondary" data-config-channel="${canal.clase}">Configurar conexión</button>` : ""}
                                 ${canal.webhook && ["whatsapp", "facebook"].includes(canal.clase) ? `<button type="button" class="connection-action secondary" data-copy-webhook="${escapeAttribute(canal.webhookUrl || webhookUrl)}">Copiar webhook</button>` : ""}
                                 ${canal.clase === "instagram" && canal.activo ? `<button type="button" class="connection-action secondary" data-sync-instagram>Sincronizar</button>` : ""}
                             </div>
@@ -149,6 +166,64 @@
                 button.addEventListener("click", async () => {
                     await navigator.clipboard.writeText(button.dataset.copyWebhook || webhookUrl);
                     notificar("URL del webhook copiada.", "success");
+                });
+            });
+
+            vista.querySelectorAll("[data-config-public-url]").forEach(button => {
+                button.addEventListener("click", async () => {
+                    const canal = button.dataset.configPublicUrl;
+                    const nombre = button.dataset.channelName || canal;
+                    modalHost.innerHTML = `
+                        <div class="modal-backdrop" data-modal-cancel></div>
+                        <section class="crm-modal integration-url-modal">
+                            <form id="integrationPublicUrlForm">
+                                <div class="crm-modal-head">
+                                    <h2>URL de ${escapeHtml(nombre)}</h2>
+                                    <button type="button" data-modal-cancel aria-label="Cerrar">×</button>
+                                </div>
+                                <div class="crm-modal-body">
+                                    <label class="connection-public-url">
+                                        <span>Enlace que abrirá el botón</span>
+                                        <input id="integrationPublicUrl" type="url" value="${escapeAttribute(button.dataset.currentUrl || "")}" placeholder="https://..." autocomplete="url">
+                                        <small>Déjalo vacío si todavía no tienes el enlace. El botón quedará desactivado.</small>
+                                    </label>
+                                </div>
+                                <div class="crm-modal-actions">
+                                    <button type="button" data-modal-cancel>Cancelar</button>
+                                    <button type="submit">Guardar URL</button>
+                                </div>
+                            </form>
+                        </section>`;
+                    modalHost.classList.remove("hidden");
+                    modalHost.setAttribute("aria-hidden", "false");
+                    modalHost.querySelectorAll("[data-modal-cancel], .modal-backdrop").forEach(elemento => {
+                        elemento.addEventListener("click", cerrarModal);
+                    });
+                    modalHost.querySelector("#integrationPublicUrl")?.focus();
+                    modalHost.querySelector("#integrationPublicUrlForm").addEventListener("submit", async event => {
+                        event.preventDefault();
+                        const submit = event.currentTarget.querySelector('[type="submit"]');
+                        const url = event.currentTarget.querySelector("#integrationPublicUrl").value.trim();
+                        submit.disabled = true;
+                        const guardar = await api(`/api/integraciones/${canal}/configuracion`, {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ values: { [button.dataset.urlKey]: url } })
+                        });
+                        const resultado = await guardar.json().catch(() => ({}));
+                        if (!guardar.ok) {
+                            notificar(resultado.message || "No se pudo guardar la URL.", "error");
+                            submit.disabled = false;
+                            return;
+                        }
+                        cerrarModal();
+                        notificar("URL guardada.", "success");
+                        await cargarModuloConexiones(vista);
+                        const canalesActualizados = await api("/api/integraciones/canales");
+                        if (canalesActualizados.ok && window.actualizarEnlacesPublicos) {
+                            window.actualizarEnlacesPublicos(await canalesActualizados.json());
+                        }
+                    });
                 });
             });
 
@@ -207,7 +282,7 @@
                                                     rows="5"
                                                     placeholder='[{"phoneNumberId":"123456789","displayNumber":"+51..."}]'>${escapeHtml(field.value || "")}</textarea>` : `<input
                                                     name="${escapeAttribute(field.key)}"
-                                                    type="${field.secret && !mostrarClaves ? "password" : "text"}"
+                                                    type="${field.secret && !mostrarClaves ? "password" : field.key.endsWith(":PublicUrl") ? "url" : "text"}"
                                                     value="${escapeAttribute(field.value || "")}"
                                                     placeholder="${field.configured ? "Configurado, deja igual para conservar" : ""}">`}
                                                 <small>${escapeHtml(field.key)}</small>

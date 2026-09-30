@@ -18,6 +18,33 @@
             return new Intl.NumberFormat("es-PE").format(Number(valor || 0));
         }
 
+        function prepararTablasResponsivas(raiz = document) {
+            const tablas = [];
+            if (raiz instanceof Element && raiz.matches("table.module-table")) tablas.push(raiz);
+            raiz.querySelectorAll?.("table.module-table").forEach(tabla => tablas.push(tabla));
+
+            tablas.forEach(tabla => {
+                const encabezados = [...tabla.querySelectorAll("thead th")]
+                    .map(celda => celda.textContent.trim());
+
+                tabla.querySelectorAll("tbody tr").forEach(fila => {
+                    const celdas = [...fila.children].filter(celda => celda.tagName === "TD");
+                    const esFilaVacia = celdas.length === 1 && Number(celdas[0].colSpan || 1) > 1;
+                    fila.classList.toggle("responsive-empty-row", esFilaVacia);
+
+                    celdas.forEach((celda, indice) => {
+                        if (esFilaVacia) {
+                            celda.removeAttribute("data-label");
+                            return;
+                        }
+                        celda.dataset.label = encabezados[indice] || `Campo ${indice + 1}`;
+                    });
+                });
+
+                tabla.classList.add("responsive-table-ready");
+            });
+        }
+
         function escapeHtml(text) {
             const div = document.createElement("div");
             div.textContent = text == null ? "" : text;
@@ -338,12 +365,8 @@
             const base = estadosConversacion();
             const rol = normalizarRol(rolActual);
 
-            if (rol === "asesor") {
-                return base.filter(etapa => ["NUEVO", "EN_ATENCION", "ESPERANDO_CLIENTE"].includes(etapa.id));
-            }
-
-            if (rol === "supervisor") {
-                return base.filter(etapa => ["NUEVO", "ABIERTO", "EN_ATENCION", "ESPERANDO_CLIENTE", "COTIZACION_ENVIADA", "CERRADO"].includes(etapa.id));
+            if (rol === "asesor" || rol === "supervisor") {
+                return base;
             }
 
             return base;

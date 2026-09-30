@@ -62,8 +62,8 @@ public sealed class MetaGraphApiService
     public async Task<MetaFacebookFeedResult> ObtenerFacebookFeedAsync(DateTime? desde, DateTime? hasta, int limit = 10)
     {
         var pageId = GetValue("Meta:Facebook:PageId");
-        var token = GetValue("Meta:Facebook:AccessToken");
-        if (string.IsNullOrWhiteSpace(pageId) || string.IsNullOrWhiteSpace(token))
+        var configuredToken = GetValue("Meta:Facebook:AccessToken");
+        if (string.IsNullOrWhiteSpace(pageId) || string.IsNullOrWhiteSpace(configuredToken))
         {
             return MetaFacebookFeedResult.Failed(
                 "Falta Meta:Facebook:PageId o Meta:Facebook:AccessToken.",
@@ -71,11 +71,11 @@ public sealed class MetaGraphApiService
         }
 
         var apiVersion = GetValue("Meta:ApiVersion") ?? _configuration["Meta:ApiVersion"] ?? "v25.0";
-        var pageToken = await ResolvePageAccessTokenAsync(apiVersion, pageId, token);
+        var pageToken = await ResolvePageAccessTokenAsync(apiVersion, pageId, configuredToken);
         var since = new DateTimeOffset((desde ?? DateTime.Today.AddDays(-30)).Date).ToUnixTimeSeconds();
         var until = new DateTimeOffset((hasta ?? DateTime.Today).Date.AddDays(1)).ToUnixTimeSeconds();
-        var fields = "id,message,created_time,permalink_url,type,full_picture,is_published,is_video,shares,likes.limit(0).summary(true),comments.limit(0).summary(true),attachments.limit(5){media_type,media,image_data{url},target{url},subattachments{media_type,media,image_data{url}}},insights.metric(post_impressions,post_reach,post_engagement).period(lifetime)";
-        var url = $"https://graph.facebook.com/{apiVersion}/{Uri.EscapeDataString(pageId)}/feed?fields={fields}&limit={Math.Clamp(limit, 1, 25)}&since={since}&until={until}";
+        var fields = "id,message,created_time,permalink_url,full_picture,shares,attachments.limit(5){media_type,media,target{url},subattachments{media_type,media}}";
+        var url = $"https://graph.facebook.com/{apiVersion}/{Uri.EscapeDataString(pageId)}/published_posts?fields={fields}&limit={Math.Clamp(limit, 1, 25)}&since={since}&until={until}";
 
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", pageToken);
@@ -99,7 +99,9 @@ public sealed class MetaGraphApiService
                 return new MetaFacebookFeedResult(true, [], null, []);
             }
 
-            var posts = data.EnumerateArray().Select(ParseFacebookPost).ToArray();
+            using var metricConcurrency = new SemaphoreSlim(5);
+            var posts = await Task.WhenAll(data.EnumerateArray()
+                .Select(post => EnrichFacebookPostAsync(post.Clone(), pageToken, apiVersion, metricConcurrency)));
             return new MetaFacebookFeedResult(true, posts, null, []);
         }
         catch (Exception ex)
@@ -160,8 +162,108 @@ public sealed class MetaGraphApiService
             impressions,
             engagement > 0 ? engagement : likes + comments + shares,
             mediaUrl,
-            mediaType);
+            mediaType,
+            new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase));
     }
+
+    private async Task<MetaFacebookPost> EnrichFacebookPostAsync(
+        JsonElement post,
+        string accessToken,
+        string apiVersion,
+        SemaphoreSlim concurrency)
+    {
+        var parsed = ParseFacebookPost(post);
+        if (string.IsNullOrWhiteSpace(parsed.Id)) return parsed;
+
+        await concurrency.WaitAsync();
+        try
+        {
+            var metrics =
+                "post_media_view,post_activity_by_action_type,post_video_views,post_reactions_by_type_total";
+            var url =
+                $"https://graph.facebook.com/{apiVersion}/{Uri.EscapeDataString(parsed.Id)}/insights" +
+                $"?metric={Uri.EscapeDataString(metrics)}";
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            using var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode) return parsed;
+
+            using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            if (!document.RootElement.TryGetProperty("data", out var data) ||
+                data.ValueKind != JsonValueKind.Array)
+            {
+                return parsed;
+            }
+
+            long reactions = 0;
+            long comments = parsed.Comments;
+            long shares = parsed.Shares;
+            long views = 0;
+            var reactionsByType = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+            foreach (var metric in data.EnumerateArray())
+            {
+                var name = ReadString(metric, "name");
+                if (!metric.TryGetProperty("values", out var values) ||
+                    values.ValueKind != JsonValueKind.Array)
+                {
+                    continue;
+                }
+
+                foreach (var valueNode in values.EnumerateArray())
+                {
+                    if (!valueNode.TryGetProperty("value", out var value)) continue;
+                    if (string.Equals(name, "post_reactions_by_type_total", StringComparison.OrdinalIgnoreCase))
+                    {
+                        reactions = Math.Max(reactions, ReadLong(value));
+                        if (value.ValueKind == JsonValueKind.Object)
+                        {
+                            foreach (var reaction in value.EnumerateObject())
+                            {
+                                reactionsByType[reaction.Name] = Math.Max(
+                                    reactionsByType.GetValueOrDefault(reaction.Name),
+                                    ReadLong(reaction.Value));
+                            }
+                        }
+                    }
+                    else if (string.Equals(name, "post_activity_by_action_type", StringComparison.OrdinalIgnoreCase) &&
+                             value.ValueKind == JsonValueKind.Object)
+                    {
+                        comments = Math.Max(comments, ReadObjectLong(value, "comment"));
+                        shares = Math.Max(shares, ReadObjectLong(value, "share"));
+                    }
+                    else if (string.Equals(name, "post_media_view", StringComparison.OrdinalIgnoreCase) ||
+                             string.Equals(name, "post_video_views", StringComparison.OrdinalIgnoreCase))
+                    {
+                        views = Math.Max(views, ReadLong(value));
+                    }
+                }
+            }
+
+            return parsed with
+            {
+                Likes = (int)Math.Min(int.MaxValue, reactions),
+                Comments = (int)Math.Min(int.MaxValue, comments),
+                Shares = (int)Math.Min(int.MaxValue, shares),
+                Impressions = (int)Math.Min(int.MaxValue, views),
+                Engagement = (int)Math.Min(int.MaxValue, reactions + comments + shares),
+                ReactionsByType = reactionsByType
+            };
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
+        {
+            return parsed;
+        }
+        finally
+        {
+            concurrency.Release();
+        }
+    }
+
+    private static long ReadObjectLong(JsonElement value, string property) =>
+        value.ValueKind == JsonValueKind.Object &&
+        value.TryGetProperty(property, out var propertyValue)
+            ? ReadLong(propertyValue)
+            : 0;
 
     private static string? ReadMediaUrl(JsonElement root)
     {
@@ -321,6 +423,7 @@ public sealed class MetaGraphApiService
         var appSecret = GetValue("Meta:AppSecret");
         var checks = new List<MetaCredentialCheck>
         {
+            await DiagnosticarInstagramLoginAsync(apiVersion),
             await DiagnosticarGraphCredentialAsync(
                 "FACEBOOK_PAGE_TOKEN", "Page Token de Facebook",
                 GetValue("Meta:Facebook:PageId"), GetValue("Meta:Facebook:AccessToken"),
@@ -332,6 +435,81 @@ public sealed class MetaGraphApiService
         };
 
         return new MetaCredentialsDiagnosticResult(DateTimeOffset.UtcNow, apiVersion, checks);
+    }
+
+    private async Task<MetaCredentialCheck> DiagnosticarInstagramLoginAsync(string apiVersion)
+    {
+        const string key = "INSTAGRAM_LOGIN_TOKEN";
+        const string name = "Instagram Login Access Token";
+        var token = GetValue("Meta:Instagram:LoginAccessToken");
+        var configuredId = GetValue("Meta:Instagram:InstagramBusinessAccountId") ??
+            GetValue("Meta:Instagram:LoginUserId");
+        if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(configuredId))
+        {
+            return MetaCredentialCheck.Fail(key, name, "NO_CONFIGURADO",
+                "Falta Instagram Professional User ID o Instagram Login Access Token.");
+        }
+
+        var url = $"https://graph.instagram.com/{apiVersion}/me?fields=id,user_id,username,account_type";
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            using var response = await _httpClient.SendAsync(request);
+            var body = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                return MetaCredentialCheck.Fail(key, name,
+                    ClassifyGraphError((int)response.StatusCode, body),
+                    $"Instagram Graph API HTTP {(int)response.StatusCode}: {BuildInsightError(body)}");
+            }
+
+            using var document = JsonDocument.Parse(body);
+            var returnedId = ReadString(document.RootElement, "user_id") ??
+                ReadString(document.RootElement, "id");
+            if (!string.Equals(returnedId, configuredId, StringComparison.OrdinalIgnoreCase))
+            {
+                return MetaCredentialCheck.Fail(key, name, "ID_NO_COINCIDE",
+                    "El token pertenece a una cuenta de Instagram distinta del ID configurado.");
+            }
+
+            var conversationsUrl =
+                $"https://graph.instagram.com/{apiVersion}/{Uri.EscapeDataString(returnedId!)}/conversations" +
+                "?fields=id&limit=1";
+            using var conversationsRequest = new HttpRequestMessage(HttpMethod.Get, conversationsUrl);
+            conversationsRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            using var conversationsResponse = await _httpClient.SendAsync(conversationsRequest);
+            if (!conversationsResponse.IsSuccessStatusCode)
+            {
+                var conversationsBody = await conversationsResponse.Content.ReadAsStringAsync();
+                return MetaCredentialCheck.Fail(key, name, "SIN_PERMISO_MENSAJES",
+                    $"Instagram no autorizo la lectura de mensajes: {BuildInsightError(conversationsBody)}");
+            }
+
+            var mediaUrl =
+                $"https://graph.instagram.com/{apiVersion}/{Uri.EscapeDataString(returnedId!)}/media" +
+                "?fields=id&limit=1";
+            using var mediaRequest = new HttpRequestMessage(HttpMethod.Get, mediaUrl);
+            mediaRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            using var mediaResponse = await _httpClient.SendAsync(mediaRequest);
+            if (!mediaResponse.IsSuccessStatusCode)
+            {
+                var mediaBody = await mediaResponse.Content.ReadAsStringAsync();
+                return MetaCredentialCheck.Fail(key, name, "SIN_PERMISO_PUBLICACIONES",
+                    $"Instagram no autorizo la lectura de publicaciones: {BuildInsightError(mediaBody)}");
+            }
+
+            var accountType = ReadString(document.RootElement, "account_type") ?? "INSTAGRAM";
+            return MetaCredentialCheck.Valid(key, name, "VALIDO",
+                "Instagram confirmó el token y la cuenta profesional configurada.",
+                accountType, null,
+                ["instagram_business_basic", "instagram_business_manage_messages"]);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "No se pudo diagnosticar Instagram Login.");
+            return MetaCredentialCheck.Fail(key, name, "ERROR_CONEXION", ex.Message);
+        }
     }
 
     private async Task<MetaCredentialCheck> DiagnosticarGraphCredentialAsync(
@@ -541,6 +719,140 @@ public sealed class MetaGraphApiService
         }
     }
 
+    public async Task<InstagramLoginSyncResult> SincronizarFacebookAsync(SocialInboundService inbound)
+    {
+        var apiVersion = GetValue("Meta:ApiVersion") ?? _configuration["Meta:ApiVersion"] ?? "v26.0";
+        var pageId = GetValue("Meta:Facebook:PageId");
+        var configuredToken = GetValue("Meta:Facebook:AccessToken");
+        if (string.IsNullOrWhiteSpace(pageId) || string.IsNullOrWhiteSpace(configuredToken))
+        {
+            return new InstagramLoginSyncResult(false, 0, 0, 0,
+                "Faltan Meta:Facebook:PageId o Meta:Facebook:AccessToken.", null);
+        }
+
+        try
+        {
+            var token = await ResolvePageAccessTokenAsync(apiVersion, pageId, configuredToken);
+            var conversationsUrl =
+                $"https://graph.facebook.com/{apiVersion}/{Uri.EscapeDataString(pageId)}/conversations" +
+                "?platform=messenger&fields=id,participants,updated_time&limit=25";
+            using var request = new HttpRequestMessage(HttpMethod.Get, conversationsUrl);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            using var response = await _httpClient.SendAsync(request);
+            var body = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                return new InstagramLoginSyncResult(false, 0, 0, 0,
+                    $"Facebook Conversations HTTP {(int)response.StatusCode}: {body}", null);
+            }
+
+            using var document = JsonDocument.Parse(body);
+            if (!document.RootElement.TryGetProperty("data", out var data) ||
+                data.ValueKind != JsonValueKind.Array)
+            {
+                return new InstagramLoginSyncResult(true, 0, 0, 0, null, null);
+            }
+
+            var conversaciones = 0;
+            var mensajesLeidos = 0;
+            var mensajesProcesados = 0;
+            foreach (var conversation in data.EnumerateArray())
+            {
+                var conversationId = ReadString(conversation, "id");
+                if (string.IsNullOrWhiteSpace(conversationId)) continue;
+                conversaciones++;
+                var result = await SincronizarFacebookConversationAsync(
+                    apiVersion, token, pageId, conversationId, inbound);
+                mensajesLeidos += result.Leidos;
+                mensajesProcesados += result.Importados;
+            }
+
+            return new InstagramLoginSyncResult(
+                true, conversaciones, mensajesLeidos, mensajesProcesados, null, null);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "No se pudo recuperar la bandeja de Facebook.");
+            return new InstagramLoginSyncResult(false, 0, 0, 0, ex.Message, null);
+        }
+        catch (TaskCanceledException ex)
+        {
+            _logger.LogWarning(ex, "Tiempo agotado recuperando la bandeja de Facebook.");
+            return new InstagramLoginSyncResult(false, 0, 0, 0, ex.Message, null);
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "Facebook devolvió una respuesta inválida al sincronizar mensajes.");
+            return new InstagramLoginSyncResult(false, 0, 0, 0, ex.Message, null);
+        }
+    }
+
+    private async Task<(int Leidos, int Importados)> SincronizarFacebookConversationAsync(
+        string apiVersion,
+        string token,
+        string pageId,
+        string conversationId,
+        SocialInboundService inbound)
+    {
+        var url =
+            $"https://graph.facebook.com/{apiVersion}/{Uri.EscapeDataString(conversationId)}/messages" +
+            "?fields=id,created_time,from,to,message&limit=50";
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        using var response = await _httpClient.SendAsync(request);
+        var body = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogWarning(
+                "Facebook no devolvió mensajes para {ConversationId}. HTTP {StatusCode}: {Body}",
+                conversationId, (int)response.StatusCode, body);
+            return (0, 0);
+        }
+
+        using var document = JsonDocument.Parse(body);
+        if (!document.RootElement.TryGetProperty("data", out var data) ||
+            data.ValueKind != JsonValueKind.Array)
+        {
+            return (0, 0);
+        }
+
+        var leidos = 0;
+        var procesados = 0;
+        foreach (var message in data.EnumerateArray().Reverse())
+        {
+            leidos++;
+            var messageId = ReadString(message, "id");
+            var text = ReadString(message, "message");
+            var fromId = ReadNestedString(message, "from", "id");
+            var fromName = ReadNestedString(message, "from", "name") ?? "Facebook";
+            var createdAt = ReadString(message, "created_time");
+            var esReciente = DateTimeOffset.TryParse(createdAt, out var created) &&
+                created >= DateTimeOffset.UtcNow.AddHours(-24);
+
+            if (string.IsNullOrWhiteSpace(messageId) ||
+                string.IsNullOrWhiteSpace(text) ||
+                string.IsNullOrWhiteSpace(fromId) ||
+                fromId.Equals(pageId, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            await inbound.RegistrarMensajeEntranteAsync(new SocialInboundMessage(
+                CanalSocial.Facebook,
+                fromId,
+                fromId,
+                fromName,
+                text,
+                "text",
+                messageId,
+                null,
+                esReciente));
+            procesados++;
+        }
+
+        return (leidos, procesados);
+    }
+
     private async Task<InstagramLoginMe> ObtenerInstagramLoginMeAsync(string apiVersion, string token)
     {
         var url = $"https://graph.instagram.com/{apiVersion}/me?fields=id,user_id,username,account_type";
@@ -600,6 +912,9 @@ public sealed class MetaGraphApiService
             var fromUsername = ReadNestedString(message, "from", "username") ??
                 ReadNestedString(message, "from", "name") ??
                 "Instagram";
+            var createdAt = ReadString(message, "created_time");
+            var esReciente = DateTimeOffset.TryParse(createdAt, out var created) &&
+                created >= DateTimeOffset.UtcNow.AddHours(-24);
 
             if (string.IsNullOrWhiteSpace(messageId) ||
                 string.IsNullOrWhiteSpace(text) ||
@@ -611,12 +926,14 @@ public sealed class MetaGraphApiService
 
             await inbound.RegistrarMensajeEntranteAsync(new SocialInboundMessage(
                 CanalSocial.Instagram,
-                conversationId,
+                fromId,
                 fromId,
                 fromUsername,
                 text,
                 "text",
-                messageId));
+                messageId,
+                null,
+                esReciente));
 
             importados++;
         }
@@ -639,11 +956,17 @@ public sealed class MetaGraphApiService
         string? pageId = null)
     {
         var normalized = CanalSocial.Normalizar(canal);
+        var instagramLoginToken = normalized == CanalSocial.Instagram
+            ? GetValue("Meta:Instagram:LoginAccessToken")
+            : null;
+        var usesInstagramLogin = !string.IsNullOrWhiteSpace(instagramLoginToken);
         var configuredPageId = normalized == CanalSocial.Instagram
-            ? GetValue("Meta:Instagram:PageId")
+            ? GetValue("Meta:Instagram:LoginUserId") ??
+              GetValue("Meta:Instagram:InstagramBusinessAccountId") ??
+              GetValue("Meta:Instagram:PageId")
             : GetValue("Meta:Facebook:PageId");
         var configuredToken = normalized == CanalSocial.Instagram
-            ? GetValue("Meta:Instagram:AccessToken")
+            ? instagramLoginToken ?? GetValue("Meta:Instagram:AccessToken")
             : GetValue("Meta:Facebook:AccessToken");
 
         if (string.IsNullOrWhiteSpace(configuredToken) || string.IsNullOrWhiteSpace(externalUserId))
@@ -670,9 +993,14 @@ public sealed class MetaGraphApiService
         var fields = normalized == CanalSocial.Instagram
             ? "name,username,profile_pic"
             : "first_name,last_name,name,profile_pic";
-        var accessToken = await ResolvePageAccessTokenAsync(apiVersion, configuredPageId, configuredToken);
+        var accessToken = usesInstagramLogin
+            ? configuredToken
+            : await ResolvePageAccessTokenAsync(apiVersion, configuredPageId, configuredToken);
+        var graphHost = usesInstagramLogin
+            ? "https://graph.instagram.com"
+            : "https://graph.facebook.com";
         var url =
-            $"https://graph.facebook.com/{apiVersion}/{Uri.EscapeDataString(externalUserId)}" +
+            $"{graphHost}/{apiVersion}/{Uri.EscapeDataString(externalUserId)}" +
             $"?fields={Uri.EscapeDataString(fields)}";
 
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
@@ -704,7 +1032,9 @@ public sealed class MetaGraphApiService
             var name = ReadString(root, "name");
             var username = ReadString(root, "username");
             var picture = ReadString(root, "profile_pic");
-            var displayName = JoinName(firstName, lastName) ?? name ?? username;
+            var displayName = normalized == CanalSocial.Instagram
+                ? username ?? name
+                : JoinName(firstName, lastName) ?? name ?? username;
 
             if (string.IsNullOrWhiteSpace(displayName) && string.IsNullOrWhiteSpace(picture))
             {
@@ -728,6 +1058,127 @@ public sealed class MetaGraphApiService
                 externalUserId);
             return MetaProfileLookupResult.Failed(ex.Message, configuredPageId, pageId);
         }
+    }
+
+    public async Task<MetaPublicationCommentsResult> ObtenerComentariosPublicacionAsync(
+        string canal,
+        string publicationId,
+        CancellationToken cancellationToken = default)
+    {
+        var normalized = CanalSocial.Normalizar(canal);
+        if (normalized is not (CanalSocial.Facebook or CanalSocial.Instagram) ||
+            string.IsNullOrWhiteSpace(publicationId))
+        {
+            return MetaPublicationCommentsResult.Failed("Canal o publicación no válidos.");
+        }
+
+        var apiVersion = GetValue("Meta:ApiVersion") ?? _configuration["Meta:ApiVersion"] ?? "v26.0";
+        string accessToken;
+        string ownerId;
+        string url;
+
+        if (normalized == CanalSocial.Instagram)
+        {
+            accessToken = GetValue("Meta:Instagram:LoginAccessToken") ??
+                GetValue("Meta:Instagram:AccessToken") ?? string.Empty;
+            ownerId = GetValue("Meta:Instagram:LoginUserId") ??
+                GetValue("Meta:Instagram:InstagramBusinessAccountId") ?? string.Empty;
+            url = $"https://graph.instagram.com/{apiVersion}/{Uri.EscapeDataString(publicationId)}/comments" +
+                "?fields=id,text,timestamp,username,from{id,username}&limit=100";
+        }
+        else
+        {
+            ownerId = GetValue("Meta:Facebook:PageId") ?? string.Empty;
+            var configuredToken = GetValue("Meta:Facebook:AccessToken") ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(ownerId) || string.IsNullOrWhiteSpace(configuredToken))
+                return MetaPublicationCommentsResult.Failed("Faltan Page ID o Access Token de Facebook.");
+            accessToken = await ResolvePageAccessTokenAsync(apiVersion, ownerId, configuredToken);
+            url = $"https://graph.facebook.com/{apiVersion}/{Uri.EscapeDataString(publicationId)}/comments" +
+                "?fields=id,message,created_time,from{id,name}&limit=100";
+        }
+
+        if (string.IsNullOrWhiteSpace(accessToken))
+            return MetaPublicationCommentsResult.Failed($"Falta el Access Token de {normalized}.");
+
+        var result = new List<MetaPublicationComment>();
+        for (var page = 0; page < 3 && !string.IsNullOrWhiteSpace(url); page++)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning(
+                    "Meta no devolvio comentarios para {Canal}/{PublicationId}. HTTP {StatusCode}: {Body}",
+                    normalized,
+                    publicationId,
+                    (int)response.StatusCode,
+                    body);
+                var detail = BuildInsightError(body);
+                if (detail.Contains("pages_read_user_content", StringComparison.OrdinalIgnoreCase))
+                {
+                    detail = "Facebook requiere el permiso pages_read_user_content para leer los comentarios. Reconecta Facebook desde Conexiones y autoriza el permiso.";
+                }
+                return MetaPublicationCommentsResult.Failed(detail);
+            }
+
+            using var document = JsonDocument.Parse(body);
+            if (!document.RootElement.TryGetProperty("data", out var data) ||
+                data.ValueKind != JsonValueKind.Array)
+            {
+                break;
+            }
+
+            foreach (var item in data.EnumerateArray())
+            {
+                var id = ReadString(item, "id");
+                var userId = ReadNestedString(item, "from", "id");
+                var username = normalized == CanalSocial.Instagram
+                    ? ReadString(item, "username") ?? ReadNestedString(item, "from", "username")
+                    : ReadNestedString(item, "from", "name");
+                var text = normalized == CanalSocial.Instagram
+                    ? ReadString(item, "text")
+                    : ReadString(item, "message");
+                var createdRaw = normalized == CanalSocial.Instagram
+                    ? ReadString(item, "timestamp")
+                    : ReadString(item, "created_time");
+
+                if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(text))
+                {
+                    continue;
+                }
+
+                userId ??= username;
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    // Meta puede ocultar `from` por privacidad aunque permita leer y
+                    // responder el comentario. El ID del comentario mantiene estable
+                    // el registro sin inventar la identidad de la persona.
+                    userId = $"comment:{id}";
+                    username = normalized == CanalSocial.Instagram
+                        ? "Usuario de Instagram"
+                        : "Usuario de Facebook";
+                }
+                DateTimeOffset? createdAt = DateTimeOffset.TryParse(createdRaw, out var parsed) ? parsed : null;
+                result.Add(new MetaPublicationComment(
+                    normalized,
+                    publicationId,
+                    id,
+                    userId,
+                    username,
+                    text,
+                    createdAt));
+            }
+
+            url = document.RootElement.TryGetProperty("paging", out var paging) &&
+                paging.TryGetProperty("next", out var next) &&
+                next.ValueKind == JsonValueKind.String
+                    ? next.GetString() ?? string.Empty
+                    : string.Empty;
+        }
+
+        return MetaPublicationCommentsResult.Ok(result);
     }
 
     private async Task<string> ResolvePageAccessTokenAsync(
@@ -873,8 +1324,10 @@ public sealed class MetaGraphApiService
 
     private async Task<MetaChannelInsight> ObtenerInstagramAsync(long since, long until)
     {
-        var instagramId = GetValue("Meta:Instagram:InstagramBusinessAccountId");
-        var token = GetValue("Meta:Instagram:AccessToken");
+        var instagramId = GetValue("Meta:Instagram:InstagramBusinessAccountId") ??
+            GetValue("Meta:Instagram:LoginUserId");
+        var token = GetValue("Meta:Instagram:LoginAccessToken") ??
+            GetValue("Meta:Instagram:AccessToken");
         var missing = new List<string>();
 
         if (string.IsNullOrWhiteSpace(instagramId))
@@ -884,7 +1337,7 @@ public sealed class MetaGraphApiService
 
         if (string.IsNullOrWhiteSpace(token))
         {
-            missing.Add("Meta:Instagram:AccessToken/Page Access Token con permiso de insights");
+            missing.Add("Meta:Instagram:LoginAccessToken con permiso instagram_business_basic");
         }
 
         if (missing.Count > 0)
@@ -892,42 +1345,140 @@ public sealed class MetaGraphApiService
             return MetaChannelInsight.NotConfigured(
                 CanalSocial.Instagram,
                 "Instagram",
-                "Faltan credenciales de insights. El token de Instagram Login sirve para DMs, pero estas metricas usan el token de Page/Instagram profesional.",
+                "Faltan credenciales de Instagram Login para leer las metricas.",
                 missing);
         }
 
-        var metrics = await GetInsightsAsync(
+        var metrics = await GetInstagramInsightsAsync(
             instagramId!,
             token!,
-            "reach,profile_views,website_clicks",
-            "day",
+            "views,reach,total_interactions,profile_views,website_clicks",
             since,
             until);
 
         var hasErrors = metrics.Errors.Count > 0;
         var alcance = GetMetric(metrics, "reach");
+        var visualizaciones = GetMetric(metrics, "views");
+        var interacciones = GetMetric(metrics, "total_interactions");
         var visitasPerfil = GetMetric(metrics, "profile_views");
         var clicksSitio = GetMetric(metrics, "website_clicks");
+        var audience = await GetInstagramAudienceBreakdownAsync(
+            instagramId!, token!, since, until);
 
         return new MetaChannelInsight(
             CanalSocial.Instagram,
             "Instagram",
             true,
-            hasErrors ? "ERROR" : (alcance + visitasPerfil + clicksSitio > 0 ? "OPERATIVO" : "SIN_DATOS"),
+            hasErrors ? "ERROR" : (visualizaciones + alcance + interacciones + visitasPerfil + clicksSitio > 0 ? "OPERATIVO" : "SIN_DATOS"),
             hasErrors
                 ? "Meta rechazo la consulta de Instagram Insights. Revisa Instagram profesional, token y permisos."
-                : (alcance + visitasPerfil + clicksSitio > 0
-                    ? "Estadisticas de Instagram leidas correctamente desde Graph API."
+                : (visualizaciones + alcance + interacciones + visitasPerfil + clicksSitio > 0
+                    ? "Estadisticas de Instagram leidas correctamente desde Instagram Graph API."
                     : "Meta respondio correctamente, pero no devolvio valores para el rango consultado."),
             [],
             alcance,
-            alcance,
-            visitasPerfil + clicksSitio,
+            visualizaciones,
+            interacciones,
             visitasPerfil,
             clicksSitio,
             0,
             metrics.Errors,
-            DateTimeOffset.UtcNow);
+            DateTimeOffset.UtcNow,
+            audience.FollowerViews,
+            audience.NonFollowerViews,
+            audience.Ages);
+    }
+
+    private async Task<MetaAudienceBreakdown> GetInstagramAudienceBreakdownAsync(
+        string instagramId,
+        string accessToken,
+        long since,
+        long until)
+    {
+        var apiVersion = GetValue("Meta:ApiVersion") ??
+            _configuration["Meta:ApiVersion"] ??
+            "v26.0";
+        var followerViews = 0L;
+        var nonFollowerViews = 0L;
+        var ages = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+
+        async Task<JsonDocument?> ReadAsync(string query)
+        {
+            var url = $"https://graph.instagram.com/{apiVersion}/{Uri.EscapeDataString(instagramId)}/insights?{query}";
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            try
+            {
+                using var response = await _httpClient.SendAsync(request);
+                if (!response.IsSuccessStatusCode) return null;
+                return JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
+            {
+                return null;
+            }
+        }
+
+        using (var viewsDocument = await ReadAsync(
+            $"metric=views&period=day&metric_type=total_value&breakdown=follow_type&since={since}&until={until}"))
+        {
+            if (viewsDocument != null)
+            {
+                foreach (var result in ReadBreakdownResults(viewsDocument.RootElement))
+                {
+                    var dimension = result.Dimension.ToUpperInvariant();
+                    if (dimension == "FOLLOWER") followerViews += result.Value;
+                    if (dimension == "NON_FOLLOWER") nonFollowerViews += result.Value;
+                }
+            }
+        }
+
+        using (var ageDocument = await ReadAsync(
+            "metric=follower_demographics&period=lifetime&metric_type=total_value&breakdown=age&timeframe=last_30_days"))
+        {
+            if (ageDocument != null)
+            {
+                foreach (var result in ReadBreakdownResults(ageDocument.RootElement))
+                {
+                    ages[result.Dimension] = result.Value;
+                }
+            }
+        }
+
+        return new MetaAudienceBreakdown(followerViews, nonFollowerViews, ages);
+    }
+
+    private static IEnumerable<(string Dimension, long Value)> ReadBreakdownResults(JsonElement root)
+    {
+        if (!root.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Array)
+            yield break;
+
+        foreach (var metric in data.EnumerateArray())
+        {
+            if (!metric.TryGetProperty("total_value", out var totalValue) ||
+                !totalValue.TryGetProperty("breakdowns", out var breakdowns) ||
+                breakdowns.ValueKind != JsonValueKind.Array)
+                continue;
+
+            foreach (var breakdown in breakdowns.EnumerateArray())
+            {
+                if (!breakdown.TryGetProperty("results", out var results) ||
+                    results.ValueKind != JsonValueKind.Array)
+                    continue;
+
+                foreach (var result in results.EnumerateArray())
+                {
+                    if (!result.TryGetProperty("dimension_values", out var dimensions) ||
+                        dimensions.ValueKind != JsonValueKind.Array ||
+                        dimensions.GetArrayLength() == 0 ||
+                        dimensions[0].ValueKind != JsonValueKind.String ||
+                        !result.TryGetProperty("value", out var value))
+                        continue;
+
+                    yield return (dimensions[0].GetString() ?? string.Empty, ReadLong(value));
+                }
+            }
+        }
     }
 
     private async Task<IReadOnlyList<MetaMetricDiagnostic>> DiagnosticarFacebookInsightsAsync(long since, long until)
@@ -961,11 +1512,15 @@ public sealed class MetaGraphApiService
 
     private async Task<IReadOnlyList<MetaMetricDiagnostic>> DiagnosticarInstagramInsightsAsync(long since, long until)
     {
-        var instagramId = GetValue("Meta:Instagram:InstagramBusinessAccountId");
-        var token = GetValue("Meta:Instagram:AccessToken");
+        var instagramId = GetValue("Meta:Instagram:InstagramBusinessAccountId") ??
+            GetValue("Meta:Instagram:LoginUserId");
+        var token = GetValue("Meta:Instagram:LoginAccessToken") ??
+            GetValue("Meta:Instagram:AccessToken");
         var metrics = new[]
         {
+            ("views", "Vistas"),
             ("reach", "Alcance"),
+            ("total_interactions", "Interacciones"),
             ("profile_views", "Visitas al perfil"),
             ("website_clicks", "Clicks al sitio web")
         };
@@ -977,10 +1532,41 @@ public sealed class MetaGraphApiService
                 "Instagram",
                 metric.Item1,
                 metric.Item2,
-                "Falta Meta:Instagram:InstagramBusinessAccountId o Meta:Instagram:AccessToken.")).ToArray();
+                "Falta Instagram Professional User ID o Instagram Login Access Token.")).ToArray();
         }
 
-        return await DiagnosticarMetricasAsync(CanalSocial.Instagram, "Instagram", instagramId, token, metrics, since, until);
+        return await DiagnosticarMetricasInstagramAsync(instagramId, token, metrics, since, until);
+    }
+
+    private async Task<IReadOnlyList<MetaMetricDiagnostic>> DiagnosticarMetricasInstagramAsync(
+        string objectId,
+        string token,
+        IReadOnlyList<(string Key, string Label)> metrics,
+        long since,
+        long until)
+    {
+        var result = new List<MetaMetricDiagnostic>();
+        foreach (var metric in metrics)
+        {
+            var response = await GetInstagramInsightsAsync(objectId, token, metric.Key, since, until);
+            var ok = response.Errors.Count == 0;
+            var value = GetMetric(response, metric.Key);
+            result.Add(new MetaMetricDiagnostic(
+                CanalSocial.Instagram,
+                "Instagram",
+                metric.Key,
+                metric.Label,
+                true,
+                ok,
+                ok ? (value > 0 ? "CON_DATOS" : "CERO") : "ERROR",
+                value,
+                ok
+                    ? (value > 0 ? "Instagram devolvio valores para esta metrica." : "Instagram acepto la metrica, pero devolvio 0 en el rango consultado.")
+                    : response.Errors[0],
+                response.Errors));
+        }
+
+        return result;
     }
 
     private async Task<IReadOnlyList<MetaMetricDiagnostic>> DiagnosticarMetricasAsync(
@@ -1061,6 +1647,49 @@ public sealed class MetaGraphApiService
         }
     }
 
+    private async Task<MetaInsightMetrics> GetInstagramInsightsAsync(
+        string objectId,
+        string accessToken,
+        string metric,
+        long since,
+        long until)
+    {
+        var apiVersion = GetValue("Meta:ApiVersion") ??
+            _configuration["Meta:ApiVersion"] ??
+            "v26.0";
+        var url =
+            $"https://graph.instagram.com/{apiVersion}/{Uri.EscapeDataString(objectId)}/insights" +
+            $"?metric={Uri.EscapeDataString(metric)}" +
+            "&period=day" +
+            $"&since={since}" +
+            $"&until={until}" +
+            "&metric_type=total_value";
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        try
+        {
+            using var response = await _httpClient.SendAsync(request);
+            var body = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning(
+                    "Instagram Graph API devolvio HTTP {StatusCode}: {Body}",
+                    (int)response.StatusCode,
+                    body);
+                return MetaInsightMetrics.WithError($"HTTP {(int)response.StatusCode}: {BuildInsightError(body)}");
+            }
+
+            return ParseMetrics(body);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "No se pudieron obtener metricas de Instagram para {ObjectId}.", objectId);
+            return MetaInsightMetrics.WithError(ex.Message);
+        }
+    }
+
     private static MetaInsightMetrics ParseMetrics(string body)
     {
         var metrics = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
@@ -1079,6 +1708,13 @@ public sealed class MetaGraphApiService
             if (string.IsNullOrWhiteSpace(name)) continue;
 
             long total = 0;
+            if (metricNode.TryGetProperty("total_value", out var totalValue) &&
+                totalValue.ValueKind == JsonValueKind.Object &&
+                totalValue.TryGetProperty("value", out var totalValueNode))
+            {
+                total = ReadLong(totalValueNode);
+            }
+
             if (metricNode.TryGetProperty("values", out var values) &&
                 values.ValueKind == JsonValueKind.Array)
             {
@@ -1208,6 +1844,27 @@ public sealed record MetaContactProfile(
     string? Username,
     string? ProfilePictureUrl);
 
+public sealed record MetaPublicationComment(
+    string Canal,
+    string PublicationId,
+    string Id,
+    string UserId,
+    string? Username,
+    string Text,
+    DateTimeOffset? CreatedAt);
+
+public sealed record MetaPublicationCommentsResult(
+    bool Success,
+    IReadOnlyList<MetaPublicationComment> Comments,
+    string? Error)
+{
+    public static MetaPublicationCommentsResult Ok(IReadOnlyList<MetaPublicationComment> comments) =>
+        new(true, comments, null);
+
+    public static MetaPublicationCommentsResult Failed(string error) =>
+        new(false, [], error);
+}
+
 public sealed record InstagramLoginSyncResult(
     bool Success,
     int Conversaciones,
@@ -1277,7 +1934,8 @@ public sealed record MetaFacebookPost(
     int Impressions,
     int Engagement,
     string? MediaUrl,
-    string? MediaType);
+    string? MediaType,
+    IReadOnlyDictionary<string, long> ReactionsByType);
 
 public sealed record MetaCredentialCheck(
     string Clave,
@@ -1356,7 +2014,10 @@ public sealed record MetaChannelInsight(
     long Clicks,
     long Seguidores,
     IReadOnlyList<string> Errors,
-    DateTimeOffset RevisadoEn)
+    DateTimeOffset RevisadoEn,
+    long VistasSeguidores = 0,
+    long VistasNoSeguidores = 0,
+    IReadOnlyDictionary<string, long>? Edades = null)
 {
     public static MetaChannelInsight NotConfigured(
         string canal,
@@ -1365,6 +2026,11 @@ public sealed record MetaChannelInsight(
         IReadOnlyList<string> requisitosFaltantes) =>
         new(canal, nombre, false, "NO_CONFIGURADO", mensaje, requisitosFaltantes, 0, 0, 0, 0, 0, 0, [], DateTimeOffset.UtcNow);
 }
+
+public sealed record MetaAudienceBreakdown(
+    long FollowerViews,
+    long NonFollowerViews,
+    IReadOnlyDictionary<string, long> Ages);
 
 public sealed record MetaInsightMetrics(
     IReadOnlyDictionary<string, long> Values,

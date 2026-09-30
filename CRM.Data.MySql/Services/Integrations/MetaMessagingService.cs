@@ -32,6 +32,12 @@ public sealed class MetaMessagingService
             return false;
         }
 
+        if (normalized == CanalSocial.Instagram)
+        {
+            return !string.IsNullOrWhiteSpace(GetInstagramAccountId()) &&
+                !string.IsNullOrWhiteSpace(GetInstagramLoginToken());
+        }
+
         return !string.IsNullOrWhiteSpace(GetPageId(normalized)) &&
             !string.IsNullOrWhiteSpace(GetAccessToken(normalized));
     }
@@ -39,6 +45,11 @@ public sealed class MetaMessagingService
     public async Task<string?> SendTextMessageAsync(string canal, string recipientId, string text)
     {
         var normalized = CanalSocial.Normalizar(canal);
+        if (normalized == CanalSocial.Instagram)
+        {
+            return await SendInstagramTextMessageAsync(recipientId, text);
+        }
+
         var pageId = GetPageId(normalized);
         var configuredToken = GetAccessToken(normalized);
 
@@ -79,6 +90,107 @@ public sealed class MetaMessagingService
                 "Meta Messaging devolvio HTTP {StatusCode} para {Canal}: {Body}",
                 (int)response.StatusCode,
                 normalized,
+                body);
+            throw new InvalidOperationException(BuildMetaMessagingError((int)response.StatusCode, body));
+        }
+
+        return ReadMessageId(body);
+    }
+
+    public async Task<string?> ReplyToPublicCommentAsync(string canal, string commentId, string text)
+    {
+        var normalized = CanalSocial.Normalizar(canal);
+        if (normalized is not (CanalSocial.Facebook or CanalSocial.Instagram))
+        {
+            throw new InvalidOperationException("Solo Facebook e Instagram admiten respuestas públicas desde Marketing.");
+        }
+
+        if (string.IsNullOrWhiteSpace(commentId) || string.IsNullOrWhiteSpace(text))
+        {
+            throw new InvalidOperationException("El comentario y la respuesta son obligatorios.");
+        }
+
+        var apiVersion = GetValue("Meta:ApiVersion") ?? _configuration["Meta:ApiVersion"] ?? "v26.0";
+        string accessToken;
+        string url;
+
+        if (normalized == CanalSocial.Instagram)
+        {
+            accessToken = GetInstagramLoginToken() ??
+                throw new InvalidOperationException("Falta el Access Token de Instagram.");
+            url = $"https://graph.instagram.com/{apiVersion}/{Uri.EscapeDataString(commentId)}/replies";
+        }
+        else
+        {
+            var pageId = GetPageId(normalized) ??
+                throw new InvalidOperationException("Falta el Page ID de Facebook.");
+            var configuredToken = GetAccessToken(normalized) ??
+                throw new InvalidOperationException("Falta el Access Token de Facebook.");
+            accessToken = await ResolvePageAccessTokenAsync(apiVersion, pageId, configuredToken);
+            url = $"https://graph.facebook.com/{apiVersion}/{Uri.EscapeDataString(commentId)}/comments";
+        }
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["message"] = text.Trim()
+        });
+
+        using var response = await _httpClient.SendAsync(request);
+        var body = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogWarning(
+                "Meta devolvio HTTP {StatusCode} al responder un comentario de {Canal}: {Body}",
+                (int)response.StatusCode,
+                normalized,
+                body);
+            throw new InvalidOperationException(BuildMetaMessagingError((int)response.StatusCode, body));
+        }
+
+        return ReadCreatedObjectId(body);
+    }
+
+    private async Task<string?> SendInstagramTextMessageAsync(string recipientId, string text)
+    {
+        var accountId = GetInstagramAccountId();
+        var accessToken = GetInstagramLoginToken();
+        if (string.IsNullOrWhiteSpace(accountId) || string.IsNullOrWhiteSpace(accessToken))
+        {
+            throw new InvalidOperationException(
+                "Faltan Instagram Professional User ID o Instagram Login Access Token.");
+        }
+
+        if (string.IsNullOrWhiteSpace(recipientId))
+        {
+            throw new InvalidOperationException("No hay identificador externo del cliente para responder.");
+        }
+
+        var apiVersion = GetValue("Meta:ApiVersion") ??
+            _configuration["Meta:ApiVersion"] ??
+            "v26.0";
+        var url = $"https://graph.instagram.com/{apiVersion}/{Uri.EscapeDataString(accountId)}/messages";
+        var payload = new
+        {
+            recipient = new { id = recipientId },
+            message = new { text }
+        };
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        request.Content = new StringContent(
+            JsonSerializer.Serialize(payload),
+            Encoding.UTF8,
+            "application/json");
+
+        using var response = await _httpClient.SendAsync(request);
+        var body = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogWarning(
+                "Instagram Send API devolvio HTTP {StatusCode}: {Body}",
+                (int)response.StatusCode,
                 body);
             throw new InvalidOperationException(BuildMetaMessagingError((int)response.StatusCode, body));
         }
@@ -201,12 +313,29 @@ public sealed class MetaMessagingService
             ? GetValue("Meta:Instagram:AccessToken")
             : GetValue("Meta:Facebook:AccessToken");
 
+    private string? GetInstagramAccountId() =>
+        GetValue("Meta:Instagram:InstagramBusinessAccountId") ??
+        GetValue("Meta:Instagram:LoginUserId");
+
+    private string? GetInstagramLoginToken() =>
+        GetValue("Meta:Instagram:LoginAccessToken") ??
+        GetValue("Meta:Instagram:AccessToken");
+
     private string? GetValue(string key) =>
         _socialIntegrations.GetConfiguredValue(key) ?? _configuration[key];
 
     private static string? ReadMessageId(string body)
     {
         using var document = JsonDocument.Parse(body);
+        return document.RootElement.TryGetProperty("message_id", out var messageId)
+            ? messageId.GetString()
+            : null;
+    }
+
+    private static string? ReadCreatedObjectId(string body)
+    {
+        using var document = JsonDocument.Parse(body);
+        if (document.RootElement.TryGetProperty("id", out var id)) return id.GetString();
         return document.RootElement.TryGetProperty("message_id", out var messageId)
             ? messageId.GetString()
             : null;

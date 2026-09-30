@@ -17,7 +17,8 @@ public async Task<long> ProcesarMensajeEntranteAsync(
     string mensaje,
     string tipo,
     string? whatsappId,
-    string? originPhoneNumberId = null)
+    string? originPhoneNumberId = null,
+    string? replyToExternalId = null)
 {
     telefono = telefono.Trim();
     var legacyDefaultPhoneNumberId = _numbers.DefaultPhoneNumberId;
@@ -198,6 +199,8 @@ public async Task<long> ProcesarMensajeEntranteAsync(
         cCanal = CanalSocial.WhatsApp,
 
         cExternalId = whatsappId,
+
+        cReplyToExternalId = replyToExternalId,
 
         cDireccion = 'E',
 

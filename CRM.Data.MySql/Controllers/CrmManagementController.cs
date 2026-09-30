@@ -66,7 +66,16 @@ public class CrmManagementController : ControllerBase
         [FromQuery] int? usuarioId = null,
         [FromQuery] int? etiquetaId = null)
     {
-        var query = _access.FiltrarClientes(_context.Clientes.AsNoTracking());
+        // En Contactos, cada asesor ve solamente clientes que tengan al menos
+        // una conversación asignada a él. Los chats sin asignar siguen siendo
+        // accesibles desde Comunicaciones para poder completar su ficha.
+        var clientes = _context.Clientes.AsNoTracking();
+        var query = _access.EsAsesor
+            ? UsuarioActualId.HasValue
+                ? clientes.Where(cliente => cliente.Conversaciones.Any(conversacion =>
+                    conversacion.nUsuarioAsignado == UsuarioActualId.Value))
+                : clientes.Where(_ => false)
+            : _access.FiltrarClientes(clientes);
         if (!string.IsNullOrWhiteSpace(search))
         {
             search = search.Trim();
@@ -376,9 +385,10 @@ public class CrmManagementController : ControllerBase
             return BadRequest("La contraseña debe tener al menos 8 caracteres.");
         }
 
-        if (!new[] { "Auditor", "Supervisor", "Asesor" }.Contains(rol, StringComparer.OrdinalIgnoreCase))
+        if (!new[] { CrmRoles.Auditor, CrmRoles.Supervisor, CrmRoles.Asesor, CrmRoles.Marketing }
+            .Contains(rol, StringComparer.OrdinalIgnoreCase))
         {
-            return BadRequest("El rol debe ser Auditor, Supervisor o Asesor. La cuenta Administrador es única.");
+            return BadRequest("El rol debe ser Auditor, Supervisor, Asesor o Marketing. La cuenta Administrador es única.");
         }
 
         if (await _context.Usuarios.AnyAsync(item => item.cUsuario == usuario))
@@ -432,10 +442,10 @@ public class CrmManagementController : ControllerBase
     public async Task<IActionResult> CambiarRol(int id, [FromBody] CambiarRolDto dto)
     {
         var rol = CrmRoles.Normalize(dto.Rol);
-        if (!new[] { CrmRoles.Auditor, CrmRoles.Supervisor, CrmRoles.Asesor }
+        if (!new[] { CrmRoles.Auditor, CrmRoles.Supervisor, CrmRoles.Asesor, CrmRoles.Marketing }
             .Contains(rol, StringComparer.OrdinalIgnoreCase))
         {
-            return BadRequest("El rol debe ser Auditor, Supervisor o Asesor.");
+            return BadRequest("El rol debe ser Auditor, Supervisor, Asesor o Marketing.");
         }
 
         var usuario = await _context.Usuarios.FirstOrDefaultAsync(item => item.nUsuario == id);
@@ -679,6 +689,66 @@ public class CrmManagementController : ControllerBase
         return Ok(new { success = true, id, usuarioId = dto.UsuarioId });
     }
 
+    [HttpPost("conversaciones/{id:long}/solicitar-reasignacion")]
+    [Authorize(Roles = "Asesor")]
+    public async Task<IActionResult> SolicitarReasignacion(long id)
+    {
+        if (!UsuarioActualId.HasValue)
+        {
+            return Unauthorized();
+        }
+
+        var conversacion = await _context.Conversaciones
+            .FirstOrDefaultAsync(item => item.nConversacion == id);
+        if (conversacion == null)
+        {
+            return NotFound("Conversación no encontrada.");
+        }
+
+        if (conversacion.nUsuarioAsignado != UsuarioActualId.Value)
+        {
+            return Forbid();
+        }
+
+        if (conversacion.cEstado is "CERRADO" or "PERDIDO" or "NO_RESPONDIO")
+        {
+            return BadRequest("No se puede solicitar la reasignación de una conversación finalizada.");
+        }
+
+        var asignadoAnterior = conversacion.nUsuarioAsignado.Value.ToString();
+        conversacion.nUsuarioAsignado = null;
+        conversacion.cEstado = "ABIERTO";
+        conversacion.cBotEstado = "ACTIVO";
+        conversacion.dBotPausadoDesde = null;
+        conversacion.nBotPausadoPor = null;
+
+        _context.NotasInternas.Add(new NotaInterna
+        {
+            nCliente = conversacion.nCliente,
+            nConversacion = conversacion.nConversacion,
+            cTexto = "El asesor solicitó transferir esta conversación. Quedó pendiente de reasignación.",
+            nCreadoPor = UsuarioActualId.Value,
+            dFecha = DateTime.Now
+        });
+
+        await _context.SaveChangesAsync();
+        await _auditoria.RegistrarAsync(
+            "Conversacion",
+            id,
+            "SOLICITUD_REASIGNACION",
+            asignadoAnterior,
+            "sin asignar",
+            UsuarioActualId);
+
+        return Ok(new
+        {
+            success = true,
+            id,
+            estado = conversacion.cEstado,
+            mensaje = "La conversación quedó disponible para que un supervisor la reasigne."
+        });
+    }
+
     [HttpPost("conversaciones/{id:long}/actualizar-perfil-meta")]
     [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
     public async Task<IActionResult> ActualizarPerfilMeta(long id)
@@ -779,6 +849,13 @@ public class CrmManagementController : ControllerBase
         if (cliente == null)
         {
             return NotFound("Cliente no encontrado.");
+        }
+
+        // Un asesor puede guardar la ficha de sus propios clientes y también
+        // la de un chat activo sin asignar que esté disponible para tomar.
+        if (!_access.TieneAccesoGlobal && !await _access.PuedeAccederClienteAsync(id))
+        {
+            return Forbid();
         }
 
         var datosAnteriores = $"{cliente.cNombre} / {cliente.cTelefono} / {cliente.cEmail}";
@@ -885,49 +962,6 @@ public class CrmManagementController : ControllerBase
             .ToListAsync();
 
         return CsvFile("contactos-crm.csv", new[] { "Nombre", "Telefono", "Email", "Documento", "Canal", "Conversaciones", "Ultima actividad" }, filas);
-    }
-
-    [HttpGet("comentarios")]
-    [Authorize(Roles = "Administrador,Supervisor,Auditor")]
-    public async Task<IActionResult> Comentarios([FromQuery] string? canal = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 100)
-    {
-        page = page < 1 ? 1 : page;
-        pageSize = pageSize is < 1 or > 200 ? 100 : pageSize;
-
-        var query = _access.FiltrarMensajes(_context.Mensajes.AsNoTracking())
-            .Where(mensaje => mensaje.cTipo == "comment");
-        if (!string.IsNullOrWhiteSpace(canal) && !canal.Equals("TODOS", StringComparison.OrdinalIgnoreCase))
-        {
-            var canalNormalizado = CanalSocial.Normalizar(canal);
-            query = query.Where(mensaje => mensaje.cCanal == canalNormalizado);
-        }
-
-        var total = await query.CountAsync();
-        var items = await query
-            .Include(mensaje => mensaje.Conversacion)
-            .ThenInclude(conversacion => conversacion.Cliente)
-            .OrderByDescending(mensaje => mensaje.dFecha)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(mensaje => new
-            {
-                id = mensaje.nMensaje,
-                canal = mensaje.cCanal,
-                texto = (string?)mensaje.cMensaje,
-                estado = mensaje.cEstado,
-                fecha = mensaje.dFecha,
-                externalId = mensaje.cExternalId,
-                conversacionId = mensaje.nConversacion,
-                cliente = new
-                {
-                    id = mensaje.Conversacion.Cliente.nCliente,
-                    nombre = mensaje.Conversacion.Cliente.cNombre,
-                    telefono = mensaje.Conversacion.Cliente.cTelefono
-                }
-            })
-            .ToListAsync();
-
-        return Ok(new { total, page, pageSize, items });
     }
 
     [HttpGet("fallos")]
@@ -1125,9 +1159,18 @@ public class CrmManagementController : ControllerBase
             .ToListAsync();
 
         var totalClientes = await clientesQuery.CountAsync();
-        var totalMensajes = await mensajesQuery.CountAsync();
-        var mensajesEntrantes = await mensajesQuery.CountAsync(mensaje => mensaje.cDireccion == 'E');
-        var mensajesSalientes = await mensajesQuery.CountAsync(mensaje => mensaje.cDireccion == 'S');
+        var estadisticasMensajes = await mensajesQuery
+            .GroupBy(_ => 1)
+            .Select(grupo => new
+            {
+                total = grupo.Count(),
+                entrantes = grupo.Count(mensaje => mensaje.cDireccion == 'E'),
+                salientes = grupo.Count(mensaje => mensaje.cDireccion == 'S')
+            })
+            .FirstOrDefaultAsync();
+        var totalMensajes = estadisticasMensajes?.total ?? 0;
+        var mensajesEntrantes = estadisticasMensajes?.entrantes ?? 0;
+        var mensajesSalientes = estadisticasMensajes?.salientes ?? 0;
         var oportunidadesPorEtapa = await oportunidadesQuery
             .GroupBy(oportunidad => oportunidad.cEtapa)
             .Select(grupo => new
@@ -1137,10 +1180,20 @@ public class CrmManagementController : ControllerBase
                 montoTotal = grupo.Sum(oportunidad => oportunidad.nMonto)
             })
             .ToListAsync();
-        var tareasPendientes = await tareasQuery.CountAsync(tarea => tarea.cEstado == "PENDIENTE");
-        var tareasVencidas = await tareasQuery
-            .CountAsync(tarea => tarea.cEstado == "PENDIENTE" && tarea.dFechaVencimiento < DateTime.Now);
-        var tareasCompletadas = await tareasQuery.CountAsync(tarea => tarea.cEstado == "COMPLETADA");
+        var ahora = DateTime.Now;
+        var estadisticasTareas = await tareasQuery
+            .GroupBy(_ => 1)
+            .Select(grupo => new
+            {
+                pendientes = grupo.Count(tarea => tarea.cEstado == "PENDIENTE"),
+                vencidas = grupo.Count(tarea =>
+                    tarea.cEstado == "PENDIENTE" && tarea.dFechaVencimiento < ahora),
+                completadas = grupo.Count(tarea => tarea.cEstado == "COMPLETADA")
+            })
+            .FirstOrDefaultAsync();
+        var tareasPendientes = estadisticasTareas?.pendientes ?? 0;
+        var tareasVencidas = estadisticasTareas?.vencidas ?? 0;
+        var tareasCompletadas = estadisticasTareas?.completadas ?? 0;
         var ventasGanadas = oportunidadesPorEtapa
             .Where(item => item.etapa == "GANADA")
             .Sum(item => item.montoTotal);

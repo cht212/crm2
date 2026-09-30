@@ -99,6 +99,10 @@
                 if (version !== moduloNavegacionVersion || moduloActual !== modulo) {
                     return;
                 }
+
+                if (typeof prepararTablasResponsivas === "function") {
+                    prepararTablasResponsivas(vista);
+                }
             } catch (error) {
                 if (error?.name === "AbortError") {
                     return;

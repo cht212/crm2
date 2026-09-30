@@ -122,7 +122,7 @@ public sealed class CrmPermissionService
         {
             return new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
-                SendMessages, ManageTasks, ManageSales, CreateContacts,
+                EditContacts, SendMessages, ManageTasks, ManageSales, CreateContacts,
                 AttendConversations, ManageNotes
             };
         }
@@ -136,19 +136,32 @@ public sealed class CrmPermissionService
             };
         }
 
+        if (normalized.Equals(CrmRoles.Marketing, StringComparison.OrdinalIgnoreCase))
+        {
+            return new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ModuleMarketing,
+                ManageMarketing
+            };
+        }
+
         return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     }
 
     public static string? ResolveMutationPermission(PathString path)
     {
         var value = path.Value?.ToLowerInvariant() ?? string.Empty;
-        if (value is "/api/auth/logout" || value.Contains("/webhook")) return null;
+        // Los endpoints de autenticación no son operaciones del CRM. En
+        // particular, login debe funcionar aunque el navegador conserve una
+        // cookie de una sesión anterior con permisos limitados.
+        if (value.StartsWith("/api/auth") || value.Contains("/webhook")) return null;
         if (value.StartsWith("/api/crm/usuarios")) return "administracion.usuarios";
         if (value.Contains("/asignar") || value.Contains("/asignar-pendientes")) return AssignConversations;
         if (value.StartsWith("/api/whatsapp"))
-            return value.EndsWith("/bot") ? ManageBot : SendMessages;
+            return value.EndsWith("/bot") ? AttendConversations : SendMessages;
         if (value.StartsWith("/api/tareas")) return ManageTasks;
         if (value.StartsWith("/api/oportunidades")) return ManageSales;
+        if (value.StartsWith("/api/crm/comentarios")) return ManageMarketing;
         if (value.StartsWith("/api/campanas") || value.StartsWith("/api/automatizacion")) return ManageMarketing;
         if (value.StartsWith("/api/bot") || value.StartsWith("/api/plantillas")) return ManageBot;
         if (value.StartsWith("/api/integraciones")) return ManageIntegrations;

@@ -68,4 +68,14 @@
             notificarEscribiendo();
         });
 
+        const vistaModulosResponsive = document.getElementById("moduleView");
+        if (vistaModulosResponsive) {
+            prepararTablasResponsivas(vistaModulosResponsive);
+            new MutationObserver(cambios => {
+                cambios.forEach(cambio => cambio.addedNodes.forEach(nodo => {
+                    if (nodo.nodeType === Node.ELEMENT_NODE) prepararTablasResponsivas(nodo);
+                }));
+            }).observe(vistaModulosResponsive, { childList: true, subtree: true });
+        }
+
         iniciarAplicacion();

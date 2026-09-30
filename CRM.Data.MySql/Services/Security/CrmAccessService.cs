@@ -154,6 +154,20 @@ public sealed class CrmAccessService
             .AnyAsync(conversacion => conversacion.nConversacion == conversacionId);
     }
 
+    public async Task<bool> PuedeControlarBotConversacionAsync(long conversacionId)
+    {
+        if (TieneAccesoGlobal)
+        {
+            return await _context.Conversaciones.AsNoTracking()
+                .AnyAsync(conversacion => conversacion.nConversacion == conversacionId);
+        }
+
+        return UsuarioActualId.HasValue &&
+            await _context.Conversaciones.AsNoTracking().AnyAsync(conversacion =>
+                conversacion.nConversacion == conversacionId &&
+                conversacion.nUsuarioAsignado == UsuarioActualId.Value);
+    }
+
     public async Task<bool> PuedeAccederClienteAsync(long clienteId)
     {
         return await FiltrarClientes(_context.Clientes.AsNoTracking())

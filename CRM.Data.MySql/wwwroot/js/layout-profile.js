@@ -57,6 +57,41 @@
             if (source && slot) slot.replaceWith(source.cloneNode(true));
         });
 
+        function aplicarEnlacesPublicos(canales = []) {
+            const enlaces = new Map(canales.map(canal => [String(canal.canal || "").toUpperCase(), canal.publicUrl || ""]));
+            document.querySelectorAll("[data-social-brand]").forEach(item => {
+                const urlConfigurada = enlaces.get(item.dataset.socialBrand) || item.getAttribute("href") || "";
+                let urlValida = "";
+                try {
+                    const candidata = new URL(urlConfigurada);
+                    if (["http:", "https:"].includes(candidata.protocol)) urlValida = candidata.href;
+                } catch { }
+
+                if (urlValida) {
+                    item.href = urlValida;
+                    item.target = "_blank";
+                    item.rel = "noopener noreferrer";
+                    item.classList.remove("social-link-pending");
+                    item.removeAttribute("aria-disabled");
+                } else {
+                    item.removeAttribute("href");
+                    item.removeAttribute("target");
+                    item.classList.add("social-link-pending");
+                    item.setAttribute("aria-disabled", "true");
+                }
+            });
+        }
+
+        async function cargarEnlacesPublicos() {
+            try {
+                const response = await fetch("/api/integraciones/canales", { credentials: "same-origin" });
+                if (response.ok) aplicarEnlacesPublicos(await response.json());
+            } catch { }
+        }
+
+        window.actualizarEnlacesPublicos = aplicarEnlacesPublicos;
+        cargarEnlacesPublicos();
+
         // obtenerIniciales() vive en utils.js (única fuente; antes estaba
         // duplicada aquí y en customer-panel.js con el mismo código).
 

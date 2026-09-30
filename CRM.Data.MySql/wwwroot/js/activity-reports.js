@@ -259,8 +259,8 @@
         }
 
         async function cargarModuloMarketing(vista) {
-            if (!puedeGestionarEquipoCRM()) {
-                vista.innerHTML = '<div class="error">Solo administradores y supervisores pueden consultar Marketing.</div>';
+            if (!puedeVerModulo("marketing")) {
+                vista.innerHTML = '<div class="error">No tienes permiso para consultar Marketing.</div>';
                 return;
             }
 
@@ -271,8 +271,8 @@
             const canalActivo = String(marketingFiltros.canal || "TODOS").toUpperCase();
             const params = new URLSearchParams({ desde: marketingFiltros.desde, hasta: marketingFiltros.hasta });
             const comentariosUrl = canalActivo === "TODOS"
-                ? "/api/crm/comentarios?pageSize=12"
-                : `/api/crm/comentarios?pageSize=12&canal=${encodeURIComponent(canalActivo)}`;
+                ? "/api/crm/comentarios?pageSize=200"
+                : `/api/crm/comentarios?pageSize=200&canal=${encodeURIComponent(canalActivo)}`;
             vista.innerHTML = `
                 <div class="module-heading marketing-heading"><div><h1>Marketing</h1><p>Preparando publicaciones, comentarios e indicadores de las redes conectadas.</p></div></div>
                 <div class="marketing-loading"><i data-lucide="loader-circle"></i><span>Cargando analítica social…</span></div>`;
@@ -282,11 +282,13 @@
                 api(url).catch(() => null),
                 new Promise(resolve => setTimeout(() => resolve(null), limiteMs))
             ]);
-            const [publicacionesResponse, metaResponse, comentariosResponse] = await Promise.all([
+            const [publicacionesResponse, metaResponse] = await Promise.all([
                 consultarConLimite(`/api/integraciones/publicaciones/estadisticas?${params}`),
-                consultarConLimite(`/api/integraciones/meta/estadisticas?${params}`),
-                consultarConLimite(comentariosUrl, 8000)
+                consultarConLimite(`/api/integraciones/meta/estadisticas?${params}`)
             ]);
+            // Publicaciones sincroniza primero los comentarios que Meta reporta.
+            // La lectura local se hace después para que el contador y la lista coincidan.
+            const comentariosResponse = await consultarConLimite(comentariosUrl, 8000);
 
             const publicacionesData = publicacionesResponse?.ok ? await publicacionesResponse.json() : { canales: [], serie: [] };
             const metaData = metaResponse?.ok ? await metaResponse.json() : { canales: [], success: false };
@@ -300,7 +302,63 @@
                 .sort((a, b) => String(b.publicadoEn || "").localeCompare(String(a.publicadoEn || "")));
             const serie = (publicacionesData.serie || []).filter(item => perteneceAlCanal(item.canal));
             const comentarios = (comentariosData.items || []).filter(item => perteneceAlCanal(item.canal));
-            const insights = (metaData.canales || []).filter(item => perteneceAlCanal(item.canal));
+            const fuenteTikTok = (publicacionesData.canales || []).find(item =>
+                String(item.canal || "").toUpperCase() === "TIKTOK");
+            const publicacionesTikTok = fuenteTikTok?.posts || [];
+            const resumenTikTok = {
+                canal: "TIKTOK",
+                nombre: "TikTok",
+                configurado: Boolean(fuenteTikTok?.configured ?? fuenteTikTok?.configurado),
+                estado: fuenteTikTok?.error
+                    ? "ERROR"
+                    : (fuenteTikTok?.configured ?? fuenteTikTok?.configurado) ? "OPERATIVO" : "PENDIENTE",
+                mensaje: fuenteTikTok?.error || ((fuenteTikTok?.configured ?? fuenteTikTok?.configurado)
+                    ? "Métricas de TikTok leídas correctamente desde Display API."
+                    : "Configura el token de TikTok Display API con permiso video.list."),
+                vistas: publicacionesTikTok.reduce((total, item) => total + Number(item.visualizaciones || 0), 0),
+                meGusta: publicacionesTikTok.reduce((total, item) => total + Number(item.meGusta || 0), 0),
+                comentarios: publicacionesTikTok.reduce((total, item) => total + Number(item.comentarios || 0), 0),
+                compartidos: publicacionesTikTok.reduce((total, item) => total + Number(item.compartidos || 0), 0)
+            };
+            const crearTarjetaMeta = (canal, nombre) => {
+                const fuente = (publicacionesData.canales || []).find(item =>
+                    String(item.canal || "").toUpperCase() === canal);
+                const insight = (metaData.canales || []).find(item =>
+                    String(item.canal || "").toUpperCase() === canal);
+                if (insight) return { ...insight, commentsError: fuente?.commentsError };
+
+                const configurado = Boolean(fuente?.configured ?? fuente?.configurado);
+                return {
+                    canal,
+                    nombre,
+                    configurado,
+                    estado: fuente?.error ? "ERROR" : configurado ? "SIN DATOS" : "PENDIENTE",
+                    commentsError: fuente?.commentsError,
+                    mensaje: fuente?.error || (configurado
+                        ? `No se recibieron estadísticas de ${nombre} en esta consulta.`
+                        : `Configura la conexión de ${nombre} para consultar sus estadísticas.`)
+                };
+            };
+            // Estas tarjetas representan el estado general de las tres redes y
+            // permanecen visibles aunque el filtro inferior seleccione una sola.
+            const tarjetasCanal = [
+                crearTarjetaMeta("FACEBOOK", "Facebook"),
+                crearTarjetaMeta("INSTAGRAM", "Instagram"),
+                resumenTikTok
+            ];
+            const insightInstagram = (metaData.canales || []).find(item =>
+                String(item.canal || "").toUpperCase() === "INSTAGRAM") || {};
+            const vistasSeguidores = Number(insightInstagram.vistasSeguidores || 0);
+            const vistasNoSeguidores = Number(insightInstagram.vistasNoSeguidores || 0);
+            const totalVistasAudiencia = vistasSeguidores + vistasNoSeguidores;
+            const porcentajeSeguidores = totalVistasAudiencia
+                ? Math.round(vistasSeguidores * 100 / totalVistasAudiencia)
+                : 0;
+            const edadesAudiencia = Object.entries(insightInstagram.edades || {})
+                .map(([rango, cantidad]) => [rango, Number(cantidad || 0)])
+                .filter(([, cantidad]) => cantidad > 0)
+                .sort((a, b) => String(a[0]).localeCompare(String(b[0])));
+            const maxEdadAudiencia = Math.max(1, ...edadesAudiencia.map(([, cantidad]) => cantidad));
             const redesMarketing = [
                 { valor: "TODOS", etiqueta: "Todas", logo: "all" },
                 { valor: "FACEBOOK", etiqueta: "Facebook", logo: "facebook" },
@@ -313,8 +371,9 @@
                 meGusta: acumulado.meGusta + Number(item.meGusta || 0),
                 comentarios: acumulado.comentarios + Number(item.comentarios || 0),
                 compartidos: acumulado.compartidos + Number(item.compartidos || 0),
-                visualizaciones: acumulado.visualizaciones + Number(item.visualizaciones || 0)
-            }), { publicaciones: 0, meGusta: 0, comentarios: 0, compartidos: 0, visualizaciones: 0 });
+                visualizaciones: acumulado.visualizaciones + Number(item.visualizaciones ?? 0),
+                publicacionesConVistas: acumulado.publicacionesConVistas + (item.visualizaciones == null ? 0 : 1)
+            }), { publicaciones: 0, meGusta: 0, comentarios: 0, compartidos: 0, visualizaciones: 0, publicacionesConVistas: 0 });
             const serieInteracciones = serie.map(item => ({
                 ...item,
                 interacciones: Number(item.meGusta || 0) + Number(item.comentarios || 0) + Number(item.compartidos || 0)
@@ -323,6 +382,158 @@
             const urlSegura = url => {
                 try { return new URL(url).protocol === "https:" ? url : ""; }
                 catch { return ""; }
+            };
+            const puedeResponderComentarios = esRol("administrador") || tienePermiso("marketing.gestionar");
+            const renderComentarioMarketing = item => {
+                const canalComentario = String(item.canal || "").toUpperCase();
+                const admiteRespuesta = ["FACEBOOK", "INSTAGRAM"].includes(canalComentario) && item.externalId;
+                const respuestas = Array.isArray(item.respuestas) ? item.respuestas : [];
+                return `<article class="marketing-comment-item">
+                    <header>${crearLogoRed(canalComentario.toLowerCase())}<span><strong>${escapeHtml(item.cliente?.nombre || "Usuario de red")}</strong><small>${escapeHtml(formatearFecha(item.fecha))}</small></span></header>
+                    <p>${escapeHtml(String(item.texto || "").replace(/^Comentario:\s*/i, ""))}</p>
+                    ${respuestas.map(respuesta => `<div class="marketing-comment-answer"><strong>Respuesta de Marketing</strong><span>${escapeHtml(respuesta.texto || "")}</span><small>${escapeHtml(formatearFecha(respuesta.fecha))}</small></div>`).join("")}
+                    ${puedeResponderComentarios && admiteRespuesta ? `<form class="marketing-comment-reply" data-marketing-comment-reply="${Number(item.id)}">
+                        <textarea name="texto" maxlength="1000" rows="2" placeholder="Escribe una respuesta pública…" aria-label="Respuesta pública" required></textarea>
+                        <button type="submit"><i data-lucide="reply"></i><span>Responder públicamente</span></button>
+                    </form>` : !admiteRespuesta ? '<small class="marketing-comment-help">Esta red no permite responder este comentario desde el CRM.</small>' : ""}
+                </article>`;
+            };
+
+            const mostrarDetallePublicacion = item => {
+                const canal = String(item.canal || "").toUpperCase();
+                const canalLogo = canal.toLowerCase();
+                const imagen = urlSegura(item.imagenUrl);
+                const enlace = urlSegura(item.url);
+                const tipo = String(item.tipo || "PUBLICACION").replaceAll("_", " ");
+                const comentariosDePublicacion = comentarios.filter(comentario =>
+                    String(comentario.publicacionId || "") === String(item.id || ""));
+                const fuentePublicacion = canalesPublicacion.find(canalPublicacion =>
+                    String(canalPublicacion.canal || "").toUpperCase() === canal);
+                const errorComentarios = fuentePublicacion?.commentsError;
+                const meGusta = Number(item.meGusta || 0);
+                const cantidadComentarios = Number(item.comentarios || 0);
+                const compartidos = Number(item.compartidos || 0);
+                const visualizaciones = item.visualizaciones == null ? null : Number(item.visualizaciones || 0);
+                const interacciones = meGusta + cantidadComentarios + compartidos;
+                const reaccionesPorTipo = { ...(item.reacciones || {}) };
+                if (canal === "FACEBOOK" && !Object.values(reaccionesPorTipo).some(Number) && meGusta > 0) {
+                    reaccionesPorTipo.like = meGusta;
+                }
+                const tiposReaccion = canal === "FACEBOOK"
+                    ? [
+                        ["like", "👍", "Me gusta"],
+                        ["love", "❤️", "Me encanta"],
+                        ["care", "🥰", "Me importa"],
+                        ["haha", "😆", "Me divierte"],
+                        ["wow", "😮", "Me asombra"],
+                        ["sorry", "😢", "Me entristece"],
+                        ["anger", "😡", "Me enfada"]
+                    ]
+                    : [["like", "❤️", "Me gusta"]];
+
+                vista.innerHTML = `
+                    <div class="marketing-detail-heading">
+                        <button type="button" class="marketing-detail-back" data-marketing-detail-back><i data-lucide="arrow-left"></i><span>Volver a publicaciones</span></button>
+                        <div><span class="panel-kicker">Biblioteca de contenido</span><h1>Insights de la publicación</h1><p>${escapeHtml(canal)} · ${escapeHtml(tipo)} · ${escapeHtml(String(item.publicadoEn || "").slice(0, 10) || "Sin fecha")}</p></div>
+                        ${enlace ? `<a class="secondary-btn" href="${escapeAttribute(enlace)}" target="_blank" rel="noopener noreferrer"><span>Ver original</span><i data-lucide="external-link"></i></a>` : ""}
+                    </div>
+                    <section class="marketing-publication-detail">
+                        <aside class="marketing-detail-preview">
+                            <div class="marketing-detail-media">${imagen
+                                ? `<img src="${escapeAttribute(imagen)}" alt="Vista de la publicación">`
+                                : `<span>${crearLogoRed(canalLogo)}<small>Vista previa no disponible</small></span>`}
+                                <div class="marketing-publication-badge">${crearLogoRed(canalLogo)}<span>${escapeHtml(canal)} · ${escapeHtml(tipo)}</span></div>
+                            </div>
+                            <div class="marketing-detail-copy">
+                                <p>${escapeHtml(item.texto || "Publicación sin texto")}</p>
+                                <div class="marketing-detail-inline-metrics">
+                                    <span><i data-lucide="heart"></i>${formatearNumero(meGusta)}</span>
+                                    <span><i data-lucide="message-circle"></i>${formatearNumero(cantidadComentarios)}</span>
+                                    <span><i data-lucide="share-2"></i>${formatearNumero(compartidos)}</span>
+                                    <span><i data-lucide="eye"></i>${visualizaciones == null ? "—" : formatearNumero(visualizaciones)}</span>
+                                </div>
+                            </div>
+                            <section class="marketing-detail-comments">
+                                <div class="marketing-detail-section-title"><div><span class="panel-kicker">Comunidad</span><h2>Comentarios</h2></div><span class="alert-chip">${formatearNumero(comentariosDePublicacion.length)}</span></div>
+                                <div class="marketing-comments-list">${comentariosDePublicacion.map(renderComentarioMarketing).join("") || (errorComentarios
+                                    ? `<div class="marketing-comment-sync-error"><i data-lucide="shield-alert"></i><span>${escapeHtml(errorComentarios)}</span>${puedeVerModulo("conexiones") ? '<button type="button" data-marketing-connections>Revisar conexión</button>' : ""}</div>`
+                                    : '<div class="empty">Esta publicación todavía no tiene comentarios recibidos en el CRM.</div>')}</div>
+                            </section>
+                        </aside>
+                        <div class="marketing-detail-insights">
+                            <article class="marketing-insight-card marketing-insight-overview">
+                                <div class="marketing-detail-section-title"><div><span class="panel-kicker">Resultado</span><h2>Rendimiento de la publicación</h2></div>${crearLogoRed(canalLogo)}</div>
+                                <div class="marketing-detail-kpis">
+                                    <span class="${visualizaciones == null ? "unavailable" : ""}"><i data-lucide="eye"></i><strong>${visualizaciones == null ? "—" : formatearNumero(visualizaciones)}</strong><small>Visualizaciones</small></span>
+                                    <span><i data-lucide="mouse-pointer-click"></i><strong>${formatearNumero(interacciones)}</strong><small>Interacciones</small></span>
+                                    <span><i data-lucide="heart"></i><strong>${formatearNumero(meGusta)}</strong><small>${canal === "FACEBOOK" ? "Reacciones" : "Me gusta"}</small></span>
+                                    <span><i data-lucide="message-circle"></i><strong>${formatearNumero(cantidadComentarios)}</strong><small>Comentarios</small></span>
+                                    <span><i data-lucide="share-2"></i><strong>${formatearNumero(compartidos)}</strong><small>Compartidos</small></span>
+                                </div>
+                            </article>
+                            <article class="marketing-insight-card marketing-reactions-card">
+                                <div class="marketing-detail-section-title"><div><span class="panel-kicker">Reacciones</span><h2>${canal === "FACEBOOK" ? "Reacción por tipo" : "Me gusta de la publicación"}</h2></div><strong>${formatearNumero(meGusta)}</strong></div>
+                                <div class="marketing-reaction-types">
+                                    ${tiposReaccion.map(([clave, emoji, etiqueta]) => `<div><span aria-hidden="true">${emoji}</span><strong>${formatearNumero(Number(reaccionesPorTipo[clave] || (canal !== "FACEBOOK" && clave === "like" ? meGusta : 0)))}</strong><small>${etiqueta}</small></div>`).join("")}
+                                </div>
+                            </article>
+                            ${canal === "INSTAGRAM" ? `
+                                <article class="marketing-insight-card">
+                                    <div class="marketing-detail-section-title"><div><span class="panel-kicker">Audiencia del periodo · Instagram</span><h2>Seguidores frente a no seguidores</h2></div><i data-lucide="pie-chart"></i></div>
+                                    ${totalVistasAudiencia ? `<div class="marketing-follow-split">
+                                        <div class="marketing-follow-donut" style="--followers:${porcentajeSeguidores}%"><strong>${formatearNumero(totalVistasAudiencia)}</strong><small>vistas</small></div>
+                                        <div><span><i class="followers"></i>Seguidores<strong>${porcentajeSeguidores}% · ${formatearNumero(vistasSeguidores)}</strong></span><span><i class="non-followers"></i>No seguidores<strong>${100 - porcentajeSeguidores}% · ${formatearNumero(vistasNoSeguidores)}</strong></span></div>
+                                    </div>` : '<div class="marketing-audience-empty"><i data-lucide="users"></i><strong>Sin muestra en el periodo</strong><p>Instagram todavía no entregó vistas clasificadas entre seguidores y no seguidores para las fechas seleccionadas.</p></div>'}
+                                </article>
+                                <article class="marketing-insight-card">
+                                    <div class="marketing-detail-section-title"><div><span class="panel-kicker">Audiencia del periodo · Instagram</span><h2>Edad de los seguidores</h2></div><i data-lucide="bar-chart-3"></i></div>
+                                    ${edadesAudiencia.length ? `<div class="marketing-age-bars">${edadesAudiencia.map(([rango, cantidad]) => `<div><span>${escapeHtml(rango)}</span><b><i style="width:${Math.round(cantidad * 100 / maxEdadAudiencia)}%"></i></b><strong>${formatearNumero(cantidad)}</strong></div>`).join("")}</div>` : '<div class="marketing-audience-empty"><i data-lucide="shield-check"></i><strong>Aún no hay una muestra suficiente</strong><p>Meta protege estos datos y normalmente los habilita cuando la cuenta profesional supera 100 seguidores y registra actividad reciente.</p></div>'}
+                                </article>` : `
+                                <article class="marketing-insight-card marketing-insight-unavailable">
+                                    <div class="marketing-detail-section-title"><div><span class="panel-kicker">Audiencia</span><h2>Seguidores frente a no seguidores</h2></div><i data-lucide="users"></i></div>
+                                    <div><i data-lucide="pie-chart"></i><strong>No disponible para esta publicación</strong><p>${canal === "FACEBOOK" ? "Facebook no entregó este desglose para la publicación mediante la API conectada." : "TikTok no entregó este desglose para la publicación mediante la API conectada."}</p></div>
+                                </article>
+                                <article class="marketing-insight-card marketing-insight-unavailable">
+                                    <div class="marketing-detail-section-title"><div><span class="panel-kicker">Demografía</span><h2>Edad de la audiencia</h2></div><i data-lucide="bar-chart-3"></i></div>
+                                    <div><i data-lucide="shield-check"></i><strong>No disponible para esta publicación</strong><p>La red social no entregó una muestra demográfica para este contenido mediante la API conectada.</p></div>
+                                </article>`}
+                        </div>
+                    </section>`;
+
+                if (window.lucide) window.lucide.createIcons();
+                vista.querySelector("[data-marketing-detail-back]")?.addEventListener("click", () => cargarModuloMarketing(vista));
+                vista.querySelectorAll("[data-marketing-connections]").forEach(button =>
+                    button.addEventListener("click", () => abrirModulo("conexiones")));
+                vista.querySelectorAll("[data-marketing-comment-reply]").forEach(form => form.addEventListener("submit", async event => {
+                    event.preventDefault();
+                    const comentarioId = Number(form.dataset.marketingCommentReply);
+                    const textarea = form.querySelector("textarea[name='texto']");
+                    const texto = textarea?.value.trim() || "";
+                    const button = form.querySelector("button[type='submit']");
+                    if (!comentarioId || !texto) return;
+                    button.disabled = true;
+                    try {
+                        const response = await api(`/api/crm/comentarios/${comentarioId}/respuestas`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ texto })
+                        });
+                        if (!response.ok) {
+                            const error = await response.json().catch(() => ({}));
+                            throw new Error(error.message || "No se pudo publicar la respuesta.");
+                        }
+                        const respuesta = await response.json();
+                        const comentario = comentarios.find(actual => Number(actual.id) === comentarioId);
+                        if (comentario) {
+                            comentario.respuestas = [...(comentario.respuestas || []), respuesta];
+                        }
+                        notificar("Respuesta publicada en la red social.", "success");
+                        mostrarDetallePublicacion(item);
+                    } catch (error) {
+                        notificar(error.message || "No se pudo publicar la respuesta.", "error");
+                        button.disabled = false;
+                    }
+                }));
             };
 
             vista.innerHTML = `
@@ -354,66 +565,59 @@
                     <article><i data-lucide="heart"></i><span>Me gusta</span><strong>${formatearNumero(total.meGusta)}</strong></article>
                     <article><i data-lucide="message-circle"></i><span>Comentarios</span><strong>${formatearNumero(total.comentarios)}</strong></article>
                     <article><i data-lucide="share-2"></i><span>Compartidos</span><strong>${formatearNumero(total.compartidos)}</strong></article>
-                    <article><i data-lucide="eye"></i><span>Vistas / impresiones</span><strong>${formatearNumero(total.visualizaciones)}</strong></article>
+                    <article><i data-lucide="eye"></i><span>Vistas disponibles</span><strong>${total.publicacionesConVistas ? formatearNumero(total.visualizaciones) : "—"}</strong></article>
                 </section>
 
                 <section class="marketing-channel-grid">
-                    ${insights.map(canal => `
-                        <article class="marketing-channel-card ${canal.estado === "ERROR" ? "danger" : canal.configurado ? "ready" : "warning"}">
-                            <div class="marketing-channel-head">${crearLogoRed(String(canal.canal || "").toLowerCase())}<div><h2>${escapeHtml(canal.nombre || canal.canal)}</h2><span>${escapeHtml(canal.estado || "Sin datos")}</span></div></div>
+                    ${tarjetasCanal.map(canal => `
+                        <article class="marketing-channel-card ${canal.estado === "ERROR" ? "danger" : canal.commentsError ? "warning" : canal.configurado ? "ready" : "warning"}">
+                            <div class="marketing-channel-head">${crearLogoRed(String(canal.canal || "").toLowerCase())}<div><h2>${escapeHtml(canal.nombre || canal.canal)}</h2><span>${escapeHtml(canal.commentsError ? "PERMISO PENDIENTE" : canal.estado || "Sin datos")}</span></div></div>
                             <div class="marketing-channel-metrics">
-                                <span><small>Alcance</small><strong>${formatearNumero(canal.alcance || 0)}</strong></span>
-                                <span><small>Impresiones</small><strong>${formatearNumero(canal.impresiones || 0)}</strong></span>
-                                <span><small>Interacciones</small><strong>${formatearNumero(canal.interacciones || 0)}</strong></span>
-                                ${String(canal.canal).toUpperCase() === "INSTAGRAM"
-                                    ? `<span><small>Visitas al perfil</small><strong>${formatearNumero(canal.visitasPerfil || 0)}</strong></span><span><small>Clics al sitio</small><strong>${formatearNumero(canal.clicks || 0)}</strong></span>`
-                                    : `<span><small>Seguidores</small><strong>${formatearNumero(canal.seguidores || 0)}</strong></span>`}
+                                ${String(canal.canal).toUpperCase() === "TIKTOK"
+                                    ? `<span><small>Vistas</small><strong>${formatearNumero(canal.vistas || 0)}</strong></span><span><small>Me gusta</small><strong>${formatearNumero(canal.meGusta || 0)}</strong></span><span><small>Comentarios</small><strong>${formatearNumero(canal.comentarios || 0)}</strong></span><span><small>Compartidos</small><strong>${formatearNumero(canal.compartidos || 0)}</strong></span>`
+                                    : `<span><small>Alcance</small><strong>${formatearNumero(canal.alcance || 0)}</strong></span>
+                                        <span><small>Impresiones</small><strong>${formatearNumero(canal.impresiones || 0)}</strong></span>
+                                        <span><small>Interacciones</small><strong>${formatearNumero(canal.interacciones || 0)}</strong></span>
+                                        ${String(canal.canal).toUpperCase() === "INSTAGRAM"
+                                            ? `<span><small>Visitas al perfil</small><strong>${formatearNumero(canal.visitasPerfil || 0)}</strong></span><span><small>Clics al sitio</small><strong>${formatearNumero(canal.clicks || 0)}</strong></span>`
+                                            : `<span><small>Seguidores</small><strong>${formatearNumero(canal.seguidores || 0)}</strong></span>`}`}
                             </div>
-                            <p>${escapeHtml(canal.mensaje || "")}</p>
+                            <p>${escapeHtml(canal.commentsError || canal.mensaje || "")}</p>
                         </article>`).join("") || '<article class="marketing-channel-card warning"><h2>Insights de Meta</h2><p>No hay métricas disponibles. Revisa las conexiones y permisos.</p></article>'}
                 </section>
 
-                <section class="marketing-layout">
+                <section class="marketing-layout marketing-layout-single">
                     <article class="meta-panel marketing-chart-panel">
                         <div class="panel-heading-with-action"><div><span class="panel-kicker">Tendencia</span><h2>Interacciones por día</h2></div><small>Me gusta + comentarios + compartidos</small></div>
                         <div class="marketing-chart">
                             ${serieInteracciones.map(item => `<div class="marketing-chart-row"><span>${escapeHtml(String(item.fecha))}</span><b>${escapeHtml(item.canal)}</b><span class="marketing-chart-track"><i style="width:${Math.max(3, Math.round(item.interacciones * 100 / maxInteracciones))}%"></i></span><strong>${formatearNumero(item.interacciones)}</strong></div>`).join("") || '<div class="empty">No hay interacciones para graficar en este periodo.</div>'}
                         </div>
                     </article>
-                    <article class="meta-panel marketing-status-panel">
-                        <div class="panel-heading-with-action"><div><span class="panel-kicker">Disponibilidad</span><h2>Estado de datos</h2></div></div>
-                        <div class="marketing-source-list">
-                            ${canalesPublicacion.map(canal => `<div class="${canal.error ? "danger" : "ready"}">${crearLogoRed(String(canal.canal || "").toLowerCase())}<span><strong>${escapeHtml(canal.canal)}</strong><small>${canal.error ? escapeHtml(canal.error) : `${formatearNumero(canal.posts?.length || 0)} publicaciones leídas`}</small></span></div>`).join("") || '<div class="empty">Sin fuentes configuradas.</div>'}
-                        </div>
-                    </article>
                 </section>
 
                 <section class="meta-panel marketing-publications-panel">
                     <div class="panel-heading-with-action"><div><span class="panel-kicker">Contenido</span><h2>Publicaciones y rendimiento</h2><p>Revisa la pieza publicada junto con sus resultados.</p></div><span class="alert-chip">${formatearNumero(publicaciones.length)} resultados</span></div>
-                    <div class="marketing-publication-grid">${publicaciones.map(item => {
+                    <div class="marketing-publication-grid">${publicaciones.map((item, index) => {
                         const imagen = urlSegura(item.imagenUrl);
                         const enlace = urlSegura(item.url);
                         const canal = String(item.canal || "").toLowerCase();
+                        const tipo = String(item.tipo || "PUBLICACION").replaceAll("_", " ");
                         const contenido = escapeHtml((item.texto || item.id || "Publicación sin texto").slice(0, 280));
-                        return `<article class="marketing-publication-card">
-                            <div class="marketing-publication-media">${imagen ? `<img src="${escapeAttribute(imagen)}" alt="Vista de la publicación" loading="lazy">` : `<span>${crearLogoRed(canal)}<small>Vista previa no disponible</small></span>`}<div class="marketing-publication-badge">${crearLogoRed(canal)}<span>${escapeHtml(item.canal || "Red social")}</span></div></div>
+                        return `<article class="marketing-publication-card" data-marketing-publication-card="${index}">
+                            <div class="marketing-publication-media">${imagen ? `<img src="${escapeAttribute(imagen)}" alt="Vista de la publicación" loading="lazy">` : `<span>${crearLogoRed(canal)}<small>Vista previa no disponible</small></span>`}<div class="marketing-publication-badge">${crearLogoRed(canal)}<span>${escapeHtml(item.canal || "Red social")} · ${escapeHtml(tipo)}</span></div></div>
                             <div class="marketing-publication-body"><time>${escapeHtml(String(item.publicadoEn || "").slice(0, 10) || "Sin fecha")}</time><p>${contenido}</p>
-                                <div class="marketing-publication-metrics"><span><i data-lucide="heart"></i><b>${formatearNumero(item.meGusta || 0)}</b><small>Me gusta</small></span><span><i data-lucide="message-circle"></i><b>${formatearNumero(item.comentarios || 0)}</b><small>Comentarios</small></span><span><i data-lucide="share-2"></i><b>${formatearNumero(item.compartidos || 0)}</b><small>Compartidos</small></span><span><i data-lucide="eye"></i><b>${formatearNumero(item.visualizaciones || 0)}</b><small>Vistas</small></span></div>
-                                ${enlace ? `<a class="marketing-publication-link" href="${escapeAttribute(enlace)}" target="_blank" rel="noopener noreferrer"><span>Ver publicación original</span><i data-lucide="external-link"></i></a>` : '<span class="marketing-publication-unavailable">Enlace original no disponible</span>'}
+                                <div class="marketing-publication-metrics"><span><i data-lucide="heart"></i><b>${formatearNumero(item.meGusta || 0)}</b><small>Me gusta</small></span><span><i data-lucide="message-circle"></i><b>${formatearNumero(item.comentarios || 0)}</b><small>Comentarios</small></span><span><i data-lucide="share-2"></i><b>${formatearNumero(item.compartidos || 0)}</b><small>Compartidos</small></span><span class="${item.visualizaciones == null ? "unavailable" : ""}"><i data-lucide="eye"></i><b>${item.visualizaciones == null ? "—" : formatearNumero(item.visualizaciones)}</b><small>${item.visualizaciones == null ? "No disponible" : "Vistas"}</small></span></div>
+                                <div class="marketing-publication-actions"><button type="button" data-marketing-publication="${index}"><span>Ver insights y comentarios</span><i data-lucide="arrow-right"></i></button>${enlace ? `<a href="${escapeAttribute(enlace)}" target="_blank" rel="noopener noreferrer" aria-label="Abrir publicación original"><i data-lucide="external-link"></i></a>` : ""}</div>
                             </div>
                         </article>`;
                     }).join("") || '<div class="empty marketing-publications-empty">No hay publicaciones de esta red en el periodo seleccionado.</div>'}</div>
                 </section>
 
-                <section class="meta-panel marketing-comments-panel">
-                    <div class="panel-heading-with-action"><div><span class="panel-kicker">Comunidad</span><h2>Comentarios recientes</h2></div><span class="alert-chip">${formatearNumero(comentarios.length)} visibles</span></div>
-                    <div class="marketing-comments-list">${comentarios.map(item => `<button type="button" data-marketing-comment-chat="${item.conversacionId || ""}">${crearLogoRed(String(item.canal || "").toLowerCase())}<span><strong>${escapeHtml(item.cliente?.nombre || "Usuario de red")}</strong><small>${escapeHtml(item.texto || "")}</small></span><time>${escapeHtml(formatearFecha(item.fecha))}</time></button>`).join("") || '<div class="empty">No hay comentarios sociales registrados.</div>'}</div>
-                </section>
-
                 <p class="marketing-data-note">Las cifras dependen de los permisos aprobados por cada red. TikTok entrega vistas, me gusta, comentarios y compartidos por video; los clics y ciertos insights solo aparecerán cuando la API de la cuenta los autorice.</p>`;
 
             if (window.lucide) window.lucide.createIcons();
-            vista.querySelector("[data-marketing-connections]")?.addEventListener("click", () => abrirModulo("conexiones"));
+            vista.querySelectorAll("[data-marketing-connections]").forEach(button =>
+                button.addEventListener("click", () => abrirModulo("conexiones")));
             vista.querySelector("#marketingFilterForm")?.addEventListener("submit", async event => {
                 event.preventDefault();
                 const datos = Object.fromEntries(new FormData(event.currentTarget));
@@ -432,8 +636,13 @@
                 marketingFiltros = { ...marketingFiltros, canal: button.dataset.marketingChannel || "TODOS" };
                 await cargarModuloMarketing(vista);
             }));
-            vista.querySelectorAll("[data-marketing-comment-chat]").forEach(button => button.addEventListener("click", async () => {
-                const conversacionId = Number(button.dataset.marketingCommentChat);
-                if (conversacionId) await abrirDetalleConversacion(conversacionId, "marketing");
+            vista.querySelectorAll("[data-marketing-publication]").forEach(button => button.addEventListener("click", () => {
+                const item = publicaciones[Number(button.dataset.marketingPublication)];
+                if (item) mostrarDetallePublicacion(item);
+            }));
+            vista.querySelectorAll("[data-marketing-publication-card]").forEach(card => card.addEventListener("click", event => {
+                if (event.target.closest("a, button")) return;
+                const item = publicaciones[Number(card.dataset.marketingPublicationCard)];
+                if (item) mostrarDetallePublicacion(item);
             }));
         }

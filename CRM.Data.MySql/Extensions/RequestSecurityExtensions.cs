@@ -42,12 +42,10 @@ public static class RequestSecurityExtensions
         if (!request.Path.StartsWithSegments("/api")) return false;
         if (!UnsafeMethods.Contains(request.Method)) return false;
         if (EsWebhookExterno(request.Path)) return false;
-
-        var secFetchSite = request.Headers["Sec-Fetch-Site"].FirstOrDefault();
-        if (secFetchSite is "cross-site" or "none")
-        {
-            return true;
-        }
+        // El login no depende de una sesión existente y puede servirse detrás de
+        // un proxy cuyo host externo sea distinto al que recibe Kestrel. CORS y
+        // la limitación de intentos siguen protegiendo este endpoint.
+        if (request.Path.StartsWithSegments("/api/auth/login")) return false;
 
         var origin = request.Headers.Origin.FirstOrDefault();
         if (!string.IsNullOrWhiteSpace(origin) && !CoincideConHostActual(origin, request))
@@ -61,7 +59,10 @@ public static class RequestSecurityExtensions
             return true;
         }
 
-        return false;
+        var secFetchSite = request.Headers["Sec-Fetch-Site"].FirstOrDefault();
+        return secFetchSite is "cross-site" or "none" &&
+            string.IsNullOrWhiteSpace(origin) &&
+            string.IsNullOrWhiteSpace(referer);
     }
 
     private static bool EsWebhookExterno(PathString path) =>

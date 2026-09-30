@@ -112,7 +112,8 @@ public sealed class MetaWebhookService
             }
 
             var profile = profileResult.Profile;
-            var displayName = profile?.DisplayName ??
+            var displayName = (canal == CanalSocial.Instagram ? profile?.Username : profile?.DisplayName) ??
+                profile?.DisplayName ??
                 profile?.Username ??
                 (canal == CanalSocial.Instagram ? "Instagram" : "Facebook");
 
@@ -147,7 +148,10 @@ public sealed class MetaWebhookService
 
             var fromId = ReadNestedString(value, "from", "id") ??
                 ReadNestedString(value, "sender", "id");
-            var fromName = ReadNestedString(value, "from", "name") ??
+            var fromUsername = ReadNestedString(value, "from", "username") ??
+                ReadNestedString(value, "sender", "username");
+            var fromName = (canal == CanalSocial.Instagram ? fromUsername : null) ??
+                ReadNestedString(value, "from", "name") ??
                 (canal == CanalSocial.Instagram ? "Instagram" : "Facebook");
             var text = value.TryGetProperty("text", out var textNode)
                 ? textNode.GetString()
@@ -165,6 +169,24 @@ public sealed class MetaWebhookService
                 : value.TryGetProperty("id", out var idNode)
                     ? idNode.GetString()
                     : null;
+            var publicationId = ReadNestedString(value, "media", "id") ??
+                ReadNestedString(value, "post", "id") ??
+                (value.TryGetProperty("post_id", out var postIdNode) ? postIdNode.GetString() : null);
+
+            string? profilePictureUrl = null;
+            var nombreGenerico = fromName.Equals("Instagram", StringComparison.OrdinalIgnoreCase) ||
+                fromName.Equals("Facebook", StringComparison.OrdinalIgnoreCase) ||
+                fromName.Equals("Usuario de Instagram", StringComparison.OrdinalIgnoreCase) ||
+                fromName.Equals("Usuario de Facebook", StringComparison.OrdinalIgnoreCase);
+            if (nombreGenerico && !fromId.StartsWith("comment:", StringComparison.OrdinalIgnoreCase))
+            {
+                var profileResult = await _metaGraph.ObtenerPerfilContactoDetalladoAsync(canal, fromId);
+                if (profileResult.Profile is { } profile)
+                {
+                    fromName = profile.Username ?? profile.DisplayName ?? fromName;
+                    profilePictureUrl = profile.ProfilePictureUrl;
+                }
+            }
 
             await _inbound.RegistrarMensajeEntranteAsync(new SocialInboundMessage(
                 canal,
@@ -173,7 +195,10 @@ public sealed class MetaWebhookService
                 fromName,
                 $"Comentario: {text}",
                 "comment",
-                commentId ?? $"{fromId}:{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"));
+                commentId ?? $"{fromId}:{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                profilePictureUrl,
+                false,
+                publicationId));
 
             procesados++;
         }

@@ -374,6 +374,12 @@ namespace CRM.Data.Controllers
 
                 string texto;
                 string tipoGuardado = tipo;
+                var replyToExternalId = message.TryGetProperty("context", out var contextNode) &&
+                    contextNode.ValueKind == JsonValueKind.Object &&
+                    contextNode.TryGetProperty("id", out var replyIdNode) &&
+                    replyIdNode.ValueKind == JsonValueKind.String
+                        ? replyIdNode.GetString()
+                        : null;
 
 
                 if (
@@ -404,6 +410,10 @@ namespace CRM.Data.Controllers
                         mimeTypeProperty.ValueKind == JsonValueKind.String
                             ? mimeTypeProperty.GetString()
                             : null;
+                    var stickerAnimado = tipo.Equals("sticker", StringComparison.OrdinalIgnoreCase) &&
+                        media.TryGetProperty("animated", out var animatedProperty) &&
+                        animatedProperty.ValueKind is JsonValueKind.True or JsonValueKind.False &&
+                        animatedProperty.GetBoolean();
                     if (tipo.Equals("sticker", StringComparison.OrdinalIgnoreCase) &&
                         (string.IsNullOrWhiteSpace(mimeTypeHint) ||
                          mimeTypeHint.Equals("application/octet-stream", StringComparison.OrdinalIgnoreCase)))
@@ -436,7 +446,8 @@ namespace CRM.Data.Controllers
                                 url = upload.SecureUrl,
                                 mimeType = mediaFile.ContentType,
                                 tamano = mediaFile.Content.Length,
-                                publicId = upload.PublicId
+                                publicId = upload.PublicId,
+                                animado = stickerAnimado
                             });
                             tipoGuardado = tipo.ToLowerInvariant() switch
                             {
@@ -461,7 +472,8 @@ namespace CRM.Data.Controllers
                 }
                 else
                 {
-                    texto = tipo.Equals("unsupported", StringComparison.OrdinalIgnoreCase)
+                    texto = tipo.Equals("unsupported", StringComparison.OrdinalIgnoreCase) ||
+                        tipo.Equals("unknown", StringComparison.OrdinalIgnoreCase)
                         ? ObtenerMensajeUnsupported(message)
                         : $"[Mensaje de tipo: {tipo}]";
                 }
@@ -479,7 +491,8 @@ namespace CRM.Data.Controllers
                         texto,
                         tipoGuardado,
                         whatsappId,
-                        originPhoneNumberId
+                        originPhoneNumberId,
+                        replyToExternalId
                     );
 
 
@@ -589,7 +602,8 @@ namespace CRM.Data.Controllers
                 if (!string.IsNullOrWhiteSpace(suppliedName)) return suppliedName;
             }
 
-            var extension = contentType switch
+            var mimeType = contentType.Split(';', 2)[0].Trim().ToLowerInvariant();
+            var extension = mimeType switch
             {
                 "image/jpeg" => ".jpg",
                 "image/png" => ".png",
@@ -689,6 +703,13 @@ namespace CRM.Data.Controllers
         private static string ObtenerMensajeUnsupported(JsonElement message)
         {
             var (unsupportedType, errorCode) = ObtenerDetalleUnsupported(message);
+            if (errorCode == 131051)
+            {
+                return "Meta no entregó el archivo de este contenido al CRM (código 131051). " +
+                    "Esto puede ocurrir con algunos stickers animados o formatos nuevos de WhatsApp. " +
+                    "Pídele al cliente que lo reenvíe como sticker estático, imagen o video.";
+            }
+
             if (string.Equals(unsupportedType, "gif", StringComparison.OrdinalIgnoreCase))
             {
                 return "El cliente envió un GIF, pero WhatsApp Cloud API no entrega ese archivo al CRM. Pídele que lo reenvíe como sticker o video.";
@@ -794,7 +815,8 @@ namespace CRM.Data.Controllers
                 dto.Mensaje,
                 _access.UsuarioActualId,
                 dto.Tipo ?? "text",
-                null);
+                null,
+                dto.ReplyToMessageId);
 
             return Ok(new { success = true, mensajeId });
         }
@@ -807,7 +829,7 @@ namespace CRM.Data.Controllers
                 return BadRequest("La conversacion es obligatoria.");
             }
 
-            if (!await _access.PuedeAccederConversacionAsync(conversacionId))
+            if (!await _access.PuedeControlarBotConversacionAsync(conversacionId))
             {
                 return Forbid();
             }
@@ -847,6 +869,8 @@ namespace CRM.Data.Controllers
         public long? UsuarioId { get; set; }
 
         public string? Tipo { get; set; }
+
+        public long? ReplyToMessageId { get; set; }
     }
 
     public class CambiarBotDto

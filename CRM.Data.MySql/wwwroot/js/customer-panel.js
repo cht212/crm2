@@ -149,6 +149,12 @@
 
         function renderDatosCliente(panel, conversacion) {
             const cliente = conversacion.cliente || {};
+            const asesorId = Number(conversacion.usuarioAsignado?.id || 0);
+            const puedeReasignar = tienePermiso("conversaciones.asignar");
+            const opcionesAsignacion = (usuariosCache || [])
+                .filter(usuario => normalizarRol(usuario.rol) !== "auditor")
+                .map(usuario => `<option value="${usuario.id}" ${Number(usuario.id) === asesorId ? "selected" : ""}>${escapeHtml(usuario.nombre || usuario.usuario)}</option>`)
+                .join("");
             const etapasPermitidas = estadosConversacionPorRol();
             const etapaActual = estadosConversacion().find(etapa => etapa.id === conversacion.estado);
             const etapas = etapaActual && !etapasPermitidas.some(etapa => etapa.id === etapaActual.id)
@@ -176,6 +182,13 @@
                         <span class="lead-progress-step ${pasos >= 4 ? "active" : ""}"></span>
                     </div>
                 </div>
+                ${puedeReasignar ? `<div class="detail-section compact-section client-assignee-control">
+                    <div class="detail-label">Responsable de la atención</div>
+                    <select id="clientAssigneeSelect" class="mini-select" aria-label="Responsable de la atención">
+                        <option value="">Sin asignar</option>${opcionesAsignacion}
+                    </select>
+                    <small>Selecciona quién atenderá esta conversación.</small>
+                </div>` : ""}
                 <div class="crm-facts">
                     <span>Conversación #${conversacion.id}</span>
                     <span>${conversacion.usuarioAsignado ? `Asesor: ${escapeHtml(conversacion.usuarioAsignado.nombre || conversacion.usuarioAsignado.usuario)}` : "Sin asesor asignado"}</span>
@@ -215,6 +228,10 @@
                 await cargarConversaciones();
                 await seleccionarConversacion(conversacion.id);
                 notificar("Etapa de atención actualizada.", "success");
+            });
+
+            document.getElementById("clientAssigneeSelect")?.addEventListener("change", event => {
+                reasignarConversacionDesdeChat(conversacion.id, event.currentTarget.value);
             });
         }
 

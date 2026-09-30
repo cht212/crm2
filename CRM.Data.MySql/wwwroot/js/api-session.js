@@ -74,6 +74,10 @@
                 // await y el polling podía competir con el primer render.
                 await abrirModulo(moduloInicialPorRol());
 
+                if (typeof iniciarActualizacionesTiempoReal === "function") {
+                    iniciarActualizacionesTiempoReal();
+                }
+
                 if (typeof actualizarCRM === "function") {
                     await Promise.resolve(actualizarCRM()).catch(error =>
                         console.warn("No se pudo actualizar el CRM al iniciar:", error)
@@ -169,6 +173,9 @@
                 "tareas",
                 "leads",
                 "ventas"
+            ]),
+            marketing: new Set([
+                "marketing"
             ])
         };
 
@@ -185,6 +192,8 @@
                 modulos = MODULOS_POR_ROL.asesor;
             } else if (rol === "auditor") {
                 modulos = MODULOS_POR_ROL.auditor;
+            } else if (rol === "marketing") {
+                modulos = MODULOS_POR_ROL.marketing;
             } else {
                 modulos = new Set(["inbox"]);
             }
@@ -197,6 +206,9 @@
         }
 
         function moduloInicialPorRol() {
+            if (esRol("marketing")) {
+                return "marketing";
+            }
             if (esRol("auditor")) {
                 return "fallos";
             }

@@ -26,6 +26,20 @@ public sealed class R2FilesController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Download([FromQuery] string key, CancellationToken cancellationToken)
     {
+        try
+        {
+            return await DownloadCore(key, cancellationToken);
+        }
+        catch (OperationCanceledException) when (
+            cancellationToken.IsCancellationRequested ||
+            HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            return new EmptyResult();
+        }
+    }
+
+    private async Task<IActionResult> DownloadCore(string key, CancellationToken cancellationToken)
+    {
         if (string.IsNullOrWhiteSpace(key) || key.Length > 1024)
         {
             return BadRequest("La referencia del archivo es obligatoria.");
@@ -50,6 +64,22 @@ public sealed class R2FilesController : ControllerBase
 
     [HttpGet("/api/archivos/mensajes/{messageId:long}")]
     public async Task<IActionResult> DownloadMessageFile(long messageId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await DownloadMessageFileCore(messageId, cancellationToken);
+        }
+        catch (OperationCanceledException) when (
+            cancellationToken.IsCancellationRequested ||
+            HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            return new EmptyResult();
+        }
+    }
+
+    private async Task<IActionResult> DownloadMessageFileCore(
+        long messageId,
+        CancellationToken cancellationToken)
     {
         var message = await _access.FiltrarMensajes(_db.Mensajes.AsNoTracking())
             .Where(item => item.nMensaje == messageId)
