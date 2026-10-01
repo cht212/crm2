@@ -30,7 +30,7 @@ async function cargarModuloUsuarios(vista) {
                     ? `<div class="user-role-action"><select data-user-role="${usuario.id}" aria-label="Rol de ${escapeAttribute(usuario.nombre)}">
                         ${["Asesor", "Marketing", "Supervisor", "Auditor"].map(rol => `<option value="${rol}" ${normalizarRol(usuario.rol) === normalizarRol(rol) ? "selected" : ""}>${rol}</option>`).join("")}
                     </select><button type="button" data-save-role="${usuario.id}">Guardar rol</button></div>`
-                    : `<span class="role-badge administrator">${escapeHtml(usuario.rol)}</span>`}</td>
+                    : `<span class="role-badge">${escapeHtml(usuario.rol)}</span>`}</td>
                 <td>${puedeAdministrar ? `<div class="user-password-action">
                     <input type="password" data-user-password="${usuario.id}" placeholder="Nueva contraseña" minlength="8" autocomplete="new-password">
                     <button type="button" data-change-password="${usuario.id}">Cambiar</button>

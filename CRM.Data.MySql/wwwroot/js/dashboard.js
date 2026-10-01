@@ -185,15 +185,18 @@ function calcularPorcentaje(parte, total) {
 let instagramGradientSeed = 0;
 
 function crearLogoRed(clase) {
+    if (String(clase).toLowerCase() === "whatsapp") {
+        return '<span class="brand-logo whatsapp"><img src="/images/whatsapp-circle.svg" alt=""></span>';
+    }
+
     // Instagram usa un solo recurso compartido en toda la aplicación. Así el
     // menú, la bandeja, Marketing, Conexiones y los reportes muestran el mismo logo.
     if (clase === "instagram") {
-        return '<span class="brand-logo instagram" role="img" aria-label="Instagram"></span>';
+        return '<span class="brand-logo instagram"><img src="/images/instagram-circle.svg" alt=""></span>';
     }
 
     const logos = {
         all: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="7" r="3.1"></circle><circle cx="17" cy="7" r="3.1"></circle><circle cx="7" cy="17" r="3.1"></circle><circle cx="17" cy="17" r="3.1"></circle></svg>',
-        whatsapp: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#25D366"></circle><path fill="#fff" d="M12.05 4.15a7.72 7.72 0 0 0-6.7 11.55l-.84 3.15 3.24-.85a7.72 7.72 0 1 0 4.3-13.85Zm0 14.1a6.35 6.35 0 0 1-3.22-.88l-.23-.14-1.92.5.51-1.86-.15-.24a6.35 6.35 0 1 1 5.01 2.62Zm3.48-4.76c-.19-.1-1.13-.56-1.3-.62-.18-.07-.31-.1-.44.1-.13.18-.5.61-.62.74-.11.13-.23.14-.42.05-.19-.1-.8-.3-1.53-.94-.56-.5-.94-1.12-1.05-1.31-.11-.19-.01-.3.08-.39.08-.08.19-.22.28-.33.1-.11.13-.19.19-.32.06-.13.03-.24-.02-.33-.05-.1-.44-1.06-.6-1.45-.16-.38-.32-.33-.44-.34h-.38c-.13 0-.34.05-.52.24-.18.19-.68.67-.68 1.64s.7 1.9.8 2.03c.1.13 1.38 2.11 3.35 2.96.47.2.83.32 1.12.41.47.15.9.13 1.24.08.38-.06 1.13-.46 1.29-.9.16-.44.16-.82.11-.9-.05-.08-.18-.13-.37-.22Z"></path></svg>',
         instagram: (() => {
             // Glifo oficial de Instagram (el mismo trazado que usa Meta en su
             // press kit), no una aproximacion dibujada a mano con rect/circle.
@@ -234,232 +237,6 @@ function renderAccionOperativa(item) {
             </span>
             <em>${escapeHtml(item.meta)}</em>
         </button>`;
-}
-
-function renderDashboardLegacy(vista, reporte) {
-    const vistaAsesor = esRol("asesor");
-    const vistaAdmin = esRol("administrador");
-    const canales = obtenerCanalesDashboard(reporte);
-    const resumen = sumarCanalesDashboard(canales);
-    const trabajo = obtenerTrabajoHoyDashboard(reporte);
-    const tasaRespuesta = calcularPorcentaje(resumen.salientes, resumen.entrantes);
-    const conversionLeads = calcularPorcentaje(resumen.oportunidades, resumen.clientes);
-    const oportunidades = reporte.oportunidades || {};
-    const abiertas = Number(oportunidades.abiertas || resumen.oportunidades || 0);
-    const ganadas = Number(oportunidades.ganadas || 0);
-    const perdidas = Number(oportunidades.perdidas || 0);
-    const winRate = calcularPorcentaje(ganadas, ganadas + perdidas);
-    const carga = reporte.cargaAsesores || [];
-    const asesorSobrecargado = carga[0];
-    const acciones = [
-        ...trabajo.mensajes.map(item => ({
-            titulo: item.nombre || "Cliente pendiente",
-            detalle: `${item.canal || "Canal"} · ${item.estado || "Sin estado"}`,
-            meta: item.fecha ? formatearFecha(item.fecha) : "Responder",
-            conversacionId: item.id,
-            urgente: true
-        })),
-        ...trabajo.tareas.map(item => ({
-            titulo: item.titulo || "Tarea pendiente",
-            detalle: item.cliente || "Sin cliente",
-            meta: `${item.vencida ? "Vencida · " : ""}${item.vence ? formatearFecha(item.vence) : "Hoy"}`,
-            conversacionId: item.conversacionId,
-            urgente: Boolean(item.vencida)
-        })),
-        ...trabajo.oportunidades.map(item => ({
-            titulo: item.titulo || "Oportunidad por mover",
-            detalle: `${item.cliente || "Cliente"} · ${item.etapa || "Etapa"}`,
-            meta: formatearMoneda(item.monto || 0, item.moneda || "PEN"),
-            conversacionId: item.conversacionId,
-            urgente: item.etapa === "NEGOCIACION" || item.etapa === "PROPUESTA"
-        })),
-        ...trabajo.clientes.map(item => ({
-            titulo: item.nombre || "Cliente nuevo",
-            detalle: item.canal || "Sin canal",
-            meta: item.fecha ? formatearFecha(item.fecha) : "Nuevo",
-            conversacionId: item.conversacionId,
-            urgente: false
-        }))
-    ].slice(0, 10);
-    const etapaRows = (oportunidades.porEtapa || [])
-        .filter(item => item.etapa !== "GANADA" && item.etapa !== "PERDIDA")
-        .sort((a, b) => Number(b.montoTotal || 0) - Number(a.montoTotal || 0));
-    const maxEtapaMonto = Math.max(...etapaRows.map(item => Number(item.montoTotal || 0)), 1);
-    const estadosAbiertos = (reporte.porEstado || [])
-        .filter(item => !["CERRADO", "PERDIDO", "NO_RESPONDIO"].includes(item.estado));
-    const maxEstado = Math.max(...estadosAbiertos.map(item => Number(item.cantidad || 0)), 1);
-
-    vista.innerHTML = `
-        <div class="ops-dashboard">
-            <div class="module-heading ops-heading">
-                <div>
-                    <h1>${vistaAsesor ? "Mi trabajo de hoy" : vistaAdmin ? "Operación CRM" : "Supervisión comercial"}</h1>
-                    <p>${vistaAsesor
-                        ? "Prioriza respuestas, seguimientos y oportunidades abiertas. Lo que no mueve una conversación o una venta no entra aquí."
-                        : "Control diario de atención, cartera, tareas vencidas y carga del equipo."}</p>
-                </div>
-                <div class="ops-heading-actions">
-                    <button type="button" class="secondary-btn" data-dashboard-module="inbox">Bandeja</button>
-                    <button type="button" class="secondary-btn" data-dashboard-module="tareas">Tareas</button>
-                    <button type="button" class="secondary-btn" data-dashboard-module="ventas">Ventas</button>
-                </div>
-            </div>
-
-            <section class="ops-kpi-grid">
-                <article class="metric-card ${trabajo.mensajes.length ? "danger-card" : ""}">
-                    <span class="metric-label">Mensajes por responder</span>
-                    <strong class="metric-value">${formatearNumero(trabajo.mensajes.length)}</strong>
-                    <small>Entradas sin respuesta humana</small>
-                </article>
-                <article class="metric-card ${resumen.tareasVencidas ? "danger-card" : ""}">
-                    <span class="metric-label">Tareas vencidas</span>
-                    <strong class="metric-value">${formatearNumero(resumen.tareasVencidas)}</strong>
-                    <small>${formatearNumero(resumen.tareasPendientes)} pendientes abiertas</small>
-                </article>
-                <article class="metric-card">
-                    <span class="metric-label">Cartera abierta</span>
-                    <strong class="metric-value">${formatearMoneda(resumen.montoAbierto || 0)}</strong>
-                    <small>${formatearNumero(abiertas)} oportunidades activas</small>
-                </article>
-                <article class="metric-card">
-                    <span class="metric-label">${vistaAsesor ? "Mi conversión" : "Win rate"}</span>
-                    <strong class="metric-value">${winRate || conversionLeads}%</strong>
-                    <small>${formatearMoneda(resumen.montoGanado || 0)} ganado</small>
-                </article>
-            </section>
-
-            <section class="ops-grid">
-                <article class="meta-panel ops-panel ops-priority-panel">
-                    <div class="panel-heading-with-action">
-                        <div>
-                            <span class="panel-kicker">Prioridad</span>
-                            <h2>${vistaAsesor ? "Siguiente acción" : "Trabajo que bloquea avance"}</h2>
-                        </div>
-                        <span class="alert-chip">${formatearNumero(trabajo.total)} acciones</span>
-                    </div>
-                    <div class="ops-action-list">
-                        ${acciones.map(renderAccionOperativa).join("") || '<div class="empty">No hay acciones urgentes. Revisa leads y prepara próximos seguimientos.</div>'}
-                    </div>
-                </article>
-
-                <article class="meta-panel ops-panel">
-                    <div class="panel-heading-with-action">
-                        <div>
-                            <span class="panel-kicker">Ventas</span>
-                            <h2>Oportunidades por etapa</h2>
-                        </div>
-                        <button type="button" class="mini-action" data-dashboard-module="ventas">Abrir ventas</button>
-                    </div>
-                    <div class="ops-bar-list">
-                        ${etapaRows.map(item => `
-                            <div class="ops-bar-row">
-                                <div><strong>${escapeHtml(item.etapa)}</strong><span>${formatearNumero(item.cantidad)} oportunidades</span></div>
-                                <span class="chart-track"><span class="chart-bar whatsapp" style="width:${Math.max(calcularPorcentaje(item.montoTotal, maxEtapaMonto), item.montoTotal > 0 ? 8 : 0)}%"></span></span>
-                                <em>${formatearMoneda(item.montoTotal || 0)}</em>
-                            </div>`).join("") || '<div class="empty">Sin oportunidades abiertas.</div>'}
-                    </div>
-                </article>
-
-                <article class="meta-panel ops-panel">
-                    <div class="panel-heading-with-action">
-                        <div>
-                            <span class="panel-kicker">Atención</span>
-                            <h2>Conversaciones activas</h2>
-                        </div>
-                        <span class="alert-chip">${tasaRespuesta}% respuesta</span>
-                    </div>
-                    <div class="ops-bar-list">
-                        ${estadosAbiertos.map(item => `
-                            <div class="ops-bar-row">
-                                <div><strong>${escapeHtml(item.estado)}</strong><span>Estado del lead</span></div>
-                                <span class="chart-track"><span class="chart-bar facebook" style="width:${Math.max(calcularPorcentaje(item.cantidad, maxEstado), item.cantidad > 0 ? 8 : 0)}%"></span></span>
-                                <em>${formatearNumero(item.cantidad)}</em>
-                            </div>`).join("") || '<div class="empty">Sin conversaciones activas.</div>'}
-                    </div>
-                </article>
-
-                ${vistaAsesor ? `
-                    <article class="meta-panel ops-panel">
-                        <div class="panel-heading-with-action">
-                            <div>
-                                <span class="panel-kicker">Agenda</span>
-                                <h2>Después de hoy</h2>
-                            </div>
-                            <button type="button" class="mini-action" data-dashboard-module="tareas">Ver tareas</button>
-                        </div>
-                        <div class="ops-action-list compact">
-                            ${trabajo.tareasFuturas.slice(0, 6).map(item => renderAccionOperativa({
-                                titulo: item.titulo || "Seguimiento",
-                                detalle: item.cliente || "Sin cliente",
-                                meta: item.vence ? formatearFecha(item.vence) : "Sin fecha",
-                                conversacionId: item.conversacionId,
-                                urgente: false
-                            })).join("") || '<div class="empty">No hay tareas futuras programadas.</div>'}
-                        </div>
-                    </article>`
-                    : `<article class="meta-panel ops-panel">
-                        <div class="panel-heading-with-action">
-                            <div>
-                                <span class="panel-kicker">Equipo</span>
-                                <h2>Carga por asesor</h2>
-                            </div>
-                            ${puedeGestionarEquipoCRM() ? '<button type="button" id="dashboardRebalanceButton" class="mini-action">Repartir pendientes</button>' : ""}
-                        </div>
-                        <div class="ops-team-list">
-                            ${carga.slice(0, 8).map(item => `
-                                <div class="ops-team-row ${item.tareasVencidas ? "danger" : ""}">
-                                    <div>
-                                        <strong>${escapeHtml(item.nombre || "Usuario")}</strong>
-                                        <span>${escapeHtml(item.rol || "Asesor")}</span>
-                                    </div>
-                                    <small>${formatearNumero(item.conversacionesActivas || 0)} chats</small>
-                                    <small>${formatearNumero(item.tareasPendientes || 0)} tareas</small>
-                                    <small>${formatearNumero(item.oportunidadesAbiertas || 0)} ventas</small>
-                                    <b>${formatearNumero(item.cargaTotal || 0)}</b>
-                                </div>`).join("") || '<div class="empty">Sin asesores activos.</div>'}
-                        </div>
-                        ${asesorSobrecargado ? `<p class="ops-footnote">Mayor carga: ${escapeHtml(asesorSobrecargado.nombre || "Sin asignación")} con ${formatearNumero(asesorSobrecargado.cargaTotal || 0)} elementos abiertos.</p>` : ""}
-                    </article>`}
-            </section>
-        </div>`;
-
-    vista.querySelectorAll("[data-dashboard-module]").forEach(button => {
-        button.addEventListener("click", () => abrirModulo(button.dataset.dashboardModule));
-    });
-
-    vista.querySelectorAll("[data-today-conversation]").forEach(elemento => {
-        elemento.addEventListener("click", async () => {
-            const conversacionId = Number(elemento.dataset.todayConversation);
-            if (!conversacionId) return;
-            if (typeof abrirDetalleConversacion === "function") {
-                await abrirDetalleConversacion(conversacionId, "dashboard");
-                return;
-            }
-            if (typeof abrirConversacionDesdeNotificacion === "function") {
-                await abrirConversacionDesdeNotificacion(conversacionId);
-            }
-        });
-    });
-
-    const rebalanceButton = vista.querySelector("#dashboardRebalanceButton");
-    rebalanceButton?.addEventListener("click", async () => {
-        rebalanceButton.disabled = true;
-        rebalanceButton.textContent = "Repartiendo...";
-        try {
-            const response = await api("/api/crm/conversaciones/asignar-pendientes", { method: "POST" });
-            if (!response.ok) throw new Error("No se pudo repartir");
-            const resultado = await response.json();
-            await cargarModuloDashboard(vista);
-            notificar(resultado.asignadas > 0
-                ? `Se reasignaron ${resultado.asignadas} conversaciones pendientes.`
-                : "No había conversaciones pendientes por repartir.", "success");
-        } catch (error) {
-            console.error(error);
-            notificar("No se pudo repartir la carga de pendientes.", "error");
-            rebalanceButton.disabled = false;
-            rebalanceButton.textContent = "Repartir pendientes";
-        }
-    });
 }
 
 // Vista administrativa: mantiene la portada diaria, pero añade contexto,
@@ -541,7 +318,7 @@ function renderDashboard(vista, reporte) {
 
     vista.innerHTML = `
         <div class="ops-dashboard">
-            <div class="module-heading ops-heading">
+            <div class="module-heading ops-heading ops-welcome-card">
                 <div>
                     <h1>${vistaAsesor ? "Mi trabajo de hoy" : vistaAdmin ? "Centro de control CRM" : "Supervisión comercial"}</h1>
                     <p>${vistaAsesor
@@ -555,6 +332,25 @@ function renderDashboard(vista, reporte) {
                     <button type="button" class="secondary-btn" data-dashboard-module="ventas">Ventas</button>
                 </div>
             </div>
+
+            <section class="ops-kpi-grid ops-summary-card" aria-label="Resumen de la operación">
+                <button type="button" class="ops-summary-stat" data-dashboard-module="inbox">
+                    <span class="ops-summary-avatar primary"><i data-lucide="messages-square"></i></span>
+                    <span class="ops-summary-copy"><strong>${formatearNumero(trabajo.totalMensajes)}</strong><span>Mensajes por responder</span><small>Entradas sin respuesta humana</small></span>
+                </button>
+                <button type="button" class="ops-summary-stat" data-dashboard-module="tareas">
+                    <span class="ops-summary-avatar warning"><i data-lucide="calendar-range"></i></span>
+                    <span class="ops-summary-copy"><strong>${formatearNumero(seguimiento.tareasVencidas ?? resumen.tareasVencidas)}</strong><span>Tareas vencidas</span><small>${formatearNumero(seguimiento.tareasVencenHoy || 0)} vencen hoy</small></span>
+                </button>
+                <button type="button" class="ops-summary-stat" data-dashboard-module="ventas">
+                    <span class="ops-summary-avatar primary"><i data-lucide="badge-dollar-sign"></i></span>
+                    <span class="ops-summary-copy"><strong>${formatearMoneda(montoAbierto)}</strong><span>Cartera abierta</span><small>${formatearNumero(abiertas)} oportunidades activas</small></span>
+                </button>
+                <button type="button" class="ops-summary-stat" data-dashboard-module="ventas">
+                    <span class="ops-summary-avatar success"><i data-lucide="check"></i></span>
+                    <span class="ops-summary-copy"><strong>${winRate}%</strong><span>${vistaAsesor ? "Mi conversión" : "Win rate del periodo"}</span><small>${formatearMoneda(montoGanado)} ganado en el periodo</small></span>
+                </button>
+            </section>
 
             ${!vistaAsesor ? `
                 <form id="dashboardFilterForm" class="ops-filter-bar">
@@ -571,13 +367,6 @@ function renderDashboard(vista, reporte) {
                     </div>
                 </form>
                 ${reporte.administracionNoDisponible ? '<div class="ops-load-warning"><strong>Resumen administrativo parcialmente disponible.</strong><span>Se muestran los datos operativos que sí respondieron. Actualiza después de reiniciar el servidor.</span></div>' : ""}` : ""}
-
-            <section class="ops-kpi-grid">
-                <article class="metric-card ${trabajo.totalMensajes ? "danger-card" : ""}"><span class="metric-label">Mensajes por responder</span><strong class="metric-value">${formatearNumero(trabajo.totalMensajes)}</strong><small>Entradas sin respuesta humana</small></article>
-                <article class="metric-card ${Number(seguimiento.tareasVencidas ?? resumen.tareasVencidas) ? "danger-card" : ""}"><span class="metric-label">Tareas vencidas</span><strong class="metric-value">${formatearNumero(seguimiento.tareasVencidas ?? resumen.tareasVencidas)}</strong><small>${formatearNumero(seguimiento.tareasVencenHoy || 0)} vencen hoy</small></article>
-                <article class="metric-card"><span class="metric-label">Cartera abierta</span><strong class="metric-value">${formatearMoneda(montoAbierto)}</strong><small>${formatearNumero(abiertas)} oportunidades activas</small></article>
-                <article class="metric-card"><span class="metric-label">${vistaAsesor ? "Mi conversión" : "Win rate del periodo"}</span><strong class="metric-value">${winRate}%</strong><small>${formatearMoneda(montoGanado)} ganado en el periodo</small></article>
-            </section>
 
             ${!vistaAsesor ? `
                 <section class="ops-executive-grid" aria-label="Rendimiento comercial del periodo">

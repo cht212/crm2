@@ -1,7 +1,6 @@
 /* ===== Bandeja de conversaciones ===== */
 .sidebar {
     width: 355px;
-    background: var(--panel);
     border-right: 1px solid var(--line);
     display: flex;
     flex-direction: column;
@@ -32,11 +31,6 @@
     min-width: 0;
 }
 
-.sidebar-title {
-    font-size: 18px;
-    font-weight: 700;
-}
-
 .conversation-count {
     color: var(--muted);
     font-size: 12px;
@@ -46,18 +40,10 @@
 
 .search {
     width: 100%;
-    padding: 11px 13px;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    outline: none;
-    font-size: 14px;
-    background: var(--soft);
 }
 
 .search:focus {
-    border-color: var(--green);
     background: var(--surface);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 .filters {
@@ -86,7 +72,7 @@
     padding: 4px;
     color: var(--muted);
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 500;
 }
 
 .inbox-channel-context .brand-logo {
@@ -95,20 +81,11 @@
 }
 
 .filter-button {
-    border: 1px solid var(--line);
-    background: var(--surface);
-    color: var(--muted);
-    border-radius: 999px;
-    padding: 6px 10px;
-    font-size: 12px;
     cursor: pointer;
 }
 
 .filter-button.active {
     border-color: var(--secondary-darken-1);
-    background: var(--soft);
-    color: var(--green-dark);
-    font-weight: 700;
 }
 
 .conversation-list {
@@ -138,7 +115,7 @@
     border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
     color: var(--primary);
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 500;
 }
 
 .conversation:hover {
@@ -168,7 +145,6 @@
 }
 
 .conversation-name {
-    font-weight: 700;
     margin-bottom: 5px;
 }
 
@@ -182,8 +158,6 @@
 .conversation-channel {
     margin-bottom: 5px;
     color: var(--muted);
-    font-size: 12px;
-    line-height: 1;
 }
 
 .conversation-channel .brand-logo {
@@ -213,7 +187,7 @@
     border-radius: 999px;
     background: color-mix(in srgb, #f5d0fe 42%, var(--surface));
     color: color-mix(in srgb, #86198f 84%, var(--on-background));
-    font-weight: 800;
+    font-weight: 500;
     white-space: nowrap;
 }
 
@@ -236,12 +210,10 @@
 
 .conversation-time {
     color: var(--muted);
-    font-size: 11px;
     white-space: nowrap;
 }
 
-.conversation-phone, .conversation-preview {
-    font-size: 13px;
+ .conversation-preview {
     color: var(--muted);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -255,20 +227,15 @@
 .conversation-advisor {
     margin-top: 3px;
     color: var(--muted);
-    font-size: 12px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .conversation-status {
-    display: inline-block;
     margin-top: 8px;
-    padding: 3px 7px;
-    border-radius: 999px;
     background: color-mix(in srgb, var(--success) 16%, transparent);
     color: var(--green-dark);
-    font-size: 11px;
 }
 
 /* ===== Zona de chat ===== */
@@ -277,7 +244,6 @@
     min-width: 360px;
     display: flex;
     flex-direction: column;
-    background: var(--soft);
     position: relative;
     z-index: 1;
 }
@@ -326,7 +292,7 @@
 .lead-detail-crumb {
     color: var(--muted);
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 500;
     letter-spacing: .04em;
     text-transform: uppercase;
 }
@@ -335,11 +301,6 @@
     background: var(--surface);
     border-bottom: 1px solid var(--line);
     padding: 16px 26px;
-}
-
-.chat-name {
-    font-size: 18px;
-    font-weight: 700;
 }
 .chat-details-toggle {
     display: grid;
@@ -365,7 +326,6 @@
 }
 
 .chat-phone {
-    font-size: 13px;
     color: var(--muted);
     margin-top: 4px;
 }
@@ -411,7 +371,7 @@
     margin-bottom: 6px;
     color: color-mix(in srgb, #86198f 84%, var(--on-background));
     font-size: 10px;
-    font-weight: 900;
+    font-weight: 500;
     letter-spacing: .04em;
     text-transform: uppercase;
 }
@@ -629,11 +589,6 @@
 
 .message-input {
     flex: 1;
-    border: 1px solid var(--line);
-    border-radius: 9px;
-    padding: 12px;
-    font-size: 14px;
-    outline: none;
 }
 
 .attach-button {
@@ -728,7 +683,7 @@
 
 .attachment-name {
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 500;
     color: var(--ink);
     white-space: nowrap;
     overflow: hidden;
@@ -857,17 +812,11 @@
 }
 
 .send-button {
-    border: 0;
-    background: linear-gradient(180deg, var(--primary) 0%, var(--primary-darken-1) 100%);
-    color: var(--surface);
-    padding: 0 22px;
-    border-radius: 9px;
-    font-weight: 700;
     cursor: pointer;
 }
 
 .send-button:hover {
-    background: linear-gradient(180deg, var(--primary-darken-1) 0%, var(--primary) 100%);
+    background: var(--primary-darken-1);
 }
 
 .send-button:disabled {
@@ -897,7 +846,7 @@
     box-shadow: 0 18px 45px color-mix(in srgb, var(--on-background) 16%, transparent);
     padding: 12px 14px;
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 500;
     transition: opacity .18s ease, transform .18s ease;
 }
 
@@ -919,7 +868,7 @@
     background: color-mix(in srgb, var(--success) 20%, transparent);
     color: var(--success-darken-1);
     font-size: 14px;
-    font-weight: 900;
+    font-weight: 500;
 }
 
 .toast-content {
@@ -993,7 +942,6 @@
 .modal-backdrop {
     position: absolute;
     inset: 0;
-    background: color-mix(in srgb, var(--on-background) 42%, transparent);
 }
 
 .image-preview-backdrop {
@@ -1050,10 +998,6 @@
     position: relative;
     z-index: 1;
     width: min(460px, 100%);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: var(--surface);
-    box-shadow: 0 30px 80px color-mix(in srgb, var(--on-background) 25%, transparent);
     padding: 18px;
 }
 
@@ -1102,37 +1046,16 @@
     display: grid;
     gap: 3px;
 }
-.chat-profile-modal { align-items: center; }
-.chat-profile-modal .contact-avatar { border-radius: 50%; flex: 0 0 52px; }
 
 .modal-profile span:last-child {
     color: var(--muted);
     font-size: 12px;
 }
 
-.chat-action-button {
-    height: 34px;
-    border: 1px solid var(--secondary-darken-1);
-    border-radius: 999px;
-    background: var(--soft);
-    color: var(--green-dark);
-    padding: 0 12px;
-    font: inherit;
-    font-size: 11px;
-    font-weight: 900;
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-.chat-action-button:hover {
-    background: var(--secondary);
-}
-
 /* ===== Ficha del cliente ===== */
 .details {
     width: 430px;
     flex: 0 0 430px;
-    background: var(--panel);
     border-left: 1px solid var(--line);
     padding: 20px;
     overflow-y: auto;
@@ -1147,10 +1070,6 @@
 
 .details-title {
     color: var(--muted);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: .08em;
-    text-transform: uppercase;
     margin-bottom: 14px;
 }
 .details-title { display: flex; align-items: center; justify-content: space-between; }
@@ -1165,7 +1084,7 @@
     background: color-mix(in srgb, var(--success) 20%, transparent);
     color: var(--green-dark);
     font-size: 18px;
-    font-weight: 700;
+    font-weight: 500;
     margin-bottom: 0;
     background-size: cover;
     background-position: center;
@@ -1178,9 +1097,6 @@
 }
 
 .contact-name {
-    font-size: 16px;
-    line-height: 1.25;
-    font-weight: 700;
     margin-top: 12px;
     overflow-wrap: anywhere;
 }
@@ -1197,7 +1113,7 @@
 .contact-phone span {
     color: var(--muted);
     font-size: 10px;
-    font-weight: 700;
+    font-weight: 500;
     letter-spacing: .06em;
     text-transform: uppercase;
 }
@@ -1219,7 +1135,7 @@
     padding: 6px 9px;
     font: inherit;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 500;
     cursor: pointer;
 }
 
@@ -1239,12 +1155,6 @@
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: .06em;
-}
-
-.detail-value {
-    margin-top: 6px;
-    font-size: 14px;
-    font-weight: 600;
 }
 
 .lead-progress {
@@ -1267,14 +1177,9 @@
 
 .empty-detail {
     color: var(--muted);
-    font-size: 13px;
-    line-height: 1.5;
 }
 
 .crm-card {
-    border: 1px solid var(--line);
-    background: var(--surface);
-    border-radius: 8px;
     padding: 14px 16px;
 }
 
@@ -1316,7 +1221,7 @@
     display: block;
     color: var(--muted);
     font-size: 10px;
-    font-weight: 700;
+    font-weight: 500;
     text-transform: uppercase;
     letter-spacing: .05em;
 }
@@ -1374,21 +1279,12 @@
     flex: 0 0 auto;
     min-width: 68px;
     height: 36px;
-    border: 1px solid var(--line);
-    background: var(--soft);
-    color: var(--muted);
-    border-radius: 7px;
-    padding: 8px 7px;
-    font-size: 12px;
-    font-weight: 700;
     cursor: pointer;
     white-space: nowrap;
 }
 
 .crm-tab.active {
     border-color: var(--secondary-darken-1);
-    background: var(--soft);
-    color: var(--green-dark);
 }
 
 .crm-panel {
@@ -1405,7 +1301,7 @@
     gap: 4px;
     color: var(--muted);
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 500;
     text-transform: uppercase;
     letter-spacing: .04em;
 }
@@ -1441,7 +1337,7 @@
     color: var(--on-primary);
     font: inherit;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 500;
     cursor: pointer;
 }
 
@@ -1504,20 +1400,10 @@
 }
 
 .mini-action {
-    display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 34px;
     margin-top: 8px;
-    border: 1px solid var(--green);
-    background: var(--surface);
-    color: var(--green-dark);
-    border-radius: 8px;
-    padding: 7px 11px;
     font: inherit;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
 }
 
 .mini-action:hover:not(:disabled) { background: var(--green-soft); }
@@ -1530,19 +1416,10 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 38px;
-    padding: 8px 13px;
-    border: 1px solid var(--line);
-    border-radius: 9px;
-    background: var(--surface);
-    color: var(--on-background);
     font: inherit;
-    font-size: 12px;
-    font-weight: 700;
     cursor: pointer;
     transition: border-color .15s ease, background .15s ease, color .15s ease;
 }
-.ghost-button:hover:not(:disabled) { border-color: var(--primary); background: var(--soft); color: var(--primary); }
 .ghost-button:disabled { opacity: .5; cursor: not-allowed; }
 
 .tag-list {
@@ -1563,7 +1440,7 @@
     background: color-mix(in srgb, var(--tag) 18%, white);
     color: var(--tag);
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 500;
 }
 
 .tag-remove {
@@ -1574,7 +1451,7 @@
     background: color-mix(in srgb, var(--tag) 24%, white);
     color: var(--tag);
     font-size: 10px;
-    font-weight: 900;
+    font-weight: 500;
     line-height: 1;
     cursor: pointer;
 }
@@ -1593,15 +1470,10 @@
 }
 
 .conversation-alert {
-    display: inline-block;
     margin-top: 8px;
     margin-right: 6px;
-    padding: 3px 7px;
-    border-radius: 999px;
     background: color-mix(in srgb, var(--warning) 16%, transparent);
     color: var(--warning);
-    font-size: 11px;
-    font-weight: 700;
 }
 
 .chat-title-row {
@@ -1624,7 +1496,7 @@
     background: color-mix(in srgb, var(--success) 20%, var(--surface));
     color: var(--green-dark);
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 500;
     background-size: cover;
     background-position: center;
 }
@@ -1649,7 +1521,7 @@
     padding: 0;
     color: var(--muted);
     font-size: 0;
-    font-weight: 700;
+    font-weight: 500;
 }
 
 .chat-channel-badge .brand-logo {
@@ -1676,7 +1548,7 @@
     padding: 6px 10px;
     font: inherit;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 500;
     cursor: pointer;
 }
 
@@ -1689,7 +1561,7 @@
     padding: 6px 10px;
     font: inherit;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 500;
 }
 
 .chat-transfer-button {
@@ -1758,7 +1630,7 @@
 .tag-create-form button {
     background: var(--green);
     color: white;
-    font-weight: 700;
+    font-weight: 500;
     cursor: pointer;
 }
 

@@ -48,12 +48,10 @@
 .theme-dark .notification-dropdown,
 .theme-dark .profile-dropdown,
 .theme-dark .crm-modal,
-.theme-dark .modal-card,
 .theme-dark .crm-card,
 .theme-dark .crm-list-item,
 .theme-dark .meta-panel,
 .theme-dark .insight-card,
-.theme-dark .dashboard-note,
 .theme-dark .contact-form,
 .theme-dark .contacts-workspace,
 .theme-dark .task-workspace,
@@ -62,11 +60,7 @@
 .theme-dark .bot-channel-section,
 .theme-dark .connection-card,
 .theme-dark .report-filter-form,
-.theme-dark .table-card,
-.theme-dark .module-table,
-.theme-dark .contact-table,
-.theme-dark .dashboard-channel-card,
-.theme-dark .executive-strip article {
+.theme-dark .module-table {
     background: var(--surface);
     border-color: var(--line);
     color: var(--on-surface);
@@ -74,37 +68,6 @@
 
 .theme-dark .header {
     background: color-mix(in srgb, var(--surface) 98%, transparent);
-}
-
-/* Antes el menu lateral tomaba el mismo tono de superficie que las
-   tarjetas y el fondo del modulo -> quedaba todo del mismo azul y el
-   nav "se perdia" sin separacion visual. Vuelve a usar el navy de marca
-   (igual que en modo claro) para que siempre se distinga del contenido. */
-.theme-dark .workspace-nav {
-    background: linear-gradient(180deg, var(--primary-darken-1) 0%, var(--primary-darken-1) 100%);
-    border-right-color: color-mix(in srgb, var(--pantone-277) 20%, transparent);
-    box-shadow: 2px 0 18px rgba(0,0,0,.28);
-}
-
-.theme-dark .nav-item,
-.theme-dark .nav-subitem {
-    color: color-mix(in srgb, var(--on-surface) 88%, transparent);
-    background: color-mix(in srgb, var(--surface) 4%, transparent);
-    border-color: color-mix(in srgb, var(--surface) 8%, transparent);
-}
-
-.theme-dark .nav-item:hover,
-.theme-dark .nav-item.active,
-.theme-dark .nav-group.active .nav-group-toggle,
-.theme-dark .nav-subitem:hover,
-.theme-dark .nav-subitem.active {
-    background: color-mix(in srgb, var(--primary) 18%, transparent);
-    /* Antes decía var(--surface): el mismo azul oscuro del fondo,
-       así que el texto del item activo (p. ej. "Dashboard") quedaba
-       del mismo tono que su propio fondo. Debe ser el color de
-       contraste (claro), no el de superficie. */
-    color: var(--on-surface);
-    border-color: color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
 .theme-dark h1,
@@ -126,16 +89,15 @@
    estaba fijo en blanco: el texto claro de arriba quedaba casi
    invisible encima. Ahora usa superficie/borde del tema oscuro. */
 .theme-dark .module-heading {
-    background: linear-gradient(180deg, var(--surface), var(--soft));
+    background: var(--surface);
     border-color: var(--line);
 }
 
 /* Las tarjetas de métricas (dashboard, tareas, reportes...) no tenían
    NINGUNA regla de modo oscuro: seguían con su degradado blanco fijo
    mientras el texto se volvía claro encima -> números casi ilegibles. */
-.theme-dark .metric-card,
-.theme-dark .module-card {
-    background: linear-gradient(180deg, var(--surface), var(--soft));
+.theme-dark .metric-card {
+    background: var(--surface);
     border-color: var(--line);
 }
 
@@ -156,7 +118,7 @@
 .theme-dark .task-summary .metric-card:nth-child(2),
 .theme-dark .task-summary .metric-card:nth-child(3),
 .theme-dark .task-summary .metric-card:nth-child(4) {
-    background: linear-gradient(180deg, var(--surface), var(--soft));
+    background: var(--surface);
 }
 
 .theme-dark .sidebar-header,
@@ -168,7 +130,6 @@
 }
 
 .theme-dark .module-heading p,
-.theme-dark .conversation-phone,
 .theme-dark .conversation-preview,
 .theme-dark .conversation-channel,
 .theme-dark .conversation-time,
@@ -194,15 +155,9 @@
 .theme-dark .quick-reply,
 .theme-dark .chat-channel-badge,
 .theme-dark .chat-bot-toggle,
-.theme-dark .network-tab,
-.theme-dark .status-item,
-.theme-dark .action-summary div,
 .theme-dark .bot-channel-card,
-.theme-dark .stage-card,
 .theme-dark .sales-card,
-.theme-dark .task-item,
-.theme-dark .contact-card,
-.theme-dark .platform-card {
+.theme-dark .task-item {
     background: color-mix(in srgb, var(--surface) 2%, transparent);
     border-color: var(--line);
     color: var(--on-surface);
@@ -212,7 +167,7 @@
    "border-color" de arriba pisaba el border-left de color de etapa,
    dejando las 8 tarjetas con el mismo tono apagado sin importar el estado. */
 .theme-dark .kanban-summary-card {
-    background: linear-gradient(180deg, color-mix(in srgb, var(--stage-color, var(--pantone-gray-52)) 20%, var(--surface)), var(--surface));
+    background: var(--surface);
     border-color: var(--line);
     border-left-color: var(--stage-color, var(--pantone-gray-52));
     color: var(--on-surface);
@@ -224,7 +179,7 @@
 .theme-dark .task-form,
 .theme-dark .sales-form,
 .theme-dark .sales-column {
-    background: linear-gradient(180deg, var(--surface), var(--soft));
+    background: var(--surface);
     border-color: var(--line);
 }
 
@@ -254,7 +209,6 @@
 .theme-dark select,
 .theme-dark textarea,
 .theme-dark .search,
-.theme-dark .search-input,
 .theme-dark .message-input,
 .theme-dark .crm-form input,
 .theme-dark .crm-form select,
@@ -277,30 +231,21 @@
 
 .theme-dark .table th,
 .theme-dark .module-table th,
-.theme-dark .contact-table th,
 .theme-dark .table td,
-.theme-dark .module-table td,
-.theme-dark .contact-table td {
+.theme-dark .module-table td {
     border-color: var(--line);
     color: var(--on-background);
 }
 
 .theme-dark .filter-button.active,
-.theme-dark .channel-filter.active,
 .theme-dark .crm-tab.active,
-.theme-dark .chart-row.active,
-.theme-dark .platform-card.active {
+.theme-dark .chart-row.active {
     background: color-mix(in srgb, var(--primary) 18%, transparent);
     border-color: color-mix(in srgb, var(--primary) 40%, transparent);
     color: var(--surface);
 }
 
-.theme-dark .executive-strip article.ok {
-    border-color: color-mix(in srgb, var(--success) 35%, transparent);
-    background: color-mix(in srgb, var(--success) 12%, transparent);
-}
 
-.theme-dark .executive-strip article.attention,
 .theme-dark .client-360-grid article.danger,
 .theme-dark .crm-list-item.danger,
 .theme-dark .task-item.danger {
@@ -309,7 +254,6 @@
 }
 
 .theme-dark .chart-track,
-.theme-dark .funnel-track,
 .theme-dark .lead-progress-step {
     background: var(--expansion-panel-text-custom-bg);
 }
@@ -334,7 +278,7 @@
     align-items: center;
     min-width: 18px;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 500;
     line-height: 1;
 }
 
@@ -359,8 +303,7 @@
     color: var(--error);
 }
 
-.contacts-table,
-.compact-table {
+.contacts-table {
     width: 100%;
 }
 
@@ -369,14 +312,7 @@
     overflow-x: auto;
 }
 
-.compact-table th,
-.compact-table td {
-    padding: 9px 10px;
-    font-size: 12px;
-}
-
 .panel-heading-with-action,
-.task-actions-row,
 .connection-actions-row {
     display: flex;
     align-items: center;
@@ -406,24 +342,6 @@
 .connection-channel-metrics strong {
     font-size: 16px;
     line-height: 1.1;
-}
-
-.campaign-client-pool {
-    display: grid;
-    gap: 10px;
-    margin-top: 12px;
-}
-
-.campaign-client-form {
-    display: grid;
-    grid-template-columns: minmax(180px, 1fr) auto;
-    gap: 8px;
-    align-items: end;
-}
-
-.campaign-list-inline {
-    margin: 0;
-    padding-left: 18px;
 }
 
 .bot-template-response {
@@ -572,7 +490,7 @@
 
 .ops-bar-row em {
     font-style: normal;
-    font-weight: 700;
+    font-weight: 500;
     color: var(--on-background);
 }
 
@@ -669,17 +587,15 @@
     background: var(--surface);
     color: var(--on-background);
     font: inherit;
-    font-size: 13px;
-    font-weight: 800;
     cursor: pointer;
     box-shadow: 0 3px 9px color-mix(in srgb, var(--on-background) 7%, transparent);
     transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
 }
 .ops-filter-button svg { width: 17px; height: 17px; }
 .ops-filter-button:hover { transform: translateY(-1px); box-shadow: 0 7px 15px color-mix(in srgb, var(--on-background) 10%, transparent); }
-.ops-filter-button.primary { border-color: var(--primary); background: var(--primary); color: var(--on-primary); }
+.ops-filter-button.primary { border-color: var(--primary); }
 .ops-filter-button.secondary:hover { border-color: var(--primary); color: var(--primary); }
-.ops-filter-button.analytics { border-color: color-mix(in srgb, var(--secondary) 55%, var(--line)); color: var(--secondary-darken-1); background: color-mix(in srgb, var(--secondary) 8%, var(--surface)); }
+.ops-filter-button.analytics { border-color: color-mix(in srgb, var(--secondary) 55%, var(--line)); }
 .ops-load-warning { display: flex; gap: 8px; align-items: center; padding: 10px 13px; border: 1px solid color-mix(in srgb, var(--warning) 42%, var(--line)); border-radius: 10px; background: color-mix(in srgb, var(--warning) 8%, var(--surface)); color: var(--muted); font-size: 12px; }
 .ops-load-warning strong { color: var(--on-background); }
 
@@ -691,12 +607,8 @@
     gap: 12px;
     align-items: end;
     padding: 14px;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: var(--surface);
 }
 .ops-filter-bar label { display: grid; gap: 6px; min-width: 0; }
-.ops-filter-bar label > span { color: var(--muted); font-size: 12px; font-weight: 700; }
 .ops-filter-bar input,
 .ops-filter-bar select {
     width: 100%;
@@ -723,18 +635,11 @@
     gap: 5px;
     min-width: 0;
     padding: 14px;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: var(--surface);
-    color: var(--on-background);
     text-align: left;
 }
-.ops-executive-card > span,
-.ops-system-card > span,
-.ops-risk-card > span { color: var(--muted); font-size: 12px; font-weight: 700; }
 .ops-executive-card > strong,
 .ops-system-card > strong,
-.ops-risk-card > strong { overflow: hidden; font-size: 22px; text-overflow: ellipsis; }
+.ops-risk-card > strong { overflow: hidden; text-overflow: ellipsis; }
 .ops-executive-card > small,
 .ops-system-card > small,
 .ops-risk-card > small { color: var(--muted); }
@@ -745,8 +650,6 @@
 .ops-system-card.ready { border-color: color-mix(in srgb, var(--secondary) 36%, var(--line)); }
 .ops-system-card,
 .ops-risk-card { cursor: pointer; font: inherit; }
-.ops-system-card:hover,
-.ops-risk-card:hover { border-color: var(--primary); transform: translateY(-1px); }
 
 .ops-admin-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 14px; align-items: start; }
 .ops-risk-grid { display: grid; grid-template-columns: repeat(2, minmax(140px, 1fr)); gap: 10px; margin-top: 12px; }

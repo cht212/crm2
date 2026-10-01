@@ -55,9 +55,9 @@
                             <td>${formatearFecha(contacto.ultimoMensaje)}</td>
                             <td>
                                 <div class="table-actions">
-                                    <button type="button" class="mini-action" data-save-contact="${contacto.id}">Guardar</button>
-                                    ${contacto.ultimaConversacionId ? `<button type="button" class="mini-action" data-open-contact-chat="${contacto.ultimaConversacionId}">Abrir chat</button>` : ""}
-                                    ${!contacto.ultimaConversacionId ? `<button type="button" class="mini-action" data-create-contact-chat="${contacto.id}">Crear chat</button>` : ""}
+                                    <button type="button" class="table-icon-action is-success" data-save-contact="${contacto.id}" title="Guardar cambios" aria-label="Guardar cambios"><i data-lucide="check"></i></button>
+                                    ${contacto.ultimaConversacionId ? `<button type="button" class="table-icon-action is-primary" data-open-contact-chat="${contacto.ultimaConversacionId}" title="Abrir conversación" aria-label="Abrir conversación"><i data-lucide="eye"></i></button>` : ""}
+                                    ${!contacto.ultimaConversacionId ? `<button type="button" class="table-icon-action is-primary" data-create-contact-chat="${contacto.id}" title="Crear conversación" aria-label="Crear conversación"><i data-lucide="plus"></i></button>` : ""}
                                 </div>
                             </td>
                         </tr>`).join("") || '<tr><td colspan="8">No hay contactos.</td></tr>'}</tbody>

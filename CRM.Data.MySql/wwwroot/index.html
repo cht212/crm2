@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM HPD - WhatsApp</title>
+    <title>CRM HPD Glass Group</title>
     <link rel="icon" type="image/png" href="/iconodelog.png">
     <script>
         try {
@@ -13,12 +13,13 @@
         } catch { }
     </script>
     <!-- El orden mantiene la cascada histórica. Agrega los cambios al módulo correspondiente. -->
-    <link rel="stylesheet" href="css/00-foundation.css?v=20260930-profile-avatar-v2">
-    <link rel="stylesheet" href="css/10-inbox.css?v=20260930-css-modules-v1">
-    <link rel="stylesheet" href="css/20-crm-modules.css?v=20260930-assignee-avatar-v2">
-    <link rel="stylesheet" href="css/30-theme-dashboard.css?v=20260930-css-modules-v1">
-    <link rel="stylesheet" href="css/40-marketing.css?v=20260930-publication-insights-v3">
-    <link rel="stylesheet" href="css/50-responsive-overrides.css?v=20260930-css-modules-v1">
+    <link rel="stylesheet" href="css/00-foundation.css?v=20261001-audit-lists-v1">
+    <link rel="stylesheet" href="css/10-inbox.css?v=20261001-audit-lists-v1">
+    <link rel="stylesheet" href="css/20-crm-modules.css?v=20261001-nav-social-svg-v2">
+    <link rel="stylesheet" href="css/30-theme-dashboard.css?v=20261001-audit-lists-v1">
+    <link rel="stylesheet" href="css/40-marketing.css?v=20261001-audit-lists-v1">
+    <link rel="stylesheet" href="css/50-responsive-overrides.css?v=20261001-audit-lists-v1">
+    <link rel="stylesheet" href="css/60-hpd-reference-theme.css?v=20261001-dashboard-compact-v4">
 </head>
 <body>
     <div class="app">
@@ -84,13 +85,19 @@
             <nav class="workspace-nav" aria-label="Navegacion del CRM">
                 <div class="nav-brand">
                     <button id="navBrandMark" class="nav-brand-mark" type="button" title="Expandir menú" aria-label="Expandir menú">
-                        <img src="/iconodelog.png" alt="HPD" class="brand-icon">
-                        <img src="/logo-full.png" alt="HPD Glass Group" class="brand-full">
+                        <img src="/images/hpd-isotipo.svg" alt="HPD" class="brand-icon">
+                        <img src="/images/hpd-logo.svg" alt="HPD Glass Group" class="brand-full">
                     </button>
-                    <button id="navToggle" class="nav-toggle" type="button" title="Contraer menú" aria-label="Contraer menú"><i data-lucide="panel-left-close"></i></button>
+                    <button id="navToggle" class="nav-toggle" type="button" title="Contraer menú" aria-label="Contraer menú">
+                        <svg class="nav-collapse-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M8.474 11.718a.913.913 0 0 0 0 1.292l3.597 3.597a1 1 0 1 1-1.414 1.414L5.83 13.194a1.174 1.174 0 0 1 0-1.66l4.827-4.827a1 1 0 1 1 1.414 1.414z" fill="currentColor" fill-opacity=".9"/>
+                            <path d="M14.358 11.834a.75.75 0 0 0 0 1.06l3.713 3.713a1 1 0 1 1-1.414 1.414l-4.975-4.975a.965.965 0 0 1 0-1.364l4.975-4.975a1 1 0 1 1 1.414 1.414z" fill="currentColor" fill-opacity=".45"/>
+                        </svg>
+                    </button>
                 </div>
                 <div class="nav-top">
-                    <button class="nav-item active" data-module="dashboard" title="Dashboard"><i data-lucide="layout-dashboard"></i><span class="nav-label">Dashboard</span></button>
+                    <button class="nav-item active" data-module="dashboard" title="Inicio"><i data-lucide="home"></i><span class="nav-label">Inicio</span></button>
+                    <div class="nav-section-title" aria-hidden="true"><span class="title-text">Comunicaciones</span></div>
                     <div class="nav-group" data-nav-group="comunicaciones">
                         <button class="nav-item nav-group-toggle" data-module="inbox" title="Comunicaciones" aria-expanded="false" aria-controls="communicationsChannels">
                             <i data-lucide="messages-square"></i>
@@ -104,7 +111,7 @@
                                 <span>Todas</span>
                             </button>
                             <button class="nav-subitem" data-module="inbox" data-channel="WHATSAPP" type="button">
-                                <span class="brand-logo whatsapp"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#25D366"></circle><path fill="#fff" d="M12.05 4.15a7.72 7.72 0 0 0-6.7 11.55l-.84 3.15 3.24-.85a7.72 7.72 0 1 0 4.3-13.85Zm0 14.1a6.35 6.35 0 0 1-3.22-.88l-.23-.14-1.92.5.51-1.86-.15-.24a6.35 6.35 0 1 1 5.01 2.62Zm3.48-4.76c-.19-.1-1.13-.56-1.3-.62-.18-.07-.31-.1-.44.1-.13.18-.5.61-.62.74-.11.13-.23.14-.42.05-.19-.1-.8-.3-1.53-.94-.56-.5-.94-1.12-1.05-1.31-.11-.19-.01-.3.08-.39.08-.08.19-.22.28-.33.1-.11.13-.19.19-.32.06-.13.03-.24-.02-.33-.05-.1-.44-1.06-.6-1.45-.16-.38-.32-.33-.44-.34h-.38c-.13 0-.34.05-.52.24-.18.19-.68.67-.68 1.64s.7 1.9.8 2.03c.1.13 1.38 2.11 3.35 2.96.47.2.83.32 1.12.41.47.15.9.13 1.24.08.38-.06 1.13-.46 1.29-.9.16-.44.16-.82.11-.9-.05-.08-.18-.13-.37-.22Z"></path></svg></span>
+                                <span class="brand-logo whatsapp"><img src="/images/whatsapp-circle.svg" alt=""></span>
                                 <span>WhatsApp</span>
                             </button>
                             <button class="nav-subitem" data-module="inbox" data-channel="INSTAGRAM" type="button">
@@ -121,11 +128,13 @@
                             </button>
                         </div>
                     </div>
+                    <div class="nav-section-title" aria-hidden="true"><span class="title-text">Gestión comercial</span></div>
                     <button class="nav-item" data-module="contactos" title="Contactos"><i data-lucide="contact-round"></i><span class="nav-label">Contactos</span></button>
                     <button class="nav-item" data-module="tareas" title="Tareas"><i data-lucide="list-checks"></i><span class="nav-label">Tareas</span></button>
                     <button class="nav-item" data-module="leads" title="Leads"><i data-lucide="kanban"></i><span class="nav-label">Leads</span></button>
                     <button class="nav-item" data-module="ventas" title="Ventas"><i data-lucide="badge-dollar-sign"></i><span class="nav-label">Ventas</span></button>
                     <button class="nav-item" data-module="reportes" title="Reportes"><i data-lucide="chart-no-axes-combined"></i><span class="nav-label">Reportes</span></button>
+                    <div class="nav-section-title" aria-hidden="true"><span class="title-text">Administración</span></div>
                     <button id="marketingNav" class="nav-item hidden" data-module="marketing" title="Marketing"><i data-lucide="chart-spline"></i><span class="nav-label">Marketing</span></button>
                     <button id="botNav" class="nav-item hidden" data-module="bot" title="Bot"><i data-lucide="bot-message-square"></i><span class="nav-label">Bot</span></button>
                     <button id="connectionsNav" class="nav-item hidden" data-module="conexiones" title="Conexiones"><i data-lucide="plug-zap"></i><span class="nav-label">Conexiones</span></button>
@@ -217,25 +226,25 @@
         <div id="modalHost" class="modal-host hidden" aria-hidden="true"></div>
     </div>
 
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="js/remix-icons.js?v=20261001-dynamic-table-icons-v4"></script>
     <script src="js/state.js?v=20260930-realtime-v1"></script>
-    <script src="js/layout-profile.js?v=20260930-public-links-v1"></script>
+    <script src="js/layout-profile.js?v=20261001-nav-toggle-v2"></script>
     <script src="js/realtime.js?v=20261001-live-v2"></script>
-    <script src="js/api-session.js?v=20260930-realtime-v1"></script>
+    <script src="js/api-session.js?v=20261001-reference-nav-v2"></script>
     <script src="js/inbox.js?v=20260930-advisor-inbox-v3"></script>
     <script src="js/customer-panel.js?v=20260930-assignee-in-details-v1"></script>
     <script src="js/messaging-attachments.js?v=20260930-whatsapp-chat-v1"></script>
     <script src="js/utils.js?v=20260930-responsive-modules-v1"></script>
     <script src="js/module-router.js?v=20260930-responsive-modules-v1"></script>
-    <script src="js/contacts.js?v=20260925-limpieza-v1"></script>
+    <script src="js/contacts.js?v=20261001-table-actions-v1"></script>
     <script src="js/tasks-sales.js?v=20260925-limpieza-v1"></script>
-    <script src="js/dashboard.js?v=20261001-progressive-v2"></script>
+    <script src="js/dashboard.js?v=20261001-dashboard-reference-v3"></script>
     <script src="js/leads.js?v=20260924-facebook-visual"></script>
-    <script src="js/activity-reports.js?v=20261001-marketing-live-v4"></script>
+    <script src="js/activity-reports.js?v=20261001-audit-lists-v1"></script>
     <script src="js/connections.js?v=20260930-connection-urls-v3"></script>
     <script src="js/bot.js?v=20260930-multicanal-v1"></script>
-    <script src="js/quality-modules.js?v=20260929-failure-context-v1"></script>
-    <script src="js/users.js?v=20260930-marketing-role-v1"></script>
+    <script src="js/quality-modules.js?v=20261001-audit-lists-v1"></script>
+    <script src="js/users.js?v=20261001-audit-lists-v1"></script>
     <script src="js/app.js?v=20260930-responsive-modules-v1"></script>
 </body>
 </html>

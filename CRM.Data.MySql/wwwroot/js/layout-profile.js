@@ -30,10 +30,7 @@
             nav.classList.toggle("collapsed", colapsada);
             navToggle.title = colapsada ? "Expandir menú" : "Contraer menú";
             navToggle.setAttribute("aria-label", navToggle.title);
-            if (window.lucide) {
-                navToggle.innerHTML = `<i data-lucide="${colapsada ? "panel-left-open" : "panel-left-close"}"></i>`;
-                window.lucide.createIcons();
-            }
+            navToggle.setAttribute("aria-pressed", colapsada ? "true" : "false");
             limpiarIconosDePanelExtra();
         }
 

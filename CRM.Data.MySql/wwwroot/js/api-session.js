@@ -232,7 +232,7 @@
 
             const dashboardLabel = document.querySelector('.nav-item[data-module="dashboard"] .nav-label');
             if (dashboardLabel) {
-                dashboardLabel.textContent = esRol("asesor") ? "Mi trabajo" : "Dashboard";
+                dashboardLabel.textContent = "Inicio";
             }
 
             document.getElementById("usersNav")?.classList.toggle("hidden", !permitidos.has("usuarios"));

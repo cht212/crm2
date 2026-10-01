@@ -623,7 +623,7 @@
                 </section>
 
                 <section class="marketing-layout marketing-layout-single">
-                    <article class="meta-panel marketing-chart-panel">
+                    <article class="meta-panel">
                         <div class="panel-heading-with-action"><div><span class="panel-kicker">Tendencia</span><h2>Interacciones por día</h2></div><small>Me gusta + comentarios + compartidos</small></div>
                         <div class="marketing-chart">
                             ${serieInteracciones.map(item => `<div class="marketing-chart-row"><span>${escapeHtml(String(item.fecha))}</span><b>${escapeHtml(item.canal)}</b><span class="marketing-chart-track"><i style="width:${Math.max(3, Math.round(item.interacciones * 100 / maxInteracciones))}%"></i></span><strong>${formatearNumero(item.interacciones)}</strong></div>`).join("") || '<div class="empty">No hay interacciones para graficar en este periodo.</div>'}
