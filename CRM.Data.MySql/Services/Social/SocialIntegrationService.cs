@@ -1,4 +1,5 @@
 using CRM.Data.Models;
+using Microsoft.AspNetCore.DataProtection;
 using System.Text.Json;
 
 namespace CRM.Data.Services;
@@ -6,14 +7,22 @@ namespace CRM.Data.Services;
 public sealed class SocialIntegrationService
 {
     private readonly IConfiguration _configuration;
+    private readonly IDataProtector _protector;
+    private readonly ILogger<SocialIntegrationService> _logger;
     private readonly string _settingsPath;
     private readonly object _sync = new();
     private readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
     private Dictionary<string, string> _values = new(StringComparer.OrdinalIgnoreCase);
 
-    public SocialIntegrationService(IConfiguration configuration, IWebHostEnvironment environment)
+    public SocialIntegrationService(
+        IConfiguration configuration,
+        IWebHostEnvironment environment,
+        IDataProtectionProvider dataProtectionProvider,
+        ILogger<SocialIntegrationService> logger)
     {
         _configuration = configuration;
+        _protector = dataProtectionProvider.CreateProtector("CRM.Data.SocialIntegrations.v1");
+        _logger = logger;
         _settingsPath = Path.Combine(environment.ContentRootPath, "App_Data", "social-integrations.json");
         Load();
     }
@@ -46,18 +55,19 @@ public sealed class SocialIntegrationService
         GetChannels(request).FirstOrDefault(channel =>
             channel.Canal.Equals(NormalizeIntegrationChannel(canal), StringComparison.OrdinalIgnoreCase));
 
-    public SocialOauthStart BuildOauthStart(HttpRequest request, string canal)
+    public SocialOauthStart BuildOauthStart(HttpRequest request, string canal, string state)
     {
         var normalized = NormalizeIntegrationChannel(canal);
-        var channel = GetChannel(request, normalized);
-        if (channel == null)
+        if (normalized is not (CanalSocial.Instagram or CanalSocial.Facebook or CanalSocial.TikTok))
         {
             return new SocialOauthStart(false, null, ["Canal no soportado."], "Canal no soportado.");
         }
 
-        var missing = channel.RequiredConfig
-            .Where(item => !item.Configured)
-            .Select(item => item.Key)
+        var requiredKeys = normalized == CanalSocial.TikTok
+            ? new[] { "TikTok:ClientKey", "TikTok:ClientSecret" }
+            : new[] { "Meta:AppId", "Meta:AppSecret" };
+        var missing = requiredKeys
+            .Where(key => !HasValue(key))
             .ToArray();
 
         if (missing.Length > 0)
@@ -66,12 +76,15 @@ public sealed class SocialIntegrationService
         }
 
         var redirectUri = Uri.EscapeDataString($"{request.Scheme}://{request.Host}/api/integraciones/{normalized.ToLowerInvariant()}/oauth/callback");
+        var encodedState = Uri.EscapeDataString(state);
         var authorizationUrl = normalized switch
         {
-            CanalSocial.Instagram or CanalSocial.Facebook =>
-                $"https://www.facebook.com/{ApiVersion}/dialog/oauth?client_id={GetValue("Meta:AppId")}&redirect_uri={redirectUri}&response_type=code&scope={Uri.EscapeDataString(MetaScopes)}",
+            CanalSocial.Instagram =>
+                $"https://www.instagram.com/oauth/authorize?client_id={GetValue("Meta:AppId")}&redirect_uri={redirectUri}&response_type=code&scope={Uri.EscapeDataString(InstagramScopes)}&state={encodedState}&force_reauth=true",
+            CanalSocial.Facebook =>
+                $"https://www.facebook.com/{ApiVersion}/dialog/oauth?client_id={GetValue("Meta:AppId")}&redirect_uri={redirectUri}&response_type=code&scope={Uri.EscapeDataString(FacebookScopes)}&state={encodedState}",
             CanalSocial.TikTok =>
-                $"https://www.tiktok.com/v2/auth/authorize/?client_key={GetValue("TikTok:ClientKey")}&redirect_uri={redirectUri}&response_type=code&scope={Uri.EscapeDataString(TikTokScopes)}",
+                $"https://www.tiktok.com/v2/auth/authorize/?client_key={GetValue("TikTok:ClientKey")}&redirect_uri={redirectUri}&response_type=code&scope={Uri.EscapeDataString(TikTokScopes)}&state={encodedState}",
             _ => null
         };
 
@@ -162,8 +175,11 @@ public sealed class SocialIntegrationService
 
     private string ApiVersion => GetValue("Meta:ApiVersion") ?? "v25.0";
 
-    private const string MetaScopes =
-        "pages_show_list,pages_messaging,pages_read_engagement,pages_read_user_content,pages_manage_engagement,pages_manage_posts,pages_manage_metadata,read_insights,instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments";
+    private const string FacebookScopes =
+        "pages_show_list,pages_messaging,pages_read_engagement,pages_read_user_content,pages_manage_engagement,pages_manage_posts,pages_manage_metadata,read_insights";
+
+    private const string InstagramScopes =
+        "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,instagram_business_content_publish";
 
     private const string TikTokScopes =
         "user.info.basic,business.basic,video.list,comment.list";
@@ -279,7 +295,9 @@ public sealed class SocialIntegrationService
     private static string NormalizeIntegrationChannel(string? canal) =>
         string.Equals(canal?.Trim(), "WEBSITE", StringComparison.OrdinalIgnoreCase)
             ? "WEBSITE"
-            : CanalSocial.Normalizar(canal);
+            : string.Equals(canal?.Trim(), "R2", StringComparison.OrdinalIgnoreCase)
+                ? "R2"
+                : CanalSocial.Normalizar(canal);
 
     private static string? GetDefaultValue(string key) => key switch
     {
@@ -297,15 +315,31 @@ public sealed class SocialIntegrationService
 
         try
         {
-            var data = JsonSerializer.Deserialize<SocialIntegrationSettingsFile>(
-                File.ReadAllText(_settingsPath),
-                _jsonOptions);
-            _values = data?.Values == null
+            var json = File.ReadAllText(_settingsPath);
+            var protectedFile = JsonSerializer.Deserialize<ProtectedSocialIntegrationSettingsFile>(json, _jsonOptions);
+
+            if (protectedFile?.Version == 1 && !string.IsNullOrWhiteSpace(protectedFile.ProtectedPayload))
+            {
+                var protectedJson = _protector.Unprotect(protectedFile.ProtectedPayload);
+                var protectedValues = JsonSerializer.Deserialize<Dictionary<string, string>>(
+                    protectedJson,
+                    _jsonOptions);
+                _values = protectedValues == null
+                    ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    : new Dictionary<string, string>(protectedValues, StringComparer.OrdinalIgnoreCase);
+                return;
+            }
+
+            // Compatibilidad con instalaciones anteriores. Al volver a guardar
+            // desde Conexiones, el archivo se reemplaza por el formato cifrado.
+            var legacy = JsonSerializer.Deserialize<SocialIntegrationSettingsFile>(json, _jsonOptions);
+            _values = legacy?.Values == null
                 ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                : new Dictionary<string, string>(data.Values, StringComparer.OrdinalIgnoreCase);
+                : new Dictionary<string, string>(legacy.Values, StringComparer.OrdinalIgnoreCase);
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "No se pudo descifrar la configuracion de integraciones.");
             _values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         }
     }
@@ -313,10 +347,14 @@ public sealed class SocialIntegrationService
     private void Save()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(_settingsPath)!);
-        File.WriteAllText(_settingsPath, JsonSerializer.Serialize(new SocialIntegrationSettingsFile
+        var payload = JsonSerializer.Serialize(_values, _jsonOptions);
+        var protectedFile = new ProtectedSocialIntegrationSettingsFile
         {
-            Values = _values
-        }, _jsonOptions));
+            ProtectedPayload = _protector.Protect(payload)
+        };
+        var temporaryPath = $"{_settingsPath}.{Guid.NewGuid():N}.tmp";
+        File.WriteAllText(temporaryPath, JsonSerializer.Serialize(protectedFile, _jsonOptions));
+        File.Move(temporaryPath, _settingsPath, true);
     }
 
     private static string? Mask(string? value)
@@ -328,8 +366,15 @@ public sealed class SocialIntegrationService
     }
 
     private static IReadOnlyList<SocialConfigFieldDefinition> GetFields(string canal) =>
-        CanalSocial.Normalizar(canal) switch
+        NormalizeIntegrationChannel(canal) switch
         {
+            "R2" =>
+            [
+                new("R2:AccountId", "Cloudflare Account ID", false, true),
+                new("R2:AccessKeyId", "R2 Access Key ID", true, true),
+                new("R2:SecretAccessKey", "R2 Secret Access Key", true, true),
+                new("R2:BucketName", "Nombre del bucket", false, true)
+            ],
             CanalSocial.Instagram =>
             [
                 new("Meta:Instagram:PublicUrl", "URL", false, false),
@@ -361,7 +406,11 @@ public sealed class SocialIntegrationService
                 new("TikTok:WebhookSecret", "TikTok Webhook Secret", true, true),
                 new("TikTok:AdvertiserId", "TikTok Advertiser ID", false, true),
                 new("TikTok:AccessToken", "Business API Access Token", true, true),
-                new("TikTok:DisplayAccessToken", "Display API Access Token (video.list)", true, false)
+                new("TikTok:DisplayAccessToken", "Display API Access Token (video.list)", true, false),
+                new("TikTok:RefreshToken", "OAuth Refresh Token", true, false),
+                new("TikTok:OpenId", "TikTok Open ID", false, false),
+                new("TikTok:AccessTokenExpiresAtUtc", "Vencimiento Access Token (UTC)", false, false),
+                new("TikTok:RefreshTokenExpiresAtUtc", "Vencimiento Refresh Token (UTC)", false, false)
             ],
             "WEBSITE" =>
             [

@@ -52,5 +52,6 @@ Toda la documentación se encuentra en [`docs`](docs/INDICE.md):
 
 - manual de uso;
 - documentación técnica;
-- Docker y migraciones MySQL.
+- Docker y migraciones MySQL;
+- despliegue en SmarterASP.NET.
 

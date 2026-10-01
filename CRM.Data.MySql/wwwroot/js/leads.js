@@ -50,7 +50,7 @@
 
             vista.innerHTML = `
                         <div class="module-heading">
-                            <div><h1>Leads</h1><p>Organiza prospectos por etapa de atención antes de convertirlos en venta.</p></div>
+                            <div><h1>Leads</h1><p>Organiza los chats privados por etapa. Los comentarios públicos se gestionan en Marketing.</p></div>
                             ${puedeGestionarEquipo
                                 ? '<button type="button" id="btnAsignarPendientes" class="secondary-btn">Asignar pendientes automáticamente</button>'
                                 : ""}

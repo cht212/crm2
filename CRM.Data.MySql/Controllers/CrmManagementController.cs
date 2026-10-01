@@ -283,7 +283,11 @@ public class CrmManagementController : ControllerBase
         page = page < 1 ? 1 : page;
         pageSize = pageSize is < 1 or > 200 ? 50 : pageSize;
 
-        var query = _access.FiltrarConversaciones(_context.Conversaciones.AsNoTracking());
+        var query = _access
+            .FiltrarConversaciones(_context.Conversaciones.AsNoTracking())
+            .Where(conversacion => conversacion.Mensajes.Any(mensaje =>
+                mensaje.cTipo != "comment" &&
+                mensaje.cTipo != "comment_reply"));
         if (!string.IsNullOrWhiteSpace(estado))
         {
             query = query.Where(c => c.cEstado == estado.Trim().ToUpperInvariant());

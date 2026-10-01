@@ -258,7 +258,28 @@
             return { desde: iso(desde), hasta: iso(hasta) };
         }
 
-        async function cargarModuloMarketing(vista) {
+        let marketingRefreshPromise = null;
+        let marketingUltimaActualizacionExterna = 0;
+        let marketingCargaVersion = 0;
+
+        function actualizarMarketingEnSegundoPlano(vista) {
+            if (marketingRefreshPromise || moduloActual !== "marketing" ||
+                Date.now() - marketingUltimaActualizacionExterna < 30000) return;
+            marketingUltimaActualizacionExterna = Date.now();
+            marketingRefreshPromise = cargarModuloMarketing(vista, {
+                forzarActualizacion: true,
+                silenciosa: true
+            }).catch(error => {
+                if (error?.name !== "AbortError") {
+                    console.warn("No se pudo actualizar Marketing en segundo plano.", error);
+                }
+            }).finally(() => {
+                marketingRefreshPromise = null;
+            });
+        }
+
+        async function cargarModuloMarketing(vista, opciones = {}) {
+            const cargaActual = ++marketingCargaVersion;
             if (!puedeVerModulo("marketing")) {
                 vista.innerHTML = '<div class="error">No tienes permiso para consultar Marketing.</div>';
                 return;
@@ -270,25 +291,36 @@
 
             const canalActivo = String(marketingFiltros.canal || "TODOS").toUpperCase();
             const params = new URLSearchParams({ desde: marketingFiltros.desde, hasta: marketingFiltros.hasta });
+            if (opciones.forzarActualizacion) params.set("refresh", "true");
             const comentariosUrl = canalActivo === "TODOS"
                 ? "/api/crm/comentarios?pageSize=200"
                 : `/api/crm/comentarios?pageSize=200&canal=${encodeURIComponent(canalActivo)}`;
-            vista.innerHTML = `
-                <div class="module-heading marketing-heading"><div><h1>Marketing</h1><p>Preparando publicaciones, comentarios e indicadores de las redes conectadas.</p></div></div>
-                <div class="marketing-loading"><i data-lucide="loader-circle"></i><span>Cargando analítica social…</span></div>`;
-            if (window.lucide) window.lucide.createIcons();
+            if (!opciones.silenciosa) {
+                vista.innerHTML = `
+                    <div class="module-heading marketing-heading"><div><h1>Marketing</h1><p>Preparando publicaciones, comentarios e indicadores de las redes conectadas.</p></div></div>
+                    <div class="marketing-loading"><i data-lucide="loader-circle"></i><span>Cargando analítica social…</span></div>`;
+                if (window.lucide) window.lucide.createIcons();
+            }
 
             const consultarConLimite = (url, limiteMs = 15000) => Promise.race([
                 api(url).catch(() => null),
                 new Promise(resolve => setTimeout(() => resolve(null), limiteMs))
             ]);
+            const comentariosIniciales = consultarConLimite(comentariosUrl, 8000);
             const [publicacionesResponse, metaResponse] = await Promise.all([
                 consultarConLimite(`/api/integraciones/publicaciones/estadisticas?${params}`),
                 consultarConLimite(`/api/integraciones/meta/estadisticas?${params}`)
             ]);
+            const servidoDesdeCache = [publicacionesResponse, metaResponse].some(response =>
+                response?.headers?.get("X-CRM-Cache") === "HIT");
             // Publicaciones sincroniza primero los comentarios que Meta reporta.
-            // La lectura local se hace después para que el contador y la lista coincidan.
-            const comentariosResponse = await consultarConLimite(comentariosUrl, 8000);
+            // Si hubo consulta externa real, se releen después para incluir los nuevos.
+            let comentariosResponse = await comentariosIniciales;
+            const huboConsultaExterna = [publicacionesResponse, metaResponse].some(response =>
+                response?.ok && response.headers?.get("X-CRM-Cache") !== "HIT");
+            if (huboConsultaExterna) {
+                comentariosResponse = await consultarConLimite(comentariosUrl, 8000);
+            }
 
             const publicacionesData = publicacionesResponse?.ok ? await publicacionesResponse.json() : { canales: [], serie: [] };
             const metaData = metaResponse?.ok ? await metaResponse.json() : { canales: [], success: false };
@@ -536,6 +568,10 @@
                 }));
             };
 
+            // Evita que una respuesta lenta sobrescriba un filtro o una navegación
+            // más reciente mientras Marketing se actualiza silenciosamente.
+            if (cargaActual !== marketingCargaVersion || moduloActual !== "marketing") return;
+
             vista.innerHTML = `
                 <div class="module-heading marketing-heading">
                     <div><h1>Marketing</h1><p>Rendimiento de redes, publicaciones y conversaciones generadas por la audiencia.</p></div>
@@ -645,4 +681,8 @@
                 const item = publicaciones[Number(card.dataset.marketingPublicationCard)];
                 if (item) mostrarDetallePublicacion(item);
             }));
+
+            if (!opciones.forzarActualizacion && servidoDesdeCache && moduloActual === "marketing") {
+                setTimeout(() => actualizarMarketingEnSegundoPlano(vista), 50);
+            }
         }

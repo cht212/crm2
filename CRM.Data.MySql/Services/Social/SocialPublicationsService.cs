@@ -25,6 +25,7 @@ public sealed class SocialPublicationsService
     private readonly SocialIntegrationService _settings;
     private readonly MetaGraphApiService _meta;
     private readonly SocialInboundService _inbound;
+    private readonly SemaphoreSlim _databaseSync = new(1, 1);
 
     public SocialPublicationsService(
         HttpClient http,
@@ -40,12 +41,10 @@ public sealed class SocialPublicationsService
 
     public async Task<SocialPublicationReport> GetReportAsync(DateOnly desde, DateOnly hasta, CancellationToken ct)
     {
-        var channels = new[]
-        {
-            await FacebookAsync(desde, hasta, ct),
-            await InstagramAsync(desde, hasta, ct),
-            await TikTokAsync(desde, hasta, ct)
-        };
+        var channels = await Task.WhenAll(
+            FacebookAsync(desde, hasta, ct),
+            InstagramAsync(desde, hasta, ct),
+            TikTokAsync(desde, hasta, ct));
         var series = channels.SelectMany(c => c.Posts)
             .GroupBy(p => new { Fecha = DateOnly.FromDateTime(p.PublicadoEn.UtcDateTime), p.Canal })
             .Select(g => new SocialPublicationDay(g.Key.Fecha, g.Key.Canal, g.Count(),
@@ -306,6 +305,7 @@ public sealed class SocialPublicationsService
         if (cancellationToken.IsCancellationRequested)
             return "La sincronización de comentarios fue cancelada.";
 
+        await _databaseSync.WaitAsync(cancellationToken);
         try
         {
             var perfiles = new Dictionary<string, MetaContactProfile?>(StringComparer.OrdinalIgnoreCase);
@@ -352,6 +352,10 @@ public sealed class SocialPublicationsService
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             return "La sincronización de comentarios fue cancelada.";
+        }
+        finally
+        {
+            _databaseSync.Release();
         }
 
         return commentGroups.FirstOrDefault(group => !group.Success)?.Error;

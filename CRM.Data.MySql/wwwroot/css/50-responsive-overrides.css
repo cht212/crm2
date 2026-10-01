@@ -121,31 +121,29 @@
 
 @media (min-width: 761px) and (max-width: 1100px) {
     .workspace-nav .nav-top > .nav-group[data-nav-group="comunicaciones"] {
-        display: flex;
-        align-items: center;
-        width: auto;
+        display: grid;
+        width: 100%;
         gap: 5px;
     }
     .workspace-nav .nav-group[data-nav-group="comunicaciones"].expanded .communications-rail {
-        display: flex !important;
-        width: auto;
-        margin: 0;
-        padding: 4px 6px;
-        gap: 3px;
-        border-radius: 22px;
+        display: grid !important;
+        width: calc(100% - 16px);
+        margin: 2px 8px 7px;
+        padding: 8px 6px;
+        gap: 5px;
+        border-radius: 18px;
     }
     .workspace-nav .nav-group[data-nav-group="comunicaciones"] .communications-rail .nav-subitem {
-        display: grid;
-        place-items: center;
-        width: 34px;
-        min-width: 34px;
-        height: 34px;
-        min-height: 34px;
-        padding: 0;
-        border-radius: 50%;
+        display: flex;
+        width: 100%;
+        min-width: 0;
+        height: 38px;
+        min-height: 38px;
+        padding: 0 9px;
+        border-radius: 12px;
     }
     .workspace-nav .nav-group[data-nav-group="comunicaciones"] .communications-rail .nav-subitem > span:last-child {
-        display: none;
+        display: inline;
     }
     .workspace-nav .nav-group[data-nav-group="comunicaciones"] .communications-rail .brand-logo,
     .workspace-nav .nav-group[data-nav-group="comunicaciones"] .communications-rail .brand-logo svg {
@@ -362,7 +360,7 @@
     .nav-chevron,
     .workspace-nav.collapsed .nav-chevron { display: block !important; margin-left: auto; }
     .nav-submenu,
-    .workspace-nav.collapsed .nav-submenu { display: grid; padding: 0 0 4px 16px; }
+    .workspace-nav.collapsed .nav-submenu { display: none; padding: 0 0 4px 16px; }
     .nav-subitem { color: rgba(255,255,255,.82); }
     .module-view,
     .workspace-nav.collapsed ~ .module-view { top: 0; }

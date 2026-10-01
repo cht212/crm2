@@ -682,12 +682,37 @@ public sealed class MetaGraphApiService
                 var conversationId = ReadString(conversation, "id");
                 if (string.IsNullOrWhiteSpace(conversationId)) continue;
 
+                string? participantId = null;
+                string? participantName = null;
+                if (conversation.TryGetProperty("participants", out var participants) &&
+                    participants.TryGetProperty("data", out var participantData) &&
+                    participantData.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var participant in participantData.EnumerateArray())
+                    {
+                        var candidateId = ReadString(participant, "id");
+                        if (string.IsNullOrWhiteSpace(candidateId) ||
+                            candidateId.Equals(ownUserId, StringComparison.OrdinalIgnoreCase) ||
+                            candidateId.Equals(professionalUserId, StringComparison.OrdinalIgnoreCase))
+                        {
+                            continue;
+                        }
+
+                        participantId = candidateId;
+                        participantName = ReadString(participant, "username") ??
+                            ReadString(participant, "name");
+                        break;
+                    }
+                }
+
                 conversaciones++;
                 var imported = await SincronizarInstagramLoginConversationAsync(
                     apiVersion,
                     token,
                     ownUserId,
                     conversationId,
+                    participantId,
+                    participantName,
                     inbound);
 
                 mensajesLeidos += imported.Leidos;
@@ -873,6 +898,8 @@ public sealed class MetaGraphApiService
         string token,
         string? ownUserId,
         string conversationId,
+        string? participantId,
+        string? participantName,
         SocialInboundService inbound)
     {
         var url =
@@ -903,6 +930,7 @@ public sealed class MetaGraphApiService
 
         var leidos = 0;
         var importados = 0;
+        var perfiles = new Dictionary<string, MetaContactProfile?>(StringComparer.OrdinalIgnoreCase);
         foreach (var message in data.EnumerateArray().Reverse())
         {
             leidos++;
@@ -924,6 +952,29 @@ public sealed class MetaGraphApiService
                 continue;
             }
 
+            MetaContactProfile? profile = null;
+            if (fromUsername.Equals("Instagram", StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrWhiteSpace(participantName) &&
+                fromId.Equals(participantId, StringComparison.OrdinalIgnoreCase))
+            {
+                fromUsername = participantName;
+            }
+
+            if (fromUsername.Equals("Instagram", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!perfiles.TryGetValue(fromId, out profile))
+                {
+                    var profileResult = await ObtenerPerfilContactoDetalladoAsync(
+                        CanalSocial.Instagram,
+                        fromId,
+                        ownUserId);
+                    profile = profileResult.Profile;
+                    perfiles[fromId] = profile;
+                }
+
+                fromUsername = profile?.Username ?? profile?.DisplayName ?? fromUsername;
+            }
+
             await inbound.RegistrarMensajeEntranteAsync(new SocialInboundMessage(
                 CanalSocial.Instagram,
                 fromId,
@@ -932,7 +983,7 @@ public sealed class MetaGraphApiService
                 text,
                 "text",
                 messageId,
-                null,
+                profile?.ProfilePictureUrl,
                 esReciente));
 
             importados++;
@@ -956,19 +1007,13 @@ public sealed class MetaGraphApiService
         string? pageId = null)
     {
         var normalized = CanalSocial.Normalizar(canal);
-        var instagramLoginToken = normalized == CanalSocial.Instagram
-            ? GetValue("Meta:Instagram:LoginAccessToken")
-            : null;
-        var usesInstagramLogin = !string.IsNullOrWhiteSpace(instagramLoginToken);
-        var configuredPageId = normalized == CanalSocial.Instagram
-            ? GetValue("Meta:Instagram:LoginUserId") ??
-              GetValue("Meta:Instagram:InstagramBusinessAccountId") ??
-              GetValue("Meta:Instagram:PageId")
-            : GetValue("Meta:Facebook:PageId");
-        var configuredToken = normalized == CanalSocial.Instagram
-            ? instagramLoginToken ?? GetValue("Meta:Instagram:AccessToken")
-            : GetValue("Meta:Facebook:AccessToken");
+        if (normalized == CanalSocial.Instagram)
+        {
+            return await ObtenerPerfilInstagramDetalladoAsync(externalUserId, pageId);
+        }
 
+        var configuredPageId = GetValue("Meta:Facebook:PageId");
+        var configuredToken = GetValue("Meta:Facebook:AccessToken");
         if (string.IsNullOrWhiteSpace(configuredToken) || string.IsNullOrWhiteSpace(externalUserId))
         {
             return MetaProfileLookupResult.Failed(
@@ -990,15 +1035,111 @@ public sealed class MetaGraphApiService
         var apiVersion = GetValue("Meta:ApiVersion") ??
             _configuration["Meta:ApiVersion"] ??
             "v25.0";
-        var fields = normalized == CanalSocial.Instagram
-            ? "name,username,profile_pic"
-            : "first_name,last_name,name,profile_pic";
-        var accessToken = usesInstagramLogin
-            ? configuredToken
-            : await ResolvePageAccessTokenAsync(apiVersion, configuredPageId, configuredToken);
-        var graphHost = usesInstagramLogin
-            ? "https://graph.instagram.com"
-            : "https://graph.facebook.com";
+        var accessToken = await ResolvePageAccessTokenAsync(apiVersion, configuredPageId, configuredToken);
+        return await ConsultarPerfilMetaAsync(
+            normalized,
+            externalUserId,
+            pageId,
+            configuredPageId,
+            accessToken,
+            "https://graph.facebook.com",
+            apiVersion,
+            "first_name,last_name,name,profile_pic");
+    }
+
+    private async Task<MetaProfileLookupResult> ObtenerPerfilInstagramDetalladoAsync(
+        string externalUserId,
+        string? webhookAccountId)
+    {
+        var loginUserId = GetValue("Meta:Instagram:LoginUserId");
+        var businessAccountId = GetValue("Meta:Instagram:InstagramBusinessAccountId");
+        var legacyPageId = GetValue("Meta:Instagram:PageId");
+        var loginToken = GetValue("Meta:Instagram:LoginAccessToken");
+        var legacyToken = GetValue("Meta:Instagram:AccessToken");
+        var configuredAccountId = loginUserId ?? businessAccountId ?? legacyPageId;
+
+        if (string.IsNullOrWhiteSpace(externalUserId) ||
+            (string.IsNullOrWhiteSpace(loginToken) && string.IsNullOrWhiteSpace(legacyToken)))
+        {
+            return MetaProfileLookupResult.Failed(
+                "Falta un Access Token de Instagram o el identificador externo del contacto.",
+                configuredAccountId,
+                webhookAccountId);
+        }
+
+        var configuredIds = new[] { loginUserId, businessAccountId, legacyPageId }
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        if (!string.IsNullOrWhiteSpace(webhookAccountId) &&
+            configuredIds.Length > 0 &&
+            !configuredIds.Contains(webhookAccountId, StringComparer.OrdinalIgnoreCase))
+        {
+            return MetaProfileLookupResult.Failed(
+                $"El mensaje llegó para la cuenta {webhookAccountId}, pero ese identificador no coincide con las cuentas configuradas de Instagram.",
+                configuredAccountId,
+                webhookAccountId);
+        }
+
+        var apiVersion = GetValue("Meta:ApiVersion") ??
+            _configuration["Meta:ApiVersion"] ??
+            "v25.0";
+        var attempts = new List<(string Flow, string Host, string Token)>();
+        if (!string.IsNullOrWhiteSpace(loginToken))
+        {
+            attempts.Add(("Instagram Login", "https://graph.instagram.com", loginToken));
+        }
+
+        var errors = new List<string>();
+        if (!string.IsNullOrWhiteSpace(legacyToken))
+        {
+            try
+            {
+                var pageToken = await ResolvePageAccessTokenAsync(apiVersion, legacyPageId, legacyToken);
+                attempts.Add(("Facebook Login", "https://graph.facebook.com", pageToken));
+            }
+            catch (Exception ex)
+            {
+                errors.Add($"Facebook Login: {ex.Message}");
+            }
+        }
+
+        foreach (var attempt in attempts)
+        {
+            var result = await ConsultarPerfilMetaAsync(
+                CanalSocial.Instagram,
+                externalUserId,
+                webhookAccountId,
+                configuredAccountId,
+                attempt.Token,
+                attempt.Host,
+                apiVersion,
+                "name,username,profile_pic");
+            if (result.Success)
+            {
+                return result;
+            }
+
+            errors.Add($"{attempt.Flow}: {result.Error}");
+        }
+
+        return MetaProfileLookupResult.Failed(
+            string.Join(" | ", errors.Distinct(StringComparer.OrdinalIgnoreCase)),
+            configuredAccountId,
+            webhookAccountId);
+    }
+
+    private async Task<MetaProfileLookupResult> ConsultarPerfilMetaAsync(
+        string canal,
+        string externalUserId,
+        string? webhookAccountId,
+        string? configuredAccountId,
+        string accessToken,
+        string graphHost,
+        string apiVersion,
+        string fields)
+    {
         var url =
             $"{graphHost}/{apiVersion}/{Uri.EscapeDataString(externalUserId)}" +
             $"?fields={Uri.EscapeDataString(fields)}";
@@ -1015,14 +1156,14 @@ public sealed class MetaGraphApiService
             {
                 _logger.LogWarning(
                     "Meta Graph API no devolvio perfil para {Canal}/{ExternalUserId}. HTTP {StatusCode}: {Body}",
-                    normalized,
+                    canal,
                     externalUserId,
                     (int)response.StatusCode,
                     body);
                 return MetaProfileLookupResult.Failed(
-                    $"Meta no devolvio perfil. HTTP {(int)response.StatusCode}: {body}",
-                    configuredPageId,
-                    pageId);
+                    $"HTTP {(int)response.StatusCode}: {BuildInsightError(body)}",
+                    configuredAccountId,
+                    webhookAccountId);
             }
 
             using var document = JsonDocument.Parse(body);
@@ -1032,7 +1173,7 @@ public sealed class MetaGraphApiService
             var name = ReadString(root, "name");
             var username = ReadString(root, "username");
             var picture = ReadString(root, "profile_pic");
-            var displayName = normalized == CanalSocial.Instagram
+            var displayName = canal == CanalSocial.Instagram
                 ? username ?? name
                 : JoinName(firstName, lastName) ?? name ?? username;
 
@@ -1040,23 +1181,23 @@ public sealed class MetaGraphApiService
             {
                 return MetaProfileLookupResult.Failed(
                     "Meta respondio, pero no devolvio nombre ni foto para este usuario.",
-                    configuredPageId,
-                    pageId);
+                    configuredAccountId,
+                    webhookAccountId);
             }
 
             return MetaProfileLookupResult.Ok(
                 new MetaContactProfile(displayName, username, picture),
-                configuredPageId,
-                pageId);
+                configuredAccountId,
+                webhookAccountId);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(
                 ex,
                 "No se pudo consultar perfil de Meta para {Canal}/{ExternalUserId}.",
-                normalized,
+                canal,
                 externalUserId);
-            return MetaProfileLookupResult.Failed(ex.Message, configuredPageId, pageId);
+            return MetaProfileLookupResult.Failed(ex.Message, configuredAccountId, webhookAccountId);
         }
     }
 
@@ -1371,7 +1512,7 @@ public sealed class MetaGraphApiService
             true,
             hasErrors ? "ERROR" : (visualizaciones + alcance + interacciones + visitasPerfil + clicksSitio > 0 ? "OPERATIVO" : "SIN_DATOS"),
             hasErrors
-                ? "Meta rechazo la consulta de Instagram Insights. Revisa Instagram profesional, token y permisos."
+                ? $"Instagram Insights no respondió: {metrics.Errors[0]}"
                 : (visualizaciones + alcance + interacciones + visitasPerfil + clicksSitio > 0
                     ? "Estadisticas de Instagram leidas correctamente desde Instagram Graph API."
                     : "Meta respondio correctamente, pero no devolvio valores para el rango consultado."),

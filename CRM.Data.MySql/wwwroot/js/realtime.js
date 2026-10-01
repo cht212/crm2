@@ -4,6 +4,7 @@ let crmRealtimeSource = null;
 let crmRealtimeTimer = null;
 let crmRealtimePending = false;
 let crmRealtimeLastRefresh = 0;
+let crmRealtimeFallbackTimer = null;
 
 function programarActualizacionTiempoReal() {
     if (document.visibilityState !== "visible") {
@@ -23,7 +24,7 @@ function programarActualizacionTiempoReal() {
             if (moduloActual === "dashboard" && vista && typeof cargarModuloDashboard === "function") {
                 await cargarModuloDashboard(vista);
             } else if (moduloActual === "marketing" && vista && typeof cargarModuloMarketing === "function") {
-                await cargarModuloMarketing(vista);
+                await cargarModuloMarketing(vista, { silenciosa: true });
             } else if (moduloActual === "inbox" && typeof actualizarCRM === "function") {
                 await actualizarCRM();
             }
@@ -47,6 +48,14 @@ function iniciarActualizacionesTiempoReal() {
     crmRealtimeSource.addEventListener("connected", () => {
         estado && (estado.textContent = "API conectada · tiempo real");
     });
+
+    // Respaldo de baja frecuencia: mantiene Dashboard y Marketing al día si
+    // un proxy interrumpe SSE o si una red social cambia sin enviar webhook.
+    crmRealtimeFallbackTimer ??= setInterval(() => {
+        if (document.visibilityState === "visible" && ["dashboard", "marketing"].includes(moduloActual)) {
+            programarActualizacionTiempoReal();
+        }
+    }, 60000);
 }
 
 document.addEventListener("visibilitychange", () => {
@@ -55,4 +64,7 @@ document.addEventListener("visibilitychange", () => {
     }
 });
 
-window.addEventListener("beforeunload", () => crmRealtimeSource?.close());
+window.addEventListener("beforeunload", () => {
+    crmRealtimeSource?.close();
+    if (crmRealtimeFallbackTimer) clearInterval(crmRealtimeFallbackTimer);
+});

@@ -8,6 +8,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Encodings.Web;
 
 namespace CRM.Data.Controllers;
 
@@ -18,6 +19,7 @@ public sealed class IntegracionesController : ControllerBase
     private readonly IConfiguration _configuration;
     private readonly BotSettingsService _botSettings;
     private readonly SocialIntegrationService _socialIntegrations;
+    private readonly SocialOAuthService _socialOAuth;
     private readonly SocialInboundService _inbound;
     private readonly MetaGraphApiService _metaGraph;
     private readonly MetaWebhookService _metaWebhook;
@@ -31,6 +33,7 @@ public sealed class IntegracionesController : ControllerBase
         IConfiguration configuration,
         BotSettingsService botSettings,
         SocialIntegrationService socialIntegrations,
+        SocialOAuthService socialOAuth,
         SocialInboundService inbound,
         MetaGraphApiService metaGraph,
         MetaWebhookService metaWebhook,
@@ -43,6 +46,7 @@ public sealed class IntegracionesController : ControllerBase
         _configuration = configuration;
         _botSettings = botSettings;
         _socialIntegrations = socialIntegrations;
+        _socialOAuth = socialOAuth;
         _inbound = inbound;
         _metaGraph = metaGraph;
         _metaWebhook = metaWebhook;
@@ -77,9 +81,13 @@ public sealed class IntegracionesController : ControllerBase
                 phoneNumberId = _numbers.GetNumbers().Count > 0,
                 numbers = _numbers.GetNumbers(),
                 businessAccountId = TieneValor("WhatsApp:BusinessAccountId"),
-                apiVersion = _configuration["WhatsApp:ApiVersion"] ?? "v25.0",
+                apiVersion = _socialIntegrations.GetConfiguredValue("WhatsApp:ApiVersion") ??
+                    _configuration["WhatsApp:ApiVersion"] ?? "v25.0",
                 sendMessagesToMeta =
-                    bool.TryParse(_configuration["WhatsApp:SendMessagesToMeta"], out var enabled) &&
+                    bool.TryParse(
+                        _socialIntegrations.GetConfiguredValue("WhatsApp:SendMessagesToMeta") ??
+                            _configuration["WhatsApp:SendMessagesToMeta"],
+                        out var enabled) &&
                     enabled
             },
             bot = new
@@ -103,7 +111,17 @@ public sealed class IntegracionesController : ControllerBase
     [Authorize]
     public IActionResult OAuthStart(string canal)
     {
-        return Ok(_socialIntegrations.BuildOauthStart(Request, canal));
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userId)) return Unauthorized();
+
+        try
+        {
+            return Ok(_socialOAuth.CreateStart(Request, canal, userId));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
     }
 
     [HttpGet("{canal}/configuracion")]
@@ -162,11 +180,13 @@ public sealed class IntegracionesController : ControllerBase
 
     [HttpGet("{canal}/oauth/callback")]
     [Authorize]
-    public IActionResult OAuthCallback(
+    public async Task<IActionResult> OAuthCallback(
         string canal,
         [FromQuery] string? code,
+        [FromQuery] string? state,
         [FromQuery] string? error,
-        [FromQuery(Name = "error_description")] string? errorDescription)
+        [FromQuery(Name = "error_description")] string? errorDescription,
+        CancellationToken cancellationToken)
     {
         if (!string.IsNullOrWhiteSpace(error))
         {
@@ -179,14 +199,53 @@ public sealed class IntegracionesController : ControllerBase
             });
         }
 
-        return Ok(new
+        if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(state))
         {
-            success = true,
-            canal,
-            pending = true,
-            message = "OAuth recibido. Falta intercambiar el code por token y guardarlo en configuracion segura.",
-            codeReceived = !string.IsNullOrWhiteSpace(code)
-        });
+            return BadRequest(new { success = false, message = "Faltan code o state en el retorno OAuth." });
+        }
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userId)) return Unauthorized();
+
+        try
+        {
+            var result = await _socialOAuth.ExchangeAsync(
+                Request, canal, userId, code, state, cancellationToken);
+            await _auditoria.RegistrarAsync(
+                "Integracion", 0, "OAUTH_CONECTADO", null, result.Canal,
+                int.TryParse(userId, out var parsedUserId) ? parsedUserId : null);
+            return Content(BuildOAuthResultHtml(true, result.Message), "text/html; charset=utf-8");
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "No se pudo completar OAuth para {Canal}.", canal);
+            return Content(BuildOAuthResultHtml(false, ex.Message), "text/html; charset=utf-8");
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            _logger.LogWarning(ex, "El proveedor OAuth no respondió para {Canal}.", canal);
+            return Content(
+                BuildOAuthResultHtml(false, "No se pudo contactar al proveedor. Inténtalo nuevamente."),
+                "text/html; charset=utf-8");
+        }
+    }
+
+    private static string BuildOAuthResultHtml(bool success, string message)
+    {
+        var title = success ? "Conexión completada" : "No se pudo conectar";
+        var color = success ? "#16803d" : "#b42318";
+        return $$"""
+            <!doctype html><html lang="es"><head><meta charset="utf-8">
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <title>{{title}}</title></head>
+            <body style="font-family:Segoe UI,sans-serif;background:#eef4fa;padding:32px;color:#24323b">
+              <main style="max-width:560px;margin:10vh auto;background:white;padding:32px;border-radius:18px;box-shadow:0 20px 50px #1232">
+                <h1 style="color:{{color}}">{{title}}</h1>
+                <p>{{HtmlEncoder.Default.Encode(message)}}</p>
+                <a href="/" style="color:#003da5;font-weight:700">Volver al CRM</a>
+              </main>
+            </body></html>
+            """;
     }
 
     [HttpGet("meta/webhook")]
@@ -214,14 +273,31 @@ public sealed class IntegracionesController : ControllerBase
     [CrmPermission(CrmPermissionService.ModuleMarketing)]
     public async Task<IActionResult> EstadisticasMeta(
         [FromQuery] DateTime? desde = null,
-        [FromQuery] DateTime? hasta = null)
+        [FromQuery] DateTime? hasta = null,
+        [FromQuery] bool refresh = false)
     {
         var key = $"marketing:meta:{desde?.Date:yyyyMMdd}:{hasta?.Date:yyyyMMdd}";
+        if (refresh)
+        {
+            _cache.Remove(key);
+        }
+        else if (_cache.TryGetValue<MetaDashboardResult>(key, out var cachedDashboard))
+        {
+            Response.Headers["X-CRM-Cache"] = "HIT";
+            return Ok(cachedDashboard);
+        }
+
         var dashboard = await _cache.GetOrCreateAsync(key, async entry =>
         {
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2);
-            return await _metaGraph.ObtenerDashboardAsync(desde, hasta);
+            var result = await _metaGraph.ObtenerDashboardAsync(desde, hasta);
+            // Una caída breve de Meta o de DNS no debe dejar Marketing mostrando
+            // un error obsoleto durante el mismo tiempo que una respuesta válida.
+            entry.AbsoluteExpirationRelativeToNow = result.Success
+                ? TimeSpan.FromMinutes(30)
+                : TimeSpan.FromSeconds(10);
+            return result;
         });
+        Response.Headers["X-CRM-Cache"] = refresh ? "REFRESH" : "MISS";
         return Ok(dashboard);
     }
 
@@ -229,18 +305,36 @@ public sealed class IntegracionesController : ControllerBase
     [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     [CrmPermission(CrmPermissionService.ModuleMarketing)]
     public async Task<IActionResult> EstadisticasPublicaciones(
-        [FromQuery] DateOnly? desde, [FromQuery] DateOnly? hasta, CancellationToken cancellationToken)
+        [FromQuery] DateOnly? desde,
+        [FromQuery] DateOnly? hasta,
+        [FromQuery] bool refresh,
+        CancellationToken cancellationToken)
     {
         var end = hasta ?? DateOnly.FromDateTime(DateTime.UtcNow);
         var start = desde ?? end.AddDays(-30);
         if (start > end || end.DayNumber - start.DayNumber > 365 || end > DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1))
             return BadRequest(new { message = "El rango debe ser valido y no superar 365 dias." });
         var key = $"marketing:publicaciones:{start:yyyyMMdd}:{end:yyyyMMdd}";
+        if (refresh)
+        {
+            _cache.Remove(key);
+        }
+        else if (_cache.TryGetValue<SocialPublicationReport>(key, out var cachedReport))
+        {
+            Response.Headers["X-CRM-Cache"] = "HIT";
+            return Ok(cachedReport);
+        }
+
         var report = await _cache.GetOrCreateAsync(key, async entry =>
         {
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2);
-            return await _publications.GetReportAsync(start, end, cancellationToken);
+            var result = await _publications.GetReportAsync(start, end, cancellationToken);
+            entry.AbsoluteExpirationRelativeToNow = result.Canales.Any(channel =>
+                !string.IsNullOrWhiteSpace(channel.Error))
+                ? TimeSpan.FromSeconds(10)
+                : TimeSpan.FromMinutes(30);
+            return result;
         });
+        Response.Headers["X-CRM-Cache"] = refresh ? "REFRESH" : "MISS";
         return Ok(report);
     }
 

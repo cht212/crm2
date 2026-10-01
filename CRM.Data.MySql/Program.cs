@@ -1,7 +1,9 @@
 using CRM.Data.Extensions;
 using CRM.Data.Services;
 using CRM.Data.Startup;
+using Microsoft.AspNetCore.ResponseCompression;
 using MySql.Data.MySqlClient;
+using System.IO.Compression;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,11 +19,23 @@ builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
 builder.Services.AddCrmDatabase(builder.Configuration);
-builder.Services.AddCrmApplicationServices();
+builder.Services.AddCrmApplicationServices(builder.Environment);
 builder.Services.AddCrmCookieAuthentication(builder.Environment);
 builder.Services.AddCrmCors(builder.Configuration);
 builder.Services.AddCrmRateLimiting();
 builder.Services.AddCrmForwardedHeaders(builder.Configuration);
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+        ["application/json", "application/javascript", "text/css", "image/svg+xml"]);
+});
+builder.Services.Configure<BrotliCompressionProviderOptions>(options =>
+    options.Level = CompressionLevel.Fastest);
+builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+    options.Level = CompressionLevel.Fastest);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -40,6 +54,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseCrmSecurityHeaders();
+app.UseResponseCompression();
 app.Use(async (context, next) =>
 {
     if (context.Request.Path.StartsWithSegments("/uploads"))

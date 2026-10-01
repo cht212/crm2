@@ -3,6 +3,7 @@
 
 let dashboardCargaVersion = 0;
 let dashboardFiltros = crearFiltrosDashboardIniciales();
+const dashboardRenderCache = new Map();
 
 function fechaLocalIso(fecha) {
     const year = fecha.getFullYear();
@@ -51,31 +52,58 @@ async function cargarModuloDashboard(vista) {
         paramsHoy.set("usuarioId", dashboardFiltros.usuarioId);
     }
 
-    const [response, hoyResponse, adminResponse, integracionesResponse, usuarios] = await Promise.all([
-        api(`/api/crm/reportes/resumen${paramsPeriodo.size ? `?${paramsPeriodo.toString()}` : ""}`),
-        api(`/api/dashboard/hoy${paramsHoy.size ? `?${paramsHoy.toString()}` : ""}`),
-        vistaAsesor ? Promise.resolve(null) : api(`/api/dashboard/administracion?${paramsPeriodo.toString()}`),
-        vistaAdmin ? api("/api/integraciones/estado") : Promise.resolve(null),
-        vistaAsesor ? Promise.resolve([]) : cargarUsuarios().catch(() => [])
-    ]);
+    const cacheKey = `${rolActual}:${paramsPeriodo.toString()}:${paramsHoy.toString()}`;
+    const cached = dashboardRenderCache.get(cacheKey);
+    if (cached && moduloActual === "dashboard") {
+        renderDashboard(vista, cached);
+    }
+
+    // Todas las consultas empiezan juntas, pero el resumen principal se pinta
+    // apenas llega; los paneles secundarios se incorporan después.
+    const responsePromise = api(`/api/crm/reportes/resumen${paramsPeriodo.size ? `?${paramsPeriodo.toString()}` : ""}`);
+    const hoyPromise = api(`/api/dashboard/hoy${paramsHoy.size ? `?${paramsHoy.toString()}` : ""}`).catch(() => null);
+    const adminPromise = vistaAsesor
+        ? Promise.resolve(null)
+        : api(`/api/dashboard/administracion?${paramsPeriodo.toString()}`).catch(() => null);
+    const integracionesPromise = vistaAdmin
+        ? api("/api/integraciones/estado").catch(() => null)
+        : Promise.resolve(null);
+    const usuariosPromise = vistaAsesor ? Promise.resolve([]) : cargarUsuarios().catch(() => []);
+
+    const response = await responsePromise;
 
     if (!response.ok) {
         throw new Error("Dashboard no disponible");
     }
     const reporte = await response.json();
-    if (hoyResponse.ok) {
-        reporte.hoy = await hoyResponse.json();
-    }
-    if (adminResponse?.ok) reporte.administracion = await adminResponse.json();
-    reporte.administracionNoDisponible = !vistaAsesor && !adminResponse?.ok;
-    if (integracionesResponse?.ok) reporte.integraciones = await integracionesResponse.json();
-    reporte.usuariosDashboard = usuarios || [];
     reporte.filtrosDashboard = { ...dashboardFiltros };
 
     if (carga !== dashboardCargaVersion || moduloActual !== "dashboard") {
         return;
     }
 
+    dashboardRenderCache.set(cacheKey, reporte);
+    renderDashboard(vista, reporte);
+
+    const [hoyResponse, adminResponse, integracionesResponse, usuarios] = await Promise.all([
+        hoyPromise,
+        adminPromise,
+        integracionesPromise,
+        usuariosPromise
+    ]);
+    if (hoyResponse?.ok) {
+        reporte.hoy = await hoyResponse.json();
+    }
+    if (adminResponse?.ok) reporte.administracion = await adminResponse.json();
+    reporte.administracionNoDisponible = !vistaAsesor && !adminResponse?.ok;
+    if (integracionesResponse?.ok) reporte.integraciones = await integracionesResponse.json();
+    reporte.usuariosDashboard = usuarios || [];
+
+    if (carga !== dashboardCargaVersion || moduloActual !== "dashboard") {
+        return;
+    }
+
+    dashboardRenderCache.set(cacheKey, reporte);
     renderDashboard(vista, reporte);
 }
 

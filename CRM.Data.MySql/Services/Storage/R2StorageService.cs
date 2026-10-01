@@ -7,15 +7,18 @@ namespace CRM.Data.Services;
 public sealed class R2StorageService
 {
     private readonly IConfiguration _configuration;
+    private readonly SocialIntegrationService _integrations;
     private readonly IWebHostEnvironment _environment;
     private readonly ILogger<R2StorageService> _logger;
 
     public R2StorageService(
         IConfiguration configuration,
+        SocialIntegrationService integrations,
         IWebHostEnvironment environment,
         ILogger<R2StorageService> logger)
     {
         _configuration = configuration;
+        _integrations = integrations;
         _environment = environment;
         _logger = logger;
     }
@@ -188,7 +191,7 @@ public sealed class R2StorageService
 
     private string Required(string key)
     {
-        var value = _configuration[key];
+        var value = _integrations.GetConfiguredValue(key) ?? _configuration[key];
         if (string.IsNullOrWhiteSpace(value))
         {
             throw new InvalidOperationException($"Falta configurar {key}.");

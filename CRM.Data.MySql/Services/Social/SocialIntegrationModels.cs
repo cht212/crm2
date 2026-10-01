@@ -19,6 +19,12 @@ public sealed record SocialOauthStart(
     IReadOnlyList<string> MissingConfig,
     string Message);
 
+public sealed record SocialOauthExchangeResult(
+    bool Success,
+    string Canal,
+    string Message,
+    IReadOnlyList<string> UpdatedFields);
+
 public sealed record SocialChannelConfiguration(
     string Canal,
     IReadOnlyList<SocialConfigField> Fields);
@@ -40,4 +46,10 @@ public sealed record SocialConfigFieldDefinition(
 public sealed class SocialIntegrationSettingsFile
 {
     public Dictionary<string, string> Values { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+}
+
+public sealed class ProtectedSocialIntegrationSettingsFile
+{
+    public int Version { get; set; } = 1;
+    public string ProtectedPayload { get; set; } = string.Empty;
 }

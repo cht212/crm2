@@ -1,5 +1,6 @@
 using CRM.Data.Data;
 using CRM.Data.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -37,8 +38,26 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddCrmApplicationServices(this IServiceCollection services)
+    public static IServiceCollection AddCrmApplicationServices(
+        this IServiceCollection services,
+        IHostEnvironment environment)
     {
+        var keyDirectory = new DirectoryInfo(Path.Combine(
+            environment.ContentRootPath,
+            "App_Data",
+            "data-protection-keys"));
+        var dataProtection = services
+            .AddDataProtection()
+            .SetApplicationName("CRM.Data")
+            .PersistKeysToFileSystem(keyDirectory);
+        if (OperatingSystem.IsWindows())
+        {
+            // SmarterASP puede no cargar el perfil del Application Pool en
+            // todos los planes. El alcance de maquina evita depender de ese
+            // perfil; App_Data debe conservar sus permisos privados de IIS.
+            dataProtection.ProtectKeysWithDpapi(protectToLocalMachine: true);
+        }
+
         services.AddMemoryCache();
         services.AddHttpContextAccessor();
         services.AddScoped<WhatsAppService>();
@@ -52,6 +71,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<BotSettingsService>();
         services.AddSingleton<QuickReplyTemplatesService>();
         services.AddSingleton<SocialIntegrationService>();
+        services.AddHttpClient<SocialOAuthService>()
+            .ConfigurePrimaryHttpMessageHandler(CreateExternalHttpHandler);
+        services.AddHostedService<SocialOAuthRefreshWorker>();
         services.AddSingleton<WhatsAppNumberRegistry>();
         services.AddScoped<IPasswordHasher<CRM.Data.Models.CrmUsuario>, PasswordHasher<CRM.Data.Models.CrmUsuario>>();
 

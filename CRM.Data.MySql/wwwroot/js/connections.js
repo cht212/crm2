@@ -126,6 +126,7 @@
                         <span>Cloudflare R2</span>
                         <strong>${r2Listo ? "Configurado" : "Incompleto"}</strong>
                         <small>Almacenamiento privado de documentos, imágenes y stickers.</small>
+                        ${puedeConfigurar ? '<button type="button" class="connection-action secondary" data-config-channel="r2">Configurar almacenamiento</button>' : ""}
                     </article>
                     <article class="connection-status-card ${bot.whatsappAutoReply ? "ready" : "warning"}">
                         <span>Bot WhatsApp</span>
@@ -291,6 +292,7 @@
                                 </div>
                                 <div class="crm-modal-actions">
                                     <button type="button" data-modal-cancel>Cancelar</button>
+                                    ${["instagram", "facebook", "tiktok"].includes(canal) ? '<button type="button" class="secondary" id="startIntegrationOAuth">Conectar con OAuth</button>' : ""}
                                     <button type="submit">Guardar</button>
                                 </div>
                             </form>
@@ -305,6 +307,22 @@
                     modalHost.querySelector("#toggleSecretsVisibility").addEventListener("click", async () => {
                         mostrarClaves = !mostrarClaves;
                         await abrirConfiguracion();
+                    });
+
+                    modalHost.querySelector("#startIntegrationOAuth")?.addEventListener("click", async event => {
+                        const oauthButton = event.currentTarget;
+                        oauthButton.disabled = true;
+                        try {
+                            const response = await api(`/api/integraciones/${canal}/oauth/start`);
+                            const result = await response.json().catch(() => ({}));
+                            if (!response.ok || !result.ready || !result.authorizationUrl) {
+                                notificar(result.message || `Falta configurar: ${(result.missingConfig || []).join(", ")}`, "error");
+                                return;
+                            }
+                            window.location.assign(result.authorizationUrl);
+                        } finally {
+                            oauthButton.disabled = false;
+                        }
                     });
 
                     modalHost.querySelector("#integrationConfigForm").addEventListener("submit", async event => {
