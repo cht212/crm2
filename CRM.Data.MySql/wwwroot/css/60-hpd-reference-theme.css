@@ -88,8 +88,8 @@ body:not(:has(.mobile-menu-open)) .main {
 
 body:has(.workspace-nav.collapsed) .header,
 body:has(.workspace-nav.collapsed) .main {
-    width: calc(100% - 70px);
-    margin-left: 70px;
+    width: calc(100% - 80px);
+    margin-left: 80px;
 }
 
 .header-icon-button,
@@ -167,7 +167,7 @@ body:has(.workspace-nav.collapsed) .main {
 }
 
 .workspace-nav::before { display: none; }
-.workspace-nav.collapsed { width: 70px; }
+.workspace-nav.collapsed { width: 80px; }
 
 .nav-brand {
     display: flex;
@@ -487,14 +487,21 @@ body:has(.workspace-nav.collapsed) .main {
 .workspace-nav > .mobile-menu-socials .brand-logo,
 .workspace-nav > .mobile-menu-socials .brand-logo svg { width: 24px; height: 24px; }
 
+/* El color global del sitio web es oscuro para las tarjetas claras. En el
+   pie azul del menú debe heredar el tono claro de la navegación. */
+.workspace-nav > .mobile-menu-socials .brand-logo.website {
+    color: var(--nav-text);
+}
+
 .workspace-nav.collapsed .nav-brand { justify-content: center; }
-.workspace-nav.collapsed .nav-brand-mark { display: none; }
+.workspace-nav.collapsed .nav-brand-mark { display: flex; }
 .workspace-nav.collapsed .nav-brand-mark .brand-icon { display: block; }
 .workspace-nav.collapsed .nav-brand-mark .brand-full { display: none; }
-.workspace-nav.collapsed #navToggle { display: grid; }
+.workspace-nav.collapsed #navToggle { display: none; }
 .workspace-nav.collapsed .nav-collapse-icon { transform: rotate(180deg); }
-.workspace-nav.collapsed .nav-brand { min-height: 74px; padding: 20px 15px; }
-.workspace-nav.collapsed .nav-top { padding: 4px 9px 12px; }
+.workspace-nav.collapsed .nav-brand { min-height: 74px; padding: 8px 11px; }
+.workspace-nav.collapsed .nav-brand-mark .brand-icon { width: 36px; height: 36px; }
+.workspace-nav.collapsed .nav-top { padding: 4px 11px 12px; }
 .workspace-nav.collapsed .nav-item { justify-content: center; padding: 8px 0; border-radius: 8px; }
 .workspace-nav.collapsed .nav-label,
 .workspace-nav.collapsed .nav-submenu,
@@ -872,11 +879,7 @@ h6 { font-size: .9375rem; font-weight: 500; line-height: 1.375rem; }
     .workspace-nav.collapsed:hover .nav-group.expanded .nav-submenu { display: grid; }
 
     .workspace-nav.collapsed:not(:hover) > .mobile-menu-socials {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        flex-basis: 90px;
-        min-height: 90px;
-        column-gap: 2px;
-        padding: 6px;
+        display: none;
     }
 }
 
@@ -941,7 +944,8 @@ h6 { font-size: .9375rem; font-weight: 500; line-height: 1.375rem; }
     filter: none;
 }
 
-.workspace-nav .nav-group[data-nav-group="comunicaciones"] .communications-rail .brand-logo svg {
+.workspace-nav .nav-group[data-nav-group="comunicaciones"] .communications-rail .brand-logo svg,
+.workspace-nav .nav-group[data-nav-group="comunicaciones"] .communications-rail .brand-logo img {
     width: 20px;
     height: 20px;
 }
@@ -965,7 +969,8 @@ h6 { font-size: .9375rem; font-weight: 500; line-height: 1.375rem; }
     color: inherit;
 }
 
-.workspace-nav .communications-rail .brand-logo.instagram svg {
+.workspace-nav .communications-rail .brand-logo.instagram svg,
+.workspace-nav .communications-rail .brand-logo.instagram img {
     display: block !important;
     width: 20px;
     height: 20px;
@@ -1348,18 +1353,37 @@ label {
 }
 
 @media (max-width: 760px) {
+    /* Contactos usa una tarjeta compacta propia; no debe heredar la tabla
+       genérica de dos columnas que se aplica al resto de módulos. */
+    .contacts-workspace > .contacts-table {
+        display: none !important;
+    }
+
+    .contacts-workspace > .contacts-mobile-list {
+        display: grid !important;
+    }
+
+    .module-table.responsive-table-ready:not(.contacts-table) {
+        display: none !important;
+    }
+
+    .table-mobile-list {
+        display: grid !important;
+    }
+
     :is(.module-table, .contacts-table, .table).responsive-table-ready tbody tr {
         height: auto;
         border: 1px solid var(--line);
+        border-top: 3px solid color-mix(in srgb, var(--primary) 70%, var(--line));
         border-radius: 10px;
         background: var(--surface);
-        box-shadow: none;
+        box-shadow: 0 7px 18px color-mix(in srgb, var(--on-background) 9%, transparent);
     }
 
     :is(.module-table, .contacts-table, .table).responsive-table-ready tbody td {
         height: auto;
-        min-height: 44px;
-        padding: 10px 14px;
+        min-height: 62px;
+        padding: 8px 10px;
         border-bottom: 1px solid var(--line);
     }
 }
@@ -1823,7 +1847,9 @@ label {
 
 /* Portada de src/pages/index.vue de sacar el diseño/frontend:
    VCard de bienvenida y resumen con VAvatar tonal, text-h4 y divisores. */
-.ops-dashboard { gap: 24px; container-type: inline-size; }
+.ops-dashboard { gap: 16px; container-type: inline-size; }
+
+.ops-dashboard .ops-panel { padding: 16px; }
 
 .ops-welcome-card,
 .ops-summary-card {
@@ -1845,16 +1871,16 @@ label {
 .ops-summary-card {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0;
-    padding: 16px 8px;
+    padding: 12px 8px;
 }
 
 .ops-summary-stat {
     position: relative;
     display: flex;
     align-items: flex-start;
-    gap: 16px;
+    gap: 12px;
     min-width: 0;
-    padding: 0 24px;
+    padding: 0 16px;
     border: 0;
     border-radius: 0;
     background: transparent;
@@ -1904,7 +1930,7 @@ label {
 .ops-summary-copy { display: grid; min-width: 0; }
 .ops-summary-copy strong { font-size: 1.5rem; font-weight: 500; line-height: 2rem; overflow-wrap: break-word; }
 .ops-summary-copy > span { font-size: .875rem; line-height: 1.25rem; }
-.ops-summary-copy small { color: var(--muted); font-size: .75rem; line-height: 1.125rem; }
+.ops-summary-copy small { display: none; }
 
 @container (max-width: 900px) {
     .ops-summary-card { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 24px; }
@@ -1914,7 +1940,7 @@ label {
 @container (max-width: 520px) {
     .ops-welcome-card { padding: 24px; }
     .ops-summary-card { grid-template-columns: 1fr; row-gap: 0; }
-    .ops-summary-stat { padding: 16px; }
+    .ops-summary-stat { padding: 12px 16px; }
     .ops-summary-stat + .ops-summary-stat { border-left: 0; border-top: 1px solid var(--line); }
     .ops-summary-stat::before { display: none; }
 }

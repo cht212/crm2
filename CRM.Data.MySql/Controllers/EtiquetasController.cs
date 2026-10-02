@@ -11,7 +11,7 @@ namespace CRM.Data.Controllers;
 
 [ApiController]
 [Route("api/etiquetas")]
-[Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+[Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
 [EnableRateLimiting("api")]
 public class EtiquetasController : ControllerBase
 {

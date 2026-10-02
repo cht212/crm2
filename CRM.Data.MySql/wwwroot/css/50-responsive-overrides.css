@@ -574,6 +574,110 @@
         white-space: normal;
     }
 
+    .module-table.contacts-table.responsive-table-ready {
+        display: none;
+    }
+
+    .contacts-mobile-list {
+        display: grid;
+        gap: 10px;
+    }
+
+    .contact-mobile-card {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--primary);
+        border-radius: 12px;
+        background: var(--surface);
+        box-shadow: 0 7px 18px color-mix(in srgb, var(--on-background) 9%, transparent);
+    }
+
+    .contact-mobile-actions {
+        justify-content: flex-end;
+    }
+
+    .contact-mobile-card strong,
+    .table-mobile-card strong {
+        min-width: 0;
+        overflow: hidden;
+        color: var(--ink);
+        font-size: 15px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .table-mobile-list {
+        display: grid;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .table-mobile-card {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--surface);
+        box-shadow: 0 7px 18px color-mix(in srgb, var(--on-background) 9%, transparent);
+    }
+
+    .table-mobile-view {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: auto;
+        min-width: 84px;
+        min-height: 40px;
+    }
+
+    .table-mobile-view svg {
+        width: 17px;
+        height: 17px;
+    }
+
+    .table-mobile-empty {
+        padding: 18px 14px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--surface);
+        color: var(--muted);
+        text-align: center;
+    }
+
+    .contact-mobile-card .secondary-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: auto;
+        min-width: 84px;
+        min-height: 40px;
+    }
+
+    .contact-mobile-card .secondary-btn svg {
+        width: 17px;
+        height: 17px;
+    }
+
+    .contact-mobile-empty {
+        padding: 18px 14px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--surface);
+        color: var(--muted);
+        text-align: center;
+    }
+
     .module-table.responsive-table-ready thead {
         position: absolute;
         width: 1px;
@@ -588,45 +692,62 @@
 
     .module-table.responsive-table-ready tbody {
         display: grid;
-        gap: 12px;
+        gap: 14px;
         width: 100%;
     }
 
     .module-table.responsive-table-ready tbody tr {
         display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0;
         width: 100%;
         overflow: hidden;
         border: 1px solid var(--line);
+        border-top: 3px solid color-mix(in srgb, var(--primary) 70%, var(--line));
         border-radius: 12px;
         background: var(--surface);
-        box-shadow: 0 8px 20px color-mix(in srgb, var(--on-background) 6%, transparent);
+        box-shadow: 0 7px 18px color-mix(in srgb, var(--on-background) 9%, transparent);
     }
 
     .module-table.responsive-table-ready tbody td {
-        display: grid;
-        grid-template-columns: minmax(92px, 36%) minmax(0, 1fr);
-        align-items: center;
-        gap: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 5px;
         width: 100%;
         min-width: 0;
-        padding: 10px 12px;
+        min-height: 66px;
+        padding: 9px 11px;
         border-bottom: 1px solid var(--line);
+        border-right: 1px solid var(--line);
         white-space: normal;
         overflow-wrap: anywhere;
+    }
+
+    .module-table.responsive-table-ready tbody td:nth-child(2n),
+    .module-table.responsive-table-ready tbody td:last-child {
+        border-right: 0;
     }
 
     .module-table.responsive-table-ready tbody td::before {
         content: attr(data-label);
         color: var(--muted);
-        font-size: 10px;
-        font-weight: 500;
+        font-size: 9px;
+        font-weight: 700;
         line-height: 1.25;
-        letter-spacing: .055em;
+        letter-spacing: .065em;
         text-transform: uppercase;
     }
 
     .module-table.responsive-table-ready tbody td:last-child {
         border-bottom: 0;
+    }
+
+    .module-table.responsive-table-ready tbody td[data-label="Acciones"],
+    .module-table.responsive-table-ready tbody td:has(.table-actions),
+    .module-table.responsive-table-ready tbody td:has(.user-row-actions) {
+        min-height: 58px;
     }
 
     .module-table.responsive-table-ready tbody td > *,
@@ -640,27 +761,55 @@
 
     .module-table.responsive-table-ready .table-actions,
     .module-table.responsive-table-ready .user-password-action,
-    .module-table.responsive-table-ready .user-role-action {
+    .module-table.responsive-table-ready .user-role-action,
+    .module-table.responsive-table-ready .user-row-actions {
         min-width: 0;
         width: 100%;
     }
 
     .module-table.responsive-table-ready .table-actions,
-    .module-table.responsive-table-ready .user-password-action {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr);
+    .module-table.responsive-table-ready .user-password-action,
+    .module-table.responsive-table-ready .user-row-actions {
+        display: flex;
+        flex-flow: row nowrap;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 8px;
     }
 
     .module-table.responsive-table-ready .table-actions button,
     .module-table.responsive-table-ready .user-password-action button,
-    .module-table.responsive-table-ready .user-permissions-button {
-        width: 100%;
+    .module-table.responsive-table-ready .user-permissions-button,
+    .module-table.responsive-table-ready .user-edit-button {
+        flex: 0 0 40px;
+        width: 40px;
+        min-width: 40px;
+        height: 40px;
         white-space: normal;
+    }
+
+    .module-table.responsive-table-ready .table-field-with-icon {
+        width: 100%;
+    }
+
+    .module-table.responsive-table-ready .contact-channel-icon {
+        width: 32px;
+        height: 32px;
+    }
+
+    .module-table.responsive-table-ready .contact-channel-icon .brand-logo,
+    .module-table.responsive-table-ready .contact-channel-icon .brand-logo img,
+    .module-table.responsive-table-ready .contact-channel-icon .brand-logo svg {
+        width: 28px;
+        height: 28px;
     }
 
     .module-table.responsive-table-ready tr.responsive-empty-row td {
         display: block;
+        grid-column: 1 / -1;
+        width: 100%;
         padding: 18px 14px;
+        border-right: 0;
         text-align: center;
     }
 
@@ -681,6 +830,41 @@
     }
 
     .crm-modal-actions button {
+        width: 100%;
+    }
+
+    .contact-detail-modal {
+        width: min(100%, calc(100vw - 20px));
+    }
+
+    .contact-detail-form {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .contact-detail-form > *,
+    .contact-detail-facts,
+    .contact-detail-actions {
+        grid-column: 1;
+    }
+
+    .contact-detail-actions {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .table-detail-modal {
+        width: min(100%, calc(100vw - 20px));
+    }
+
+    .table-detail-facts {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .table-detail-actions {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .table-detail-actions button {
         width: 100%;
     }
 
@@ -709,11 +893,26 @@
     }
 }
 
+@media (max-width: 430px) {
+    .contact-mobile-card {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .contact-mobile-actions {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+
+    .contact-mobile-actions .table-icon-action {
+        flex: 1 1 0;
+    }
+}
+
 @media (max-width: 480px) {
     .module-table.responsive-table-ready tbody td {
-        grid-template-columns: minmax(78px, 32%) minmax(0, 1fr);
-        gap: 8px;
-        padding: 9px 10px;
+        min-height: 62px;
+        gap: 4px;
+        padding: 8px 9px;
     }
 
     .chat-header--conversation .chat-transfer-button span,

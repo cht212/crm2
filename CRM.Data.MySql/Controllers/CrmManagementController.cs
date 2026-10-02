@@ -14,7 +14,7 @@ namespace CRM.Data.Controllers;
 
 [ApiController]
 [Route("api/crm")]
-[Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+[Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
 [EnableRateLimiting("api")]
 public class CrmManagementController : ControllerBase
 {
@@ -154,7 +154,7 @@ public class CrmManagementController : ControllerBase
         return Ok(result);
     }
     [HttpPost("contactos")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     public async Task<IActionResult> CrearContacto([FromBody] ContactoDto dto)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
@@ -221,7 +221,7 @@ public class CrmManagementController : ControllerBase
     }
 
     [HttpPost("contactos/{id:long}/conversaciones")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     public async Task<IActionResult> CrearConversacionContacto(long id)
     {
         var cliente = await _context.Clientes.FindAsync(id);
@@ -342,10 +342,6 @@ public class CrmManagementController : ControllerBase
     {
         var canViewUsers = UsuarioActualId.HasValue &&
             await _permissions.HasAsync(UsuarioActualId.Value, _access.RolActual, CrmPermissionService.ModuleUsers);
-        if (!_access.TieneAccesoGlobal && !canViewUsers)
-        {
-            return Forbid();
-        }
 
         var query = _context.Usuarios
             .AsNoTracking()
@@ -441,30 +437,26 @@ public class CrmManagementController : ControllerBase
         return Ok(new { success = true });
     }
 
-    [HttpPut("usuarios/{id:int}/rol")]
+    [HttpPut("usuarios/{id:int}")]
     [Authorize(Roles = "Administrador")]
-    public async Task<IActionResult> CambiarRol(int id, [FromBody] CambiarRolDto dto)
+    public async Task<IActionResult> EditarUsuario(int id, [FromBody] EditarUsuarioDto dto)
     {
-        var rol = CrmRoles.Normalize(dto.Rol);
-        if (!new[] { CrmRoles.Auditor, CrmRoles.Supervisor, CrmRoles.Asesor, CrmRoles.Marketing }
-            .Contains(rol, StringComparer.OrdinalIgnoreCase))
-        {
-            return BadRequest("El rol debe ser Auditor, Supervisor, Asesor o Marketing.");
-        }
+        var nombre = (dto.Nombre ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(nombre)) return BadRequest("El nombre es obligatorio.");
+        if (!string.IsNullOrEmpty(dto.Password) && dto.Password.Length < 8)
+            return BadRequest("La contraseña debe tener al menos 8 caracteres.");
 
         var usuario = await _context.Usuarios.FirstOrDefaultAsync(item => item.nUsuario == id);
         if (usuario == null) return NotFound("Usuario no encontrado.");
-        if (CrmRoles.Normalize(usuario.cRol).Equals(CrmRoles.Administrador, StringComparison.OrdinalIgnoreCase))
-        {
-            return BadRequest("No se puede cambiar el rol de la cuenta Administrador.");
-        }
 
-        var rolAnterior = usuario.cRol;
-        usuario.cRol = rol;
+        var anterior = usuario.cNombre;
+        usuario.cNombre = nombre;
+        if (!string.IsNullOrWhiteSpace(dto.Password))
+            usuario.cPasswordHash = _hasher.HashPassword(usuario, dto.Password);
+
         await _context.SaveChangesAsync();
-        await _auditoria.RegistrarAsync("Usuario", id, "CAMBIO_ROL", rolAnterior, rol, UsuarioActualId);
-
-        return Ok(new { success = true, rol });
+        await _auditoria.RegistrarAsync("Usuario", id, "EDICION", anterior, nombre, UsuarioActualId);
+        return Ok(new { success = true, nombre = usuario.cNombre, rol = usuario.cRol });
     }
 
     [HttpGet("usuarios/{id:int}/permisos")]
@@ -479,6 +471,7 @@ public class CrmManagementController : ControllerBase
             .Select(item => item.cPermiso)
             .ToListAsync();
         var basePermissions = CrmPermissionService.GetBasePermissions(usuario.cRol);
+        var effective = CrmPermissionService.ResolveEffective(usuario.cRol, granted);
 
         return Ok(new
         {
@@ -491,7 +484,7 @@ public class CrmManagementController : ControllerBase
                 descripcion = item.Description,
                 heredado = basePermissions.Contains(item.Code),
                 adicional = granted.Contains(item.Code, StringComparer.OrdinalIgnoreCase),
-                efectivo = basePermissions.Contains(item.Code) || granted.Contains(item.Code, StringComparer.OrdinalIgnoreCase)
+                efectivo = effective.Contains(item.Code)
             })
         });
     }
@@ -507,19 +500,27 @@ public class CrmManagementController : ControllerBase
             return BadRequest("El Administrador conserva siempre todos los permisos.");
         }
 
-        var requested = (dto.Permisos ?? [])
+        if (dto.Permisos == null) return BadRequest("Debes enviar la lista de permisos seleccionados.");
+        if (dto.Permisos.Any(item => !CrmPermissionService.IsConfigurable(item)))
+            return BadRequest("La lista contiene permisos no válidos.");
+
+        var requested = dto.Permisos
             .Where(CrmPermissionService.IsConfigurable)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var basePermissions = CrmPermissionService.GetBasePermissions(usuario.cRol);
-        requested.ExceptWith(basePermissions);
+        // El editor nuevo envía el conjunto efectivo completo. Se mantiene
+        // compatible el contrato anterior, que sólo concedía adicionales.
+        var stored = dto.Personalizar
+            ? CrmPermissionService.BuildOverrides(usuario.cRol, requested)
+            : requested.Except(CrmPermissionService.GetBasePermissions(usuario.cRol), StringComparer.OrdinalIgnoreCase)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var existing = await _context.UsuarioPermisos.Where(item => item.nUsuario == id).ToListAsync();
         var previous = existing.Select(item => item.cPermiso).OrderBy(item => item).ToArray();
-        _context.UsuarioPermisos.RemoveRange(existing.Where(item => !requested.Contains(item.cPermiso)));
+        _context.UsuarioPermisos.RemoveRange(existing.Where(item => !stored.Contains(item.cPermiso)));
 
         var current = existing.Select(item => item.cPermiso).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        foreach (var permission in requested.Where(item => !current.Contains(item)))
+        foreach (var permission in stored.Where(item => !current.Contains(item)))
         {
             _context.UsuarioPermisos.Add(new UsuarioPermiso
             {
@@ -536,14 +537,14 @@ public class CrmManagementController : ControllerBase
             id,
             "CAMBIO_PERMISOS",
             string.Join(", ", previous),
-            string.Join(", ", requested.OrderBy(item => item)),
+            string.Join(", ", stored.OrderBy(item => item)),
             UsuarioActualId);
 
-        return Ok(new { success = true, permisosAdicionales = requested.OrderBy(item => item) });
+        return Ok(new { success = true, permisos = CrmPermissionService.ResolveEffective(usuario.cRol, stored).OrderBy(item => item) });
     }
 
     [HttpPut("conversaciones/{id:long}/estado")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     public async Task<IActionResult> CambiarEstado(long id, [FromBody] EstadoDto dto)
     {
         var estado = (dto.Estado ?? string.Empty).Trim().ToUpperInvariant();
@@ -612,7 +613,7 @@ public class CrmManagementController : ControllerBase
     }
 
     [HttpPut("conversaciones/{id:long}/tomar")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     public async Task<IActionResult> TomarConversacion(long id)
     {
         if (!UsuarioActualId.HasValue)
@@ -666,7 +667,7 @@ public class CrmManagementController : ControllerBase
     }
 
     [HttpPut("conversaciones/{id:long}/asignar")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     public async Task<IActionResult> Asignar(long id, [FromBody] AsignacionDto dto)
     {
         var conversacion = await _context.Conversaciones.FindAsync(id);
@@ -754,7 +755,7 @@ public class CrmManagementController : ControllerBase
     }
 
     [HttpPost("conversaciones/{id:long}/actualizar-perfil-meta")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     public async Task<IActionResult> ActualizarPerfilMeta(long id)
     {
         var conversacion = await _context.Conversaciones
@@ -838,7 +839,7 @@ public class CrmManagementController : ControllerBase
     // =========================================================
 
     [HttpPost("conversaciones/asignar-pendientes")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     public async Task<IActionResult> AsignarPendientes()
     {
         var cantidad = await _whatsappService.AsignarConversacionesPendientesAsync();
@@ -846,7 +847,7 @@ public class CrmManagementController : ControllerBase
     }
 
     [HttpPut("contactos/{id:long}")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     public async Task<IActionResult> ActualizarContacto(long id, [FromBody] ContactoDto dto)
     {
         var cliente = await _context.Clientes.FindAsync(id);
@@ -874,7 +875,7 @@ public class CrmManagementController : ControllerBase
     }
 
     [HttpGet("actividad")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     public async Task<IActionResult> Actividad(
         [FromQuery] string? entidad = null,
         [FromQuery] long? entidadId = null,
@@ -969,7 +970,7 @@ public class CrmManagementController : ControllerBase
     }
 
     [HttpGet("fallos")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     [CrmPermission(CrmPermissionService.ModuleFailures)]
     public async Task<IActionResult> Fallos([FromQuery] int page = 1, [FromQuery] int pageSize = 100)
     {
@@ -1028,7 +1029,7 @@ public class CrmManagementController : ControllerBase
     }
 
     [HttpGet("actividad/historial")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     public async Task<IActionResult> HistorialActividad(
         [FromQuery] long? clienteId = null,
         [FromQuery] long? conversacionId = null,
@@ -1103,7 +1104,7 @@ public class CrmManagementController : ControllerBase
     }
 
     [HttpGet("reportes/resumen")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     public async Task<IActionResult> ReporteResumen(
         [FromQuery] DateTime? desde = null,
         [FromQuery] DateTime? hasta = null,
@@ -1398,7 +1399,7 @@ public class CrmManagementController : ControllerBase
     }
 
     [HttpGet("reportes/asesores")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     public async Task<IActionResult> ReportePorAsesor(
         [FromQuery] DateTime? desde = null,
         [FromQuery] DateTime? hasta = null)
@@ -1466,7 +1467,7 @@ public class CrmManagementController : ControllerBase
     }
 
     [HttpGet("reportes/canales")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     public async Task<IActionResult> ReportePorCanal(
         [FromQuery] DateTime? desde = null,
         [FromQuery] DateTime? hasta = null)
@@ -1502,7 +1503,7 @@ public class CrmManagementController : ControllerBase
     }
 
     [HttpGet("reportes/exportar")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     public async Task<IActionResult> ExportarReporte(
         [FromQuery] DateTime? desde = null,
         [FromQuery] DateTime? hasta = null,
@@ -1628,13 +1629,17 @@ public sealed class CambiarPasswordDto
     public string? Password { get; set; }
 }
 
-public sealed class CambiarRolDto
+public sealed class EditarUsuarioDto
 {
-    [Required(ErrorMessage = "El rol es obligatorio.")]
-    public string? Rol { get; set; }
+    [Required(ErrorMessage = "El nombre es obligatorio.")]
+    [StringLength(150)]
+    public string? Nombre { get; set; }
+
+    public string? Password { get; set; }
 }
 
 public sealed class ActualizarPermisosDto
 {
     public List<string>? Permisos { get; set; }
+    public bool Personalizar { get; set; }
 }

@@ -100,10 +100,28 @@ if (!app.Environment.IsDevelopment())
 
 app.UseAuthentication();
 
-// Cada operación de escritura se valida contra el rol base y los permisos
-// adicionales guardados en MySQL. La interfaz nunca es la única barrera.
+// Valida accesos y acciones contra los permisos efectivos de cada usuario.
 app.Use(async (context, next) =>
 {
+    if (context.User.Identity?.IsAuthenticated == true &&
+        (HttpMethods.IsGet(context.Request.Method) || HttpMethods.IsHead(context.Request.Method)))
+    {
+        var required = CrmPermissionService.ResolveReadPermissions(context.Request.Path);
+        if (required.Length > 0)
+        {
+            var idValue = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var role = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            var effective = int.TryParse(idValue, out var userId)
+                ? await context.RequestServices.GetRequiredService<CrmPermissionService>().GetEffectiveAsync(userId, role)
+                : [];
+            if (!required.Any(effective.Contains))
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                await context.Response.WriteAsJsonAsync(new { message = "No tienes acceso a este apartado o información." });
+                return;
+            }
+        }
+    }
     if (context.User.Identity?.IsAuthenticated == true &&
         !HttpMethods.IsGet(context.Request.Method) &&
         !HttpMethods.IsHead(context.Request.Method) &&
@@ -114,9 +132,17 @@ app.Use(async (context, next) =>
         {
             var idValue = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             var role = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-            var allowed = int.TryParse(idValue, out var userId) &&
-                await context.RequestServices.GetRequiredService<CrmPermissionService>()
-                    .HasAsync(userId, role, requiredPermission);
+            var allowed = false;
+            if (int.TryParse(idValue, out var userId))
+            {
+                var effective = await context.RequestServices.GetRequiredService<CrmPermissionService>()
+                    .GetEffectiveAsync(userId, role);
+                allowed = effective.Contains(requiredPermission) ||
+                    (HttpMethods.IsPut(context.Request.Method) &&
+                     requiredPermission == CrmPermissionService.EditContacts &&
+                     CrmPermissionService.IsContactUpdatePath(context.Request.Path) &&
+                     effective.Contains(CrmPermissionService.EditConversationContact));
+            }
             if (!allowed)
             {
                 context.Response.StatusCode = StatusCodes.Status403Forbidden;

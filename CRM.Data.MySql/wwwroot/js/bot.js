@@ -1,6 +1,7 @@
 // Módulo de configuración del bot y respuestas rápidas.
 
         async function cargarModuloBot(vista) {
+            const puedeConfigurar = tienePermiso("bot.gestionar");
             let bot = {
                 enabled: true,
                 message: "Hola, gracias por escribirnos. En breve te atenderá un asesor.\n\nResponde con una opción:\n1. Hablar con un asesor\n2. Información de productos\n3. Cotización\n4. Horarios y ubicación",
@@ -86,45 +87,45 @@
                 <article class="bot-template-row" data-bot-template-row>
                     <label>
                         <span>Opción</span>
-                        <input type="text" data-template-key value="${escapeAttribute(option.key || "")}" maxlength="12" placeholder="1">
+                        <input type="text" data-template-key value="${escapeAttribute(option.key || "")}" maxlength="12" placeholder="1" ${puedeConfigurar ? "" : "disabled"}>
                     </label>
                     <label>
                         <span>Título</span>
-                        <input type="text" data-template-title value="${escapeAttribute(option.title || "")}" maxlength="80" placeholder="Cotización">
+                        <input type="text" data-template-title value="${escapeAttribute(option.title || "")}" maxlength="80" placeholder="Cotización" ${puedeConfigurar ? "" : "disabled"}>
                     </label>
                     <label class="bot-template-response">
                         <span>Respuesta que envía el bot</span>
-                        <textarea data-template-response rows="3" maxlength="400" placeholder="Mensaje para el cliente">${escapeHtml(option.response || "")}</textarea>
+                        <textarea data-template-response rows="3" maxlength="400" placeholder="Mensaje para el cliente" ${puedeConfigurar ? "" : "disabled"}>${escapeHtml(option.response || "")}</textarea>
                     </label>
                     <label class="bot-template-check">
-                        <input type="checkbox" data-template-derives ${option.derivesToAdvisor === false ? "" : "checked"}>
+                        <input type="checkbox" data-template-derives ${option.derivesToAdvisor === false ? "" : "checked"} ${puedeConfigurar ? "" : "disabled"}>
                         <span>Deriva a asesor</span>
                     </label>
-                    <button type="button" class="bot-template-remove" data-remove-template title="Quitar plantilla" aria-label="Quitar plantilla">
+                    ${puedeConfigurar ? `<button type="button" class="bot-template-remove" data-remove-template title="Quitar plantilla" aria-label="Quitar plantilla">
                         <i data-lucide="trash-2"></i>
-                    </button>
+                    </button>` : ""}
                 </article>`;
             const crearFilaPlantillaRapida = template => `
                 <article class="bot-template-row" data-quick-template-row>
                     <label>
                         <span>Título</span>
-                        <input type="text" data-quick-title value="${escapeAttribute(template.title || "")}" maxlength="80" placeholder="Saludo">
+                        <input type="text" data-quick-title value="${escapeAttribute(template.title || "")}" maxlength="80" placeholder="Saludo" ${puedeConfigurar ? "" : "disabled"}>
                     </label>
                     <label>
                         <span>Categoría</span>
-                        <input type="text" data-quick-category value="${escapeAttribute(template.category || "General")}" maxlength="40" placeholder="Ventas">
+                        <input type="text" data-quick-category value="${escapeAttribute(template.category || "General")}" maxlength="40" placeholder="Ventas" ${puedeConfigurar ? "" : "disabled"}>
                     </label>
                     <label class="bot-template-response">
                         <span>Mensaje para insertar</span>
-                        <textarea data-quick-message rows="3" maxlength="1000" placeholder="Texto que usará el asesor">${escapeHtml(template.message || "")}</textarea>
+                        <textarea data-quick-message rows="3" maxlength="1000" placeholder="Texto que usará el asesor" ${puedeConfigurar ? "" : "disabled"}>${escapeHtml(template.message || "")}</textarea>
                     </label>
                     <label class="bot-template-check">
-                        <input type="checkbox" data-quick-enabled ${template.enabled === false ? "" : "checked"}>
+                        <input type="checkbox" data-quick-enabled ${template.enabled === false ? "" : "checked"} ${puedeConfigurar ? "" : "disabled"}>
                         <span>Activa</span>
                     </label>
-                    <button type="button" class="bot-template-remove" data-remove-quick-template title="Quitar plantilla" aria-label="Quitar plantilla">
+                    ${puedeConfigurar ? `<button type="button" class="bot-template-remove" data-remove-quick-template title="Quitar plantilla" aria-label="Quitar plantilla">
                         <i data-lucide="trash-2"></i>
-                    </button>
+                    </button>` : ""}
                 </article>`;
 
             vista.innerHTML = `
@@ -167,18 +168,17 @@
                                     <strong>Activar bot</strong>
                                     <small>Activa la respuesta global. Los chats pausados por un asesor se reactivan con el botón de abajo.</small>
                                 </span>
-                                <input id="botEnabled" type="checkbox" ${bot.enabled ? "checked" : ""}>
+                                <input id="botEnabled" type="checkbox" ${bot.enabled ? "checked" : ""} ${puedeConfigurar ? "" : "disabled"}>
                             </label>
                             <label>
                                 <span>Mensaje para el cliente</span>
-                                <textarea id="botMessage" rows="5" maxlength="500">${escapeHtml(bot.message || "")}</textarea>
+                                <textarea id="botMessage" rows="5" maxlength="500" ${puedeConfigurar ? "" : "disabled"}>${escapeHtml(bot.message || "")}</textarea>
                             </label>
                             <label>
                                 <span>Límite de respuestas automáticas por conversación</span>
-                                <input id="botMaxReplies" type="number" min="1" max="5" value="${Number(bot.maxAutoReplies || 2)}">
+                                <input id="botMaxReplies" type="number" min="1" max="5" value="${Number(bot.maxAutoReplies || 2)}" ${puedeConfigurar ? "" : "disabled"}>
                             </label>
-                            <button type="submit" class="connection-action">Guardar configuración</button>
-                            <button type="button" id="reactivateBotConversations" class="connection-action secondary">Reactivar bot en chats pausados</button>
+                            ${puedeConfigurar ? '<button type="submit" class="connection-action">Guardar configuración</button><button type="button" id="reactivateBotConversations" class="connection-action secondary">Reactivar bot en chats pausados</button>' : ""}
                         </form>
                     </article>
                     <article class="bot-card">
@@ -201,10 +201,10 @@
                     <div id="botTemplatesList" class="bot-template-list">
                         ${opcionesBot.map(crearFilaPlantillaBot).join("")}
                     </div>
-                    <button id="addBotTemplate" type="button" class="bot-template-add">
+                    ${puedeConfigurar ? `<button id="addBotTemplate" type="button" class="bot-template-add">
                         <i data-lucide="plus"></i>
                         <span>Agregar plantilla</span>
-                    </button>
+                    </button>` : ""}
                 </section>
                 <section class="bot-channel-section">
                     <div>
@@ -216,13 +216,13 @@
                             { title: "Saludo", category: "Atención", message: "Hola, gracias por escribirnos. Soy tu asesor, cuéntame en qué puedo ayudarte.", enabled: true }
                         ]).map(crearFilaPlantillaRapida).join("")}
                     </div>
-                    <div class="connection-actions-row">
+                    ${puedeConfigurar ? `<div class="connection-actions-row">
                         <button id="addQuickTemplate" type="button" class="bot-template-add">
                             <i data-lucide="plus"></i>
                             <span>Agregar respuesta rápida</span>
                         </button>
                         <button id="saveQuickTemplates" type="button" class="connection-action">Guardar respuestas rápidas</button>
-                    </div>
+                    </div>` : ""}
                 </section>
                 <section class="bot-channel-section">
                     <div>
@@ -270,7 +270,7 @@
                 }))
                 .filter(template => template.title && template.message);
 
-            vista.querySelector("#addBotTemplate").addEventListener("click", () => {
+            vista.querySelector("#addBotTemplate")?.addEventListener("click", () => {
                 const lista = vista.querySelector("#botTemplatesList");
                 const cantidad = lista.querySelectorAll("[data-bot-template-row]").length + 1;
                 lista.insertAdjacentHTML("beforeend", crearFilaPlantillaBot({
@@ -292,7 +292,7 @@
                 }
                 botonQuitar.closest("[data-bot-template-row]")?.remove();
             });
-            vista.querySelector("#addQuickTemplate").addEventListener("click", () => {
+            vista.querySelector("#addQuickTemplate")?.addEventListener("click", () => {
                 vista.querySelector("#quickTemplatesList").insertAdjacentHTML("beforeend", crearFilaPlantillaRapida({
                     title: "Nueva respuesta",
                     category: "General",
@@ -306,7 +306,7 @@
                 if (!botonQuitar) return;
                 botonQuitar.closest("[data-quick-template-row]")?.remove();
             });
-            vista.querySelector("#saveQuickTemplates").addEventListener("click", async () => {
+            vista.querySelector("#saveQuickTemplates")?.addEventListener("click", async () => {
                 const templates = leerPlantillasRapidas();
                 if (!templates.length) {
                     notificar("Agrega al menos una respuesta rápida válida.", "error");
@@ -329,7 +329,7 @@
                 await cargarModuloBot(vista);
             });
 
-            vista.querySelector("#botSettingsForm").addEventListener("submit", async event => {
+            vista.querySelector("#botSettingsForm")?.addEventListener("submit", async event => {
                 event.preventDefault();
                 const options = leerPlantillasBot();
                 if (!options.length) {
@@ -357,7 +357,7 @@
                 await cargarModuloBot(vista);
             });
 
-            vista.querySelector("#reactivateBotConversations").addEventListener("click", async () => {
+            vista.querySelector("#reactivateBotConversations")?.addEventListener("click", async () => {
                 const response = await api("/api/bot/whatsapp/reactivar-conversaciones", {
                     method: "POST"
                 });

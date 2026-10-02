@@ -11,6 +11,7 @@ const POLLING_MS = 60000;
         let rolActual = "";
         let sesionActual = null;
         let fichaTabActiva = "datos";
+        let fichaModoActivo = "completa";
         let usuariosCache = null;
         let dashboardCanalActivo = "TODOS";
         let facebookDateRange = { desde: "", hasta: "" };

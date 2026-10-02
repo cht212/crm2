@@ -8,7 +8,7 @@ namespace CRM.Data.Controllers;
 
 [ApiController]
 [Route("api/bot")]
-[Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+[Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
 [EnableRateLimiting("api")]
 public sealed class BotController : ControllerBase
 {

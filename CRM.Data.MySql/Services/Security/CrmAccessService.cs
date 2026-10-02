@@ -9,11 +9,13 @@ public sealed class CrmAccessService
 {
     private readonly CrmDbContext _context;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly CrmPermissionService _permissions;
 
-    public CrmAccessService(CrmDbContext context, IHttpContextAccessor httpContextAccessor)
+    public CrmAccessService(CrmDbContext context, IHttpContextAccessor httpContextAccessor, CrmPermissionService permissions)
     {
         _context = context;
         _httpContextAccessor = httpContextAccessor;
+        _permissions = permissions;
     }
 
     public int? UsuarioActualId =>
@@ -47,15 +49,15 @@ public sealed class CrmAccessService
     public bool PuedeVerDashboard =>
         TieneAccesoGlobal || EsAsesor;
 
-    public bool PuedeAccederModulo(string modulo)
+    public async Task<bool> PuedeAccederModuloAsync(string modulo)
     {
         if (string.IsNullOrWhiteSpace(modulo))
         {
             return false;
         }
 
-        var rolActual = RolActual;
-        return CrmRolePermissions.CanAccessModule(rolActual, modulo);
+        return UsuarioActualId.HasValue &&
+            await _permissions.HasAsync(UsuarioActualId.Value, RolActual, "modulo." + modulo);
     }
 
     public static bool EsConversacionDisponibleParaAsesor(Conversacion conversacion) =>
@@ -150,7 +152,11 @@ public sealed class CrmAccessService
 
     public async Task<bool> PuedeAccederConversacionAsync(long conversacionId)
     {
+        if (!UsuarioActualId.HasValue) return false;
+        var permisos = await _permissions.GetEffectiveAsync(UsuarioActualId.Value, RolActual);
+        var canales = CrmPermissionService.GetAllowedChannels(permisos);
         return await FiltrarConversaciones(_context.Conversaciones.AsNoTracking())
+            .Where(conversacion => canales.Contains(conversacion.cCanal))
             .AnyAsync(conversacion => conversacion.nConversacion == conversacionId);
     }
 

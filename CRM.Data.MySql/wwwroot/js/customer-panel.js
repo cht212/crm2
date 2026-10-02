@@ -1,6 +1,20 @@
 // Módulo frontend del CRM.
 
         function mostrarFichaCliente(conversacion) {
+            const puedeFichaCompleta = tienePermiso("comunicaciones.ficha");
+            const puedeFichaContacto = tienePermiso("comunicaciones.ficha.contacto");
+            if (!puedeFichaCompleta && !puedeFichaContacto) {
+                document.getElementById("details")?.classList.add("hidden");
+                document.body.classList.remove("mobile-contact-details-open");
+                document.querySelector(".main")?.classList.add("customer-details-collapsed");
+                return;
+            }
+            if (!puedeFichaCompleta) fichaModoActivo = "contacto";
+            else if (!puedeFichaContacto) fichaModoActivo = "completa";
+            if (fichaModoActivo === "contacto") {
+                mostrarFichaContactoBasica(conversacion, puedeFichaCompleta);
+                return;
+            }
             const cliente = conversacion.cliente || {};
             const avatar = renderClienteAvatar(cliente, "contact-avatar");
             const etiquetaContacto = obtenerEtiquetaContacto(conversacion);
@@ -16,6 +30,7 @@
 
             document.getElementById("details").innerHTML = `
                 <div class="details-title"><span>Ficha del cliente</span><button id="mobileDetailsClose" class="mobile-details-close" type="button" aria-label="Cerrar ficha"><i data-lucide="x"></i></button></div>
+                ${puedeFichaContacto ? renderSelectorModoFicha() : ""}
                 <div class="crm-card compact-profile">
                     ${avatar}
                     <div class="contact-name">${escapeHtml(cliente.nombre || "Sin nombre")}</div>
@@ -45,6 +60,7 @@
             document.getElementById("mobileDetailsClose")?.addEventListener("click", () => {
                 document.body.classList.remove("mobile-contact-details-open");
             });
+            vincularSelectorModoFicha(conversacion);
             if (window.lucide) window.lucide.createIcons();
             document.getElementById("refreshMetaProfileButton")?.addEventListener("click", () => {
                 actualizarPerfilMeta(conversacion.id);
@@ -53,6 +69,75 @@
             cargarEtiquetasCliente(cliente.id);
             cargarResumen360Cliente(conversacion);
             cargarPanelFicha(fichaTabActiva, conversacion);
+        }
+
+        function renderSelectorModoFicha() {
+            return `<div class="customer-card-mode-switch" role="group" aria-label="Tipo de ficha">
+                <button type="button" data-customer-card-mode="completa" class="${fichaModoActivo === "completa" ? "active" : ""}" aria-pressed="${fichaModoActivo === "completa"}">Ficha completa</button>
+                <button type="button" data-customer-card-mode="contacto" class="${fichaModoActivo === "contacto" ? "active" : ""}" aria-pressed="${fichaModoActivo === "contacto"}">Datos de contacto</button>
+            </div>`;
+        }
+
+        function vincularSelectorModoFicha(conversacion) {
+            document.querySelectorAll("[data-customer-card-mode]").forEach(boton => {
+                boton.addEventListener("click", () => {
+                    fichaModoActivo = boton.dataset.customerCardMode;
+                    mostrarFichaCliente(conversacionSeleccionada || conversacion);
+                });
+            });
+        }
+
+        function mostrarFichaContactoBasica(conversacion, puedeFichaCompleta) {
+            const cliente = conversacion.cliente || {};
+            const panel = document.getElementById("details");
+            if (!panel) return;
+            panel.innerHTML = `
+                <div class="details-title"><span>Datos de contacto</span><button id="mobileDetailsClose" class="mobile-details-close" type="button" aria-label="Cerrar ficha"><i data-lucide="x"></i></button></div>
+                ${puedeFichaCompleta ? renderSelectorModoFicha() : ""}
+                <div class="crm-card compact-profile">
+                    ${renderClienteAvatar(cliente, "contact-avatar")}
+                    <div class="contact-name">${escapeHtml(cliente.nombre || "Sin nombre")}</div>
+                    <div class="contact-phone"><span>${escapeHtml(obtenerEtiquetaContacto(conversacion))}</span><strong>${escapeHtml(cliente.telefono || "Sin dato")}</strong></div>
+                </div>
+                <div class="crm-panel">
+                    <form id="contactOnlyForm" class="crm-form">
+                        <label>Nombre<input name="nombre" value="${escapeAttribute(cliente.nombre || "")}" maxlength="150" required></label>
+                        <label>Teléfono<input name="telefono" value="${escapeAttribute(cliente.telefono || "")}" maxlength="30" required></label>
+                        <label>Email<input name="email" type="email" value="${escapeAttribute(cliente.email || "")}" maxlength="150"></label>
+                        <label>Documento<input name="documento" value="${escapeAttribute(cliente.documento || "")}" maxlength="20"></label>
+                        <button type="submit">Guardar datos</button>
+                    </form>
+                </div>`;
+            panel.querySelector("#mobileDetailsClose")?.addEventListener("click", () => {
+                document.body.classList.remove("mobile-contact-details-open");
+            });
+            vincularSelectorModoFicha(conversacion);
+            panel.querySelector("#contactOnlyForm")?.addEventListener("submit", async event => {
+                event.preventDefault();
+                const boton = event.currentTarget.querySelector('button[type="submit"]');
+                const datos = Object.fromEntries(new FormData(event.currentTarget));
+                datos.nombre = datos.nombre.trim();
+                datos.telefono = datos.telefono.trim();
+                datos.email = datos.email.trim() || null;
+                datos.documento = datos.documento.trim() || null;
+                boton.disabled = true;
+                try {
+                    const response = await api(`/api/crm/contactos/${cliente.id}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(datos)
+                    });
+                    if (!response.ok) {
+                        notificar(await obtenerMensajeError(response, "No se pudieron guardar los datos."), "error");
+                        return;
+                    }
+                    await seleccionarConversacion(conversacion.id);
+                    notificar("Datos del contacto guardados.", "success");
+                } finally {
+                    boton.disabled = false;
+                }
+            });
+            window.lucide?.createIcons(panel);
         }
 
         // obtenerIniciales() vive en utils.js (única fuente).
@@ -149,6 +234,8 @@
 
         function renderDatosCliente(panel, conversacion) {
             const cliente = conversacion.cliente || {};
+            const puedeEditarContacto = tienePermiso("contactos.editar");
+            const puedeCambiarEstado = tienePermiso("conversaciones.atender");
             const asesorId = Number(conversacion.usuarioAsignado?.id || 0);
             const puedeReasignar = tienePermiso("conversaciones.asignar");
             const opcionesAsignacion = (usuariosCache || [])
@@ -168,11 +255,11 @@
                     <label>Telefono<input name="telefono" value="${escapeAttribute(cliente.telefono || "")}" maxlength="30"></label>
                     <label>Email<input name="email" type="email" value="${escapeAttribute(cliente.email || "")}" maxlength="150"></label>
                     <label>Documento<input name="documento" value="${escapeAttribute(cliente.documento || "")}" maxlength="20"></label>
-                    <button type="submit">Guardar datos</button>
+                    ${puedeEditarContacto ? '<button type="submit">Guardar datos</button>' : ""}
                 </form>
                 <div class="detail-section compact-section">
                     <div class="detail-label">Etapa de atención</div>
-                    <select id="conversationStateSelect" class="mini-select">
+                    <select id="conversationStateSelect" class="mini-select" ${puedeCambiarEstado ? "" : "disabled"}>
                         ${etapas.map(etapa => `<option value="${etapa.id}" ${etapa.id === conversacion.estado ? "selected" : ""}>${escapeHtml(etapa.label)}</option>`).join("")}
                     </select>
                     <div class="lead-progress">
@@ -195,8 +282,9 @@
                     <span>Ultima actividad ${formatearFecha(conversacion.ultimoMensaje)}</span>
                 </div>`;
 
-            document.getElementById("clientForm").addEventListener("submit", async event => {
+            document.getElementById("clientForm")?.addEventListener("submit", async event => {
                 event.preventDefault();
+                if (!puedeEditarContacto) return;
                 const datos = Object.fromEntries(new FormData(event.currentTarget));
                 datos.email = datos.email?.trim() || null;
                 datos.documento = datos.documento?.trim() || null;
@@ -215,7 +303,8 @@
                 notificar("Datos del cliente guardados.", "success");
             });
 
-            document.getElementById("conversationStateSelect").addEventListener("change", async event => {
+            document.getElementById("conversationStateSelect")?.addEventListener("change", async event => {
+                if (!puedeCambiarEstado) return;
                 const response = await api(`/api/crm/conversaciones/${conversacion.id}/estado`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
@@ -258,14 +347,15 @@
 
         async function renderNotasCliente(panel, conversacion) {
             const clienteId = conversacion.cliente.id;
+            const puedeGestionarNotas = tienePermiso("clientes.detalles");
             const response = await api(`/api/clientes/${clienteId}/notas`);
             if (!response.ok) throw new Error("Notas no disponibles");
             const notas = await response.json();
             panel.innerHTML = `
-                <form id="noteForm" class="crm-form">
+                ${puedeGestionarNotas ? `<form id="noteForm" class="crm-form">
                     <textarea name="texto" rows="3" maxlength="4000" placeholder="Nota interna para el equipo" required></textarea>
                     <button type="submit">Agregar nota</button>
-                </form>
+                </form>` : ""}
                 <div class="crm-list">
                     ${notas.map(nota => `<article class="crm-list-item">
                         <strong>${escapeHtml(nota.autor || "Equipo")}</strong>
@@ -274,7 +364,7 @@
                     </article>`).join("") || '<div class="empty-detail">Sin notas internas.</div>'}
                 </div>`;
 
-            document.getElementById("noteForm").addEventListener("submit", async event => {
+            document.getElementById("noteForm")?.addEventListener("submit", async event => {
                 event.preventDefault();
                 const datos = Object.fromEntries(new FormData(event.currentTarget));
                 datos.conversacionId = conversacion.id;
@@ -295,6 +385,7 @@
 
         async function renderTareasCliente(panel, conversacion) {
             const clienteId = conversacion.cliente.id;
+            const puedeGestionarTareas = tienePermiso("tareas.gestionar");
             const [tareasResponse, usuarios] = await Promise.all([
                 api(`/api/tareas?clienteId=${clienteId}&pageSize=20`),
                 cargarUsuarios()
@@ -303,23 +394,23 @@
             const pagina = await tareasResponse.json();
             const tareas = pagina.items || [];
             panel.innerHTML = `
-                <form id="taskForm" class="crm-form">
+                ${puedeGestionarTareas ? `<form id="taskForm" class="crm-form">
                     <input name="titulo" maxlength="200" placeholder="Seguimiento pendiente" required>
                     <input name="fechaVencimiento" type="datetime-local" required>
                     <select name="asignadoAId"><option value="">Sin asignar</option>${usuarios.map(u => `<option value="${u.id}" ${Number(u.id) === Number(sesionActual?.id) ? "selected" : ""}>${escapeHtml(u.nombre)}</option>`).join("")}</select>
                     <textarea name="descripcion" rows="2" maxlength="2000" placeholder="Detalle opcional"></textarea>
                     <button type="submit">Crear tarea</button>
-                </form>
+                </form>` : ""}
                 <div class="crm-list">
                     ${tareas.map(tarea => `<article class="crm-list-item ${tarea.estado === "VENCIDA" ? "danger" : ""}">
                         <strong>${escapeHtml(tarea.titulo)}</strong>
                         <p>${escapeHtml(tarea.descripcion || "")}</p>
                         <small>${escapeHtml(tarea.estado)} · ${formatearFecha(tarea.vence)}${tarea.asignadoA ? ` · ${escapeHtml(tarea.asignadoA)}` : ""}</small>
-                        ${tarea.estado !== "COMPLETADA" && tarea.estado !== "CANCELADA" ? `<button type="button" class="mini-action" data-complete-task="${tarea.id}">Completar</button>` : ""}
+                        ${puedeGestionarTareas && tarea.estado !== "COMPLETADA" && tarea.estado !== "CANCELADA" ? `<button type="button" class="mini-action" data-complete-task="${tarea.id}">Completar</button>` : ""}
                     </article>`).join("") || '<div class="empty-detail">Sin tareas.</div>'}
                 </div>`;
 
-            document.getElementById("taskForm").addEventListener("submit", async event => {
+            document.getElementById("taskForm")?.addEventListener("submit", async event => {
                 event.preventDefault();
                 const datos = Object.fromEntries(new FormData(event.currentTarget));
                 datos.clienteId = clienteId;
@@ -355,6 +446,7 @@
 
         async function renderOportunidadesCliente(panel, conversacion) {
             const clienteId = conversacion.cliente.id;
+            const puedeGestionarVentas = tienePermiso("ventas.gestionar");
             const fechaMinimaCierre = new Date().toISOString().slice(0, 10);
             const response = await api(`/api/oportunidades?clienteId=${clienteId}&pageSize=20`);
             if (!response.ok) throw new Error("Oportunidades no disponibles");
@@ -362,26 +454,26 @@
             const oportunidades = pagina.items || [];
             const etapas = ["NUEVA", "CALIFICADA", "PROPUESTA", "NEGOCIACION", "GANADA", "PERDIDA"];
             panel.innerHTML = `
-                <form id="dealForm" class="crm-form two-cols">
+                ${puedeGestionarVentas ? `<form id="dealForm" class="crm-form two-cols">
                     <input name="titulo" maxlength="200" placeholder="Nueva oportunidad" required>
                     <input name="monto" type="number" min="0.01" step="0.01" placeholder="Monto" required>
                     <select name="moneda"><option value="PEN">PEN</option><option value="USD">USD</option></select>
                     <input name="fechaCierreEstimada" type="date" min="${fechaMinimaCierre}" title="Fecha estimada de cierre" aria-label="Fecha estimada de cierre" required>
                     <input name="probabilidad" type="number" min="0" max="100" value="10" placeholder="Probabilidad">
                     <button type="submit">Crear oportunidad</button>
-                </form>
+                </form>` : ""}
                 <div class="crm-list">
                     ${oportunidades.map(op => `<article class="crm-list-item">
                         <strong>${escapeHtml(op.titulo)}</strong>
                         <p>${escapeHtml(op.moneda)} ${Number(op.monto || 0).toFixed(2)} · ${op.probabilidad}%${op.fechaCierreEstimada ? ` · Cierre ${formatearFecha(op.fechaCierreEstimada)}` : ""}</p>
                         ${op.motivoPerdida ? `<p>Motivo: ${escapeHtml(op.motivoPerdida)}</p>` : ""}
-                        <select class="mini-select" data-deal-stage="${op.id}">
+                        ${puedeGestionarVentas ? `<select class="mini-select" data-deal-stage="${op.id}">
                             ${etapas.map(etapa => `<option value="${etapa}" ${etapa === op.etapa ? "selected" : ""}>${etapa}</option>`).join("")}
-                        </select>
+                        </select>` : `<span class="role-badge">${escapeHtml(op.etapa)}</span>`}
                     </article>`).join("") || '<div class="empty-detail">Sin oportunidades.</div>'}
                 </div>`;
 
-            document.getElementById("dealForm").addEventListener("submit", async event => {
+            document.getElementById("dealForm")?.addEventListener("submit", async event => {
                 event.preventDefault();
                 const datos = Object.fromEntries(new FormData(event.currentTarget));
                 datos.clienteId = clienteId;
@@ -453,7 +545,7 @@
         async function cargarEtiquetasCliente(clienteId) {
             const contenedor = document.getElementById("clientTags");
             if (!contenedor || !clienteId) return;
-            const puedeGestionarEtiquetas = puedeGestionarEquipoCRM();
+            const puedeGestionarEtiquetas = tienePermiso("clientes.detalles");
             const [clienteTagsResponse, todasResponse] = await Promise.all([
                 api(`/api/etiquetas/clientes/${clienteId}`),
                 api("/api/etiquetas")
@@ -463,8 +555,8 @@
             const disponibles = todas.filter(tag => !asignadas.some(actual => actual.id === tag.id));
 
             contenedor.innerHTML = `
-                ${asignadas.map(tag => `<span class="client-tag" style="--tag:${escapeAttribute(tag.color)}">${escapeHtml(tag.nombre)}<button type="button" class="tag-remove" data-remove-tag="${tag.id}" title="Quitar etiqueta">x</button></span>`).join("") || '<span class="muted-small">Sin etiquetas</span>'}
-                ${disponibles.length ? `<select id="tagPicker" class="tag-picker"><option value="">+ etiqueta</option>${disponibles.map(tag => `<option value="${tag.id}">${escapeHtml(tag.nombre)}</option>`).join("")}</select>` : ""}
+                ${asignadas.map(tag => `<span class="client-tag" style="--tag:${escapeAttribute(tag.color)}">${escapeHtml(tag.nombre)}${puedeGestionarEtiquetas ? `<button type="button" class="tag-remove" data-remove-tag="${tag.id}" title="Quitar etiqueta">x</button>` : ""}</span>`).join("") || '<span class="muted-small">Sin etiquetas</span>'}
+                ${puedeGestionarEtiquetas && disponibles.length ? `<select id="tagPicker" class="tag-picker"><option value="">+ etiqueta</option>${disponibles.map(tag => `<option value="${tag.id}">${escapeHtml(tag.nombre)}</option>`).join("")}</select>` : ""}
                 ${puedeGestionarEtiquetas ? `<form id="tagCreateForm" class="tag-create-form"><input name="nombre" maxlength="60" placeholder="Nueva etiqueta" required><input name="color" type="color" value="#0f766e" title="Color"><button type="submit">Crear</button></form>` : ""}`;
 
             contenedor.querySelectorAll("[data-remove-tag]").forEach(button => {

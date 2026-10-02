@@ -12,7 +12,7 @@ namespace CRM.Data.Controllers;
 
 [ApiController]
 [Route("api/automatizacion")]
-[Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+[Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
 [EnableRateLimiting("api")]
 public class AutomatizacionController : ControllerBase
 {

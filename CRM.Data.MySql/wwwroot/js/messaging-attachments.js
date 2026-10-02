@@ -4,7 +4,7 @@ async function actualizarCRM() {
     if (actualizacionEnCurso) return;
     if (document.activeElement?.closest("#details")) return;
 
-    const requiereInbox = moduloActual === "inbox" || moduloActual === "dashboard";
+    const requiereInbox = moduloActual === "inbox" || (moduloActual === "dashboard" && puedeVerModulo("inbox"));
     if (!requiereInbox) {
         estado.textContent = "API conectada";
         return;

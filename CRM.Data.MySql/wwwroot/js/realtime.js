@@ -6,28 +6,59 @@ let crmRealtimePending = false;
 let crmRealtimeLastRefresh = 0;
 let crmRealtimeFallbackTimer = null;
 
+function hayEditorCrmActivo() {
+    const vista = document.getElementById("moduleView");
+    return document.activeElement?.matches("input, textarea, select, [contenteditable='true']") &&
+        (vista?.contains(document.activeElement) || document.getElementById("details")?.contains(document.activeElement));
+}
+
 function programarActualizacionTiempoReal() {
     if (document.visibilityState !== "visible") {
         crmRealtimePending = true;
         return;
     }
 
-    const esperaMinima = moduloActual === "marketing" ? 10000 : 1200;
+    const vista = document.getElementById("moduleView");
+    if (hayEditorCrmActivo()) {
+        crmRealtimePending = true;
+        return;
+    }
+
+    const esperaMinima = moduloActual === "marketing" ? 2500 : 1200;
     const espera = Math.max(700, esperaMinima - (Date.now() - crmRealtimeLastRefresh));
     clearTimeout(crmRealtimeTimer);
     crmRealtimeTimer = setTimeout(async () => {
+        if (hayEditorCrmActivo()) {
+            crmRealtimePending = true;
+            return;
+        }
         crmRealtimePending = false;
         crmRealtimeLastRefresh = Date.now();
-        const vista = document.getElementById("moduleView");
 
         try {
-            if (moduloActual === "dashboard" && vista && typeof cargarModuloDashboard === "function") {
-                await cargarModuloDashboard(vista);
-            } else if (moduloActual === "marketing" && vista && typeof cargarModuloMarketing === "function") {
-                await cargarModuloMarketing(vista, { silenciosa: true });
-            } else if (moduloActual === "inbox" && typeof actualizarCRM === "function") {
+            if (moduloActual === "inbox" && typeof actualizarCRM === "function") {
                 await actualizarCRM();
+                return;
             }
+
+            const cargadores = {
+                dashboard: typeof cargarModuloDashboard === "function" ? cargarModuloDashboard : null,
+                contactos: typeof cargarModuloContactos === "function" ? cargarModuloContactos : null,
+                tareas: typeof cargarModuloTareas === "function" ? cargarModuloTareas : null,
+                leads: typeof cargarModuloLeads === "function" ? cargarModuloLeads : null,
+                ventas: typeof cargarModuloVentas === "function" ? cargarModuloVentas : null,
+                reportes: typeof cargarModuloReportes === "function" ? cargarModuloReportes : null,
+                marketing: typeof cargarModuloMarketing === "function"
+                    ? currentView => cargarModuloMarketing(currentView, { silenciosa: true })
+                    : null,
+                bot: typeof cargarModuloBot === "function" ? cargarModuloBot : null,
+                conexiones: typeof cargarModuloConexiones === "function" ? cargarModuloConexiones : null,
+                actividad: typeof cargarModuloActividad === "function" ? cargarModuloActividad : null,
+                fallos: typeof cargarModuloFallos === "function" ? cargarModuloFallos : null,
+                usuarios: typeof cargarModuloUsuarios === "function" ? cargarModuloUsuarios : null
+            };
+            const cargar = cargadores[moduloActual];
+            if (vista && cargar) await cargar(vista);
         } catch (error) {
             if (error?.name !== "AbortError") {
                 console.warn("No se pudo aplicar la actualización en tiempo real.", error);
@@ -60,6 +91,12 @@ function iniciarActualizacionesTiempoReal() {
 
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible" && crmRealtimePending) {
+        programarActualizacionTiempoReal();
+    }
+});
+
+document.addEventListener("focusout", () => {
+    if (crmRealtimePending && document.visibilityState === "visible") {
         programarActualizacionTiempoReal();
     }
 });

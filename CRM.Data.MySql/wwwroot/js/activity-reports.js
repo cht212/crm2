@@ -1,7 +1,7 @@
 // Módulo frontend del CRM.
 
         async function cargarModuloActividad(vista, entidad = "") {
-            if (!esRol("administrador", "supervisor", "auditor")) {
+            if (!puedeVerModulo("actividad")) {
                 vista.innerHTML = '<div class="error">No tienes permiso para ver la actividad.</div>';
                 return;
             }
@@ -73,6 +73,7 @@
         }
 
         async function cargarModuloReportes(vista) {
+            const puedeExportar = tienePermiso("datos.exportar");
             if (esRol("asesor") && sesionActual?.id && !reportesFiltros.usuarioId) {
                 reportesFiltros.usuarioId = String(sesionActual.id);
             }
@@ -95,7 +96,7 @@
             const cargaAsesores = reporte.cargaAsesores || [];
 
             vista.innerHTML = `
-                        <div class="module-heading"><div><h1>Reportes</h1><p>Resumen operativo del CRM.</p></div><button id="reportsExportButton" class="secondary-btn" type="button">Exportar CSV</button></div>
+                        <div class="module-heading"><div><h1>Reportes</h1><p>Resumen operativo del CRM.</p></div>${puedeExportar ? '<button id="reportsExportButton" class="secondary-btn" type="button">Exportar CSV</button>' : ""}</div>
                         <form id="reportsFilterForm" class="report-filter-form">
                             <label>
                                 <span>Desde</span>
@@ -258,25 +259,9 @@
             return { desde: iso(desde), hasta: iso(hasta) };
         }
 
-        let marketingRefreshPromise = null;
-        let marketingUltimaActualizacionExterna = 0;
         let marketingCargaVersion = 0;
-
-        function actualizarMarketingEnSegundoPlano(vista) {
-            if (marketingRefreshPromise || moduloActual !== "marketing" ||
-                Date.now() - marketingUltimaActualizacionExterna < 30000) return;
-            marketingUltimaActualizacionExterna = Date.now();
-            marketingRefreshPromise = cargarModuloMarketing(vista, {
-                forzarActualizacion: true,
-                silenciosa: true
-            }).catch(error => {
-                if (error?.name !== "AbortError") {
-                    console.warn("No se pudo actualizar Marketing en segundo plano.", error);
-                }
-            }).finally(() => {
-                marketingRefreshPromise = null;
-            });
-        }
+        const marketingComentariosSincronizados = new Set();
+        const marketingErroresComentarios = new Map();
 
         async function cargarModuloMarketing(vista, opciones = {}) {
             const cargaActual = ++marketingCargaVersion;
@@ -302,17 +287,27 @@
                 if (window.lucide) window.lucide.createIcons();
             }
 
-            const consultarConLimite = (url, limiteMs = 15000) => Promise.race([
-                api(url).catch(() => null),
-                new Promise(resolve => setTimeout(() => resolve(null), limiteMs))
-            ]);
+            const consultarConLimite = async (url, limiteMs = 15000) => {
+                const controller = new AbortController();
+                const navigationSignal = window.__crmNavigationController?.signal;
+                const cancelarNavegacion = () => controller.abort();
+                navigationSignal?.addEventListener("abort", cancelarNavegacion, { once: true });
+                const timeout = setTimeout(() => controller.abort(), limiteMs);
+                try {
+                    return await api(url, { signal: controller.signal });
+                } catch (error) {
+                    if (error?.name !== "AbortError") console.warn(`No se pudo consultar ${url}.`, error);
+                    return null;
+                } finally {
+                    clearTimeout(timeout);
+                    navigationSignal?.removeEventListener("abort", cancelarNavegacion);
+                }
+            };
             const comentariosIniciales = consultarConLimite(comentariosUrl, 8000);
             const [publicacionesResponse, metaResponse] = await Promise.all([
                 consultarConLimite(`/api/integraciones/publicaciones/estadisticas?${params}`),
                 consultarConLimite(`/api/integraciones/meta/estadisticas?${params}`)
             ]);
-            const servidoDesdeCache = [publicacionesResponse, metaResponse].some(response =>
-                response?.headers?.get("X-CRM-Cache") === "HIT");
             // Publicaciones sincroniza primero los comentarios que Meta reporta.
             // Si hubo consulta externa real, se releen después para incluir los nuevos.
             let comentariosResponse = await comentariosIniciales;
@@ -333,7 +328,9 @@
             })))
                 .sort((a, b) => String(b.publicadoEn || "").localeCompare(String(a.publicadoEn || "")));
             const serie = (publicacionesData.serie || []).filter(item => perteneceAlCanal(item.canal));
-            const comentarios = (comentariosData.items || []).filter(item => perteneceAlCanal(item.canal));
+            let comentarios = (comentariosData.items || []).filter(item => perteneceAlCanal(item.canal));
+            const comentariosSincronizados = marketingComentariosSincronizados;
+            const erroresComentarios = marketingErroresComentarios;
             const fuenteTikTok = (publicacionesData.canales || []).find(item =>
                 String(item.canal || "").toUpperCase() === "TIKTOK");
             const publicacionesTikTok = fuenteTikTok?.posts || [];
@@ -433,6 +430,7 @@
 
             const mostrarDetallePublicacion = item => {
                 const canal = String(item.canal || "").toUpperCase();
+                const clavePublicacion = `${canal}:${String(item.id || "")}`;
                 const canalLogo = canal.toLowerCase();
                 const imagen = urlSegura(item.imagenUrl);
                 const enlace = urlSegura(item.url);
@@ -441,7 +439,7 @@
                     String(comentario.publicacionId || "") === String(item.id || ""));
                 const fuentePublicacion = canalesPublicacion.find(canalPublicacion =>
                     String(canalPublicacion.canal || "").toUpperCase() === canal);
-                const errorComentarios = fuentePublicacion?.commentsError;
+                const errorComentarios = erroresComentarios.get(clavePublicacion) || fuentePublicacion?.commentsError;
                 const meGusta = Number(item.meGusta || 0);
                 const cantidadComentarios = Number(item.comentarios || 0);
                 const compartidos = Number(item.compartidos || 0);
@@ -488,7 +486,7 @@
                             <section class="marketing-detail-comments">
                                 <div class="marketing-detail-section-title"><div><span class="panel-kicker">Comunidad</span><h2>Comentarios</h2></div><span class="alert-chip">${formatearNumero(comentariosDePublicacion.length)}</span></div>
                                 <div class="marketing-comments-list">${comentariosDePublicacion.map(renderComentarioMarketing).join("") || (errorComentarios
-                                    ? `<div class="marketing-comment-sync-error"><i data-lucide="shield-alert"></i><span>${escapeHtml(errorComentarios)}</span>${puedeVerModulo("conexiones") ? '<button type="button" data-marketing-connections>Revisar conexión</button>' : ""}</div>`
+                                    ? `<div class="marketing-comment-sync-error"><i data-lucide="shield-alert"></i><span>${escapeHtml(errorComentarios)}</span><button type="button" data-marketing-comment-sync>Volver a intentar</button>${puedeVerModulo("conexiones") ? '<button type="button" data-marketing-connections>Revisar conexión</button>' : ""}</div>`
                                     : '<div class="empty">Esta publicación todavía no tiene comentarios recibidos en el CRM.</div>')}</div>
                             </section>
                         </aside>
@@ -536,6 +534,11 @@
                 vista.querySelector("[data-marketing-detail-back]")?.addEventListener("click", () => cargarModuloMarketing(vista));
                 vista.querySelectorAll("[data-marketing-connections]").forEach(button =>
                     button.addEventListener("click", () => abrirModulo("conexiones")));
+                vista.querySelector("[data-marketing-comment-sync]")?.addEventListener("click", () => {
+                    comentariosSincronizados.delete(clavePublicacion);
+                    erroresComentarios.delete(clavePublicacion);
+                    mostrarDetallePublicacion(item);
+                });
                 vista.querySelectorAll("[data-marketing-comment-reply]").forEach(form => form.addEventListener("submit", async event => {
                     event.preventDefault();
                     const comentarioId = Number(form.dataset.marketingCommentReply);
@@ -566,6 +569,42 @@
                         button.disabled = false;
                     }
                 }));
+
+                if (cantidadComentarios > 0 && comentariosDePublicacion.length === 0 &&
+                    ["FACEBOOK", "INSTAGRAM"].includes(canal) && item.id &&
+                    !comentariosSincronizados.has(clavePublicacion)) {
+                    comentariosSincronizados.add(clavePublicacion);
+                    const listaComentarios = vista.querySelector(".marketing-comments-list");
+                    if (listaComentarios) {
+                        listaComentarios.innerHTML = '<div class="empty">Sincronizando comentarios con Instagram…</div>';
+                    }
+
+                    (async () => {
+                        try {
+                            const sincronizacion = await api(
+                                `/api/integraciones/publicaciones/${encodeURIComponent(canal)}/${encodeURIComponent(item.id)}/comentarios/sincronizar`,
+                                { method: "POST" });
+                            const resultado = await sincronizacion.json().catch(() => ({}));
+                            if (!sincronizacion.ok) {
+                                throw new Error(resultado.message || "Instagram no permitió leer los comentarios.");
+                            }
+                            if (Number(resultado.count || 0) === 0) {
+                                throw new Error("Instagram reporta comentarios, pero todavía no entregó su contenido mediante la API.");
+                            }
+
+                            const actualizados = await api(comentariosUrl);
+                            if (!actualizados.ok) throw new Error("No se pudo releer los comentarios guardados.");
+                            const datosActualizados = await actualizados.json();
+                            comentarios = (datosActualizados.items || []).filter(comentario => perteneceAlCanal(comentario.canal));
+                            erroresComentarios.delete(clavePublicacion);
+                        } catch (error) {
+                            if (error?.name === "AbortError") return;
+                            erroresComentarios.set(clavePublicacion, error.message || "No se pudo sincronizar el comentario.");
+                        }
+
+                        if (moduloActual === "marketing") mostrarDetallePublicacion(item);
+                    })();
+                }
             };
 
             // Evita que una respuesta lenta sobrescriba un filtro o una navegación
@@ -662,7 +701,7 @@
                     return;
                 }
                 marketingFiltros = { ...marketingFiltros, desde: datos.desde, hasta: datos.hasta };
-                await cargarModuloMarketing(vista);
+                await cargarModuloMarketing(vista, { forzarActualizacion: true });
             });
             vista.querySelectorAll("[data-marketing-days]").forEach(button => button.addEventListener("click", async () => {
                 marketingFiltros = { ...rangoMarketingPredeterminado(Number(button.dataset.marketingDays || 30)), canal: canalActivo };
@@ -681,8 +720,4 @@
                 const item = publicaciones[Number(card.dataset.marketingPublicationCard)];
                 if (item) mostrarDetallePublicacion(item);
             }));
-
-            if (!opciones.forzarActualizacion && servidoDesdeCache && moduloActual === "marketing") {
-                setTimeout(() => actualizarMarketingEnSegundoPlano(vista), 50);
-            }
         }

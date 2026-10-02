@@ -7,7 +7,7 @@ namespace CRM.Data.Controllers;
 
 [ApiController]
 [Route("api/plantillas-rapidas")]
-[Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+[Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
 [EnableRateLimiting("api")]
 public sealed class PlantillasController : ControllerBase
 {
@@ -28,7 +28,7 @@ public sealed class PlantillasController : ControllerBase
     }
 
     [HttpGet("admin")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     [CrmPermission(CrmPermissionService.ModuleBot)]
     public IActionResult ListarAdmin()
     {
@@ -39,7 +39,7 @@ public sealed class PlantillasController : ControllerBase
     }
 
     [HttpPut]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     public IActionResult Guardar(QuickReplyTemplatesDto dto)
     {
         var templates = dto.Templates?.Select(template => new QuickReplyTemplate(

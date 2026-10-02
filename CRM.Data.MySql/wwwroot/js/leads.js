@@ -8,10 +8,11 @@
             if (!response.ok) throw new Error("Leads no disponibles");
             const paginaLeads = await response.json();
             const conversacionesLeads = paginaLeads.items || [];
-            const puedeGestionarEquipo = puedeGestionarEquipoCRM();
+            const puedeAsignar = tienePermiso("conversaciones.asignar");
+            const puedeCambiarEstado = tienePermiso("conversaciones.atender");
             const etapas = estadosConversacionPorRol().map(etapa => etapa.id);
             let usuarios = [];
-            if (puedeGestionarEquipo) {
+            if (puedeAsignar) {
                 const usuariosResponse = await api("/api/crm/usuarios");
                 if (!usuariosResponse.ok) throw new Error("Usuarios no disponibles");
                 usuarios = await usuariosResponse.json();
@@ -26,8 +27,6 @@
             const renderAsesor = item => {
                 const asesorNombre = item.asesor || "Sin asignar";
                 const avatar = item.asesor ? iniciales(asesorNombre) : "?";
-                const puedeAsignar = puedeGestionarEquipo;
-
                 return `<div class="assignee-profile">
                     <button type="button" class="assignee-avatar" title="${escapeAttribute(asesorNombre)}" aria-label="Ver asesor asignado">
                         ${escapeHtml(avatar)}
@@ -51,7 +50,7 @@
             vista.innerHTML = `
                         <div class="module-heading">
                             <div><h1>Leads</h1><p>Organiza los chats privados por etapa. Los comentarios públicos se gestionan en Marketing.</p></div>
-                            ${puedeGestionarEquipo
+                            ${puedeAsignar
                                 ? '<button type="button" id="btnAsignarPendientes" class="secondary-btn">Asignar pendientes automáticamente</button>'
                                 : ""}
                         </div>
@@ -78,7 +77,7 @@
                                     const red = typeof obtenerRedPorCanal === "function"
                                         ? obtenerRedPorCanal(canal)
                                         : { nombre: canal, clase: canal.toLowerCase() };
-                                    return `<div class="deal-card" data-conversation-id="${item.id}" draggable="true">
+                                    return `<div class="deal-card" data-conversation-id="${item.id}" draggable="${puedeCambiarEstado}">
                                 <div class="deal-card-top">
                                     <div class="deal-avatar">${escapeHtml(iniciales(item.cliente.nombre))}</div>
                                     <div class="deal-info">
@@ -96,9 +95,9 @@
                                         ? `<span class="${item.proximaTarea.vencida ? "danger-text" : ""}">Próximo paso: ${escapeHtml(item.proximaTarea.titulo)} · ${formatearFecha(item.proximaTarea.vence)}</span>`
                                         : '<span class="danger-text">Sin próximo paso</span>'}
                                 </div>
-                                <select class="stage-select" data-id="${item.id}">
+                                ${puedeCambiarEstado ? `<select class="stage-select" data-id="${item.id}">
                                     ${etapas.map(opcion => `<option value="${opcion}" ${opcion === item.estado ? "selected" : ""}>${opcion}</option>`).join("")}
-                                </select>
+                                </select>` : ""}
                             </div>`;
                                 }).join("") || '<div class="empty">Sin conversaciones</div>'}
                             </div>`;
@@ -135,6 +134,10 @@
              */
             vista.querySelectorAll(".deal-card").forEach(card => {
                 card.addEventListener("dragstart", event => {
+                    if (!puedeCambiarEstado) {
+                        event.preventDefault();
+                        return;
+                    }
                     event.dataTransfer.setData("text/plain", card.dataset.conversationId || "");
                     event.dataTransfer.effectAllowed = "move";
                     card.classList.add("dragging");
@@ -149,6 +152,7 @@
             });
             vista.querySelectorAll(".stage-column").forEach(column => {
                 column.addEventListener("dragover", event => {
+                    if (!puedeCambiarEstado) return;
                     event.preventDefault();
                     event.dataTransfer.dropEffect = "move";
                     column.classList.add("drag-over");
@@ -157,6 +161,7 @@
                     column.classList.remove("drag-over");
                 });
                 column.addEventListener("drop", async event => {
+                    if (!puedeCambiarEstado) return;
                     event.preventDefault();
                     column.classList.remove("drag-over");
                     const id = event.dataTransfer.getData("text/plain");

@@ -74,8 +74,20 @@ public sealed class MetaGraphApiService
         var pageToken = await ResolvePageAccessTokenAsync(apiVersion, pageId, configuredToken);
         var since = new DateTimeOffset((desde ?? DateTime.Today.AddDays(-30)).Date).ToUnixTimeSeconds();
         var until = new DateTimeOffset((hasta ?? DateTime.Today).Date.AddDays(1)).ToUnixTimeSeconds();
-        var fields = "id,message,created_time,permalink_url,full_picture,shares,attachments.limit(5){media_type,media,target{url},subattachments{media_type,media}}";
-        var url = $"https://graph.facebook.com/{apiVersion}/{Uri.EscapeDataString(pageId)}/published_posts?fields={fields}&limit={Math.Clamp(limit, 1, 25)}&since={since}&until={until}";
+        var fields = string.Join(",",
+        [
+            "id", "message", "created_time", "permalink_url", "full_picture", "shares",
+            "attachments.limit(5){media_type,media,target{url},subattachments{media_type,media}}",
+            "comments.limit(0).summary(total_count)",
+            "reactions.limit(0).summary(total_count)",
+            "reactions.type(LIKE).limit(0).summary(total_count).as(reaction_like)",
+            "reactions.type(LOVE).limit(0).summary(total_count).as(reaction_love)",
+            "reactions.type(HAHA).limit(0).summary(total_count).as(reaction_haha)",
+            "reactions.type(WOW).limit(0).summary(total_count).as(reaction_wow)",
+            "reactions.type(SAD).limit(0).summary(total_count).as(reaction_sorry)",
+            "reactions.type(ANGRY).limit(0).summary(total_count).as(reaction_anger)"
+        ]);
+        var url = $"https://graph.facebook.com/{apiVersion}/{Uri.EscapeDataString(pageId)}/published_posts?fields={Uri.EscapeDataString(fields)}&limit={Math.Clamp(limit, 1, 25)}&since={since}&until={until}";
 
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", pageToken);
@@ -137,7 +149,9 @@ public sealed class MetaGraphApiService
 
     private static MetaFacebookPost ParseFacebookPost(JsonElement post)
     {
-        var likes = ReadSummaryCount(post, "likes");
+        var likes = HasSummary(post, "reactions")
+            ? ReadSummaryCount(post, "reactions")
+            : ReadSummaryCount(post, "likes");
         var comments = ReadSummaryCount(post, "comments");
         var shares = post.TryGetProperty("shares", out var sharesNode) &&
                      sharesNode.TryGetProperty("count", out var sharesCount) &&
@@ -149,6 +163,8 @@ public sealed class MetaGraphApiService
         var engagement = ReadInsightValue(post, "post_engagement");
         var mediaUrl = ReadMediaUrl(post);
         var mediaType = ReadMediaType(post);
+
+        var reactionsByType = ReadCurrentReactionBreakdown(post);
 
         return new MetaFacebookPost(
             ReadString(post, "id") ?? string.Empty,
@@ -163,7 +179,7 @@ public sealed class MetaGraphApiService
             engagement > 0 ? engagement : likes + comments + shares,
             mediaUrl,
             mediaType,
-            new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase));
+            reactionsByType);
     }
 
     private async Task<MetaFacebookPost> EnrichFacebookPostAsync(
@@ -174,6 +190,8 @@ public sealed class MetaGraphApiService
     {
         var parsed = ParseFacebookPost(post);
         if (string.IsNullOrWhiteSpace(parsed.Id)) return parsed;
+        var hasCurrentReactionSummary = HasSummary(post, "reactions");
+        var hasCurrentCommentSummary = HasSummary(post, "comments");
 
         await concurrency.WaitAsync();
         try
@@ -195,11 +213,14 @@ public sealed class MetaGraphApiService
                 return parsed;
             }
 
-            long reactions = 0;
+            long reactions = parsed.Likes;
             long comments = parsed.Comments;
             long shares = parsed.Shares;
             long views = 0;
-            var reactionsByType = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+            var reactionsByType = parsed.ReactionsByType.ToDictionary(
+                item => item.Key,
+                item => item.Value,
+                StringComparer.OrdinalIgnoreCase);
             foreach (var metric in data.EnumerateArray())
             {
                 var name = ReadString(metric, "name");
@@ -212,7 +233,8 @@ public sealed class MetaGraphApiService
                 foreach (var valueNode in values.EnumerateArray())
                 {
                     if (!valueNode.TryGetProperty("value", out var value)) continue;
-                    if (string.Equals(name, "post_reactions_by_type_total", StringComparison.OrdinalIgnoreCase))
+                    if (string.Equals(name, "post_reactions_by_type_total", StringComparison.OrdinalIgnoreCase) &&
+                        !hasCurrentReactionSummary)
                     {
                         reactions = Math.Max(reactions, ReadLong(value));
                         if (value.ValueKind == JsonValueKind.Object)
@@ -228,7 +250,8 @@ public sealed class MetaGraphApiService
                     else if (string.Equals(name, "post_activity_by_action_type", StringComparison.OrdinalIgnoreCase) &&
                              value.ValueKind == JsonValueKind.Object)
                     {
-                        comments = Math.Max(comments, ReadObjectLong(value, "comment"));
+                        if (!hasCurrentCommentSummary)
+                            comments = Math.Max(comments, ReadObjectLong(value, "comment"));
                         shares = Math.Max(shares, ReadObjectLong(value, "share"));
                     }
                     else if (string.Equals(name, "post_media_view", StringComparison.OrdinalIgnoreCase) ||
@@ -264,6 +287,35 @@ public sealed class MetaGraphApiService
         value.TryGetProperty(property, out var propertyValue)
             ? ReadLong(propertyValue)
             : 0;
+
+    private static bool HasSummary(JsonElement root, string property) =>
+        root.TryGetProperty(property, out var node) &&
+        node.ValueKind == JsonValueKind.Object &&
+        node.TryGetProperty("summary", out var summary) &&
+        summary.ValueKind == JsonValueKind.Object &&
+        summary.TryGetProperty("total_count", out _);
+
+    private static IReadOnlyDictionary<string, long> ReadCurrentReactionBreakdown(JsonElement post)
+    {
+        var result = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+        var aliases = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["reaction_like"] = "like",
+            ["reaction_love"] = "love",
+            ["reaction_haha"] = "haha",
+            ["reaction_wow"] = "wow",
+            ["reaction_sorry"] = "sorry",
+            ["reaction_anger"] = "anger"
+        };
+
+        foreach (var alias in aliases)
+        {
+            if (!HasSummary(post, alias.Key)) continue;
+            result[alias.Value] = ReadSummaryCount(post, alias.Key);
+        }
+
+        return result;
+    }
 
     private static string? ReadMediaUrl(JsonElement root)
     {
@@ -1214,34 +1266,90 @@ public sealed class MetaGraphApiService
         }
 
         var apiVersion = GetValue("Meta:ApiVersion") ?? _configuration["Meta:ApiVersion"] ?? "v26.0";
-        string accessToken;
-        string ownerId;
-        string url;
-
         if (normalized == CanalSocial.Instagram)
         {
-            accessToken = GetValue("Meta:Instagram:LoginAccessToken") ??
-                GetValue("Meta:Instagram:AccessToken") ?? string.Empty;
-            ownerId = GetValue("Meta:Instagram:LoginUserId") ??
-                GetValue("Meta:Instagram:InstagramBusinessAccountId") ?? string.Empty;
-            url = $"https://graph.instagram.com/{apiVersion}/{Uri.EscapeDataString(publicationId)}/comments" +
-                "?fields=id,text,timestamp,username,from{id,username}&limit=100";
-        }
-        else
-        {
-            ownerId = GetValue("Meta:Facebook:PageId") ?? string.Empty;
-            var configuredToken = GetValue("Meta:Facebook:AccessToken") ?? string.Empty;
-            if (string.IsNullOrWhiteSpace(ownerId) || string.IsNullOrWhiteSpace(configuredToken))
-                return MetaPublicationCommentsResult.Failed("Faltan Page ID o Access Token de Facebook.");
-            accessToken = await ResolvePageAccessTokenAsync(apiVersion, ownerId, configuredToken);
-            url = $"https://graph.facebook.com/{apiVersion}/{Uri.EscapeDataString(publicationId)}/comments" +
-                "?fields=id,message,created_time,from{id,name}&limit=100";
+            var candidates = new[]
+            {
+                new
+                {
+                    Host = "graph.instagram.com",
+                    Token = GetValue("Meta:Instagram:LoginAccessToken"),
+                    Permission = "instagram_business_manage_comments"
+                },
+                new
+                {
+                    Host = "graph.facebook.com",
+                    Token = GetValue("Meta:Instagram:AccessToken"),
+                    Permission = "instagram_manage_comments"
+                }
+            }
+            .Where(candidate => !string.IsNullOrWhiteSpace(candidate.Token))
+            .DistinctBy(candidate => $"{candidate.Host}:{candidate.Token}")
+            .ToArray();
+
+            if (candidates.Length == 0)
+                return MetaPublicationCommentsResult.Failed("Falta el Access Token de Instagram.");
+
+            MetaPublicationCommentsResult? emptyResult = null;
+            var errors = new List<string>();
+            foreach (var candidate in candidates)
+            {
+                var url = $"https://{candidate.Host}/{apiVersion}/{Uri.EscapeDataString(publicationId)}/comments" +
+                    "?fields=id,text,timestamp,username,from{id,username}&limit=100";
+                var result = await FetchPublicationCommentsAsync(
+                    normalized,
+                    publicationId,
+                    url,
+                    candidate.Token!,
+                    cancellationToken);
+                if (result.Success && result.Comments.Count > 0) return result;
+                if (result.Success)
+                {
+                    emptyResult ??= result;
+                    continue;
+                }
+
+                errors.Add($"{candidate.Host}: {result.Error}");
+                _logger.LogWarning(
+                    "No se pudieron leer comentarios de Instagram mediante {Host}. Permiso esperado: {Permission}. Error: {Error}",
+                    candidate.Host,
+                    candidate.Permission,
+                    result.Error);
+            }
+
+            if (emptyResult != null && errors.Count == 0) return emptyResult;
+            return MetaPublicationCommentsResult.Failed(
+                "Instagram no autorizó la lectura de comentarios. Reconecta la cuenta y concede " +
+                "instagram_business_manage_comments. " + string.Join(" | ", errors));
         }
 
+        var ownerId = GetValue("Meta:Facebook:PageId") ?? string.Empty;
+        var configuredToken = GetValue("Meta:Facebook:AccessToken") ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(ownerId) || string.IsNullOrWhiteSpace(configuredToken))
+            return MetaPublicationCommentsResult.Failed("Faltan Page ID o Access Token de Facebook.");
+        var accessToken = await ResolvePageAccessTokenAsync(apiVersion, ownerId, configuredToken);
+        var facebookUrl = $"https://graph.facebook.com/{apiVersion}/{Uri.EscapeDataString(publicationId)}/comments" +
+            "?fields=id,message,created_time,from{id,name}&limit=100";
+        return await FetchPublicationCommentsAsync(
+            normalized,
+            publicationId,
+            facebookUrl,
+            accessToken,
+            cancellationToken);
+    }
+
+    private async Task<MetaPublicationCommentsResult> FetchPublicationCommentsAsync(
+        string normalized,
+        string publicationId,
+        string initialUrl,
+        string accessToken,
+        CancellationToken cancellationToken)
+    {
         if (string.IsNullOrWhiteSpace(accessToken))
             return MetaPublicationCommentsResult.Failed($"Falta el Access Token de {normalized}.");
 
         var result = new List<MetaPublicationComment>();
+        var url = initialUrl;
         for (var page = 0; page < 3 && !string.IsNullOrWhiteSpace(url); page++)
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
@@ -1257,7 +1365,8 @@ public sealed class MetaGraphApiService
                     (int)response.StatusCode,
                     body);
                 var detail = BuildInsightError(body);
-                if (detail.Contains("pages_read_user_content", StringComparison.OrdinalIgnoreCase))
+                if (normalized == CanalSocial.Facebook &&
+                    detail.Contains("pages_read_user_content", StringComparison.OrdinalIgnoreCase))
                 {
                     detail = "Facebook requiere el permiso pages_read_user_content para leer los comentarios. Reconecta Facebook desde Conexiones y autoriza el permiso.";
                 }

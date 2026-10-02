@@ -39,6 +39,7 @@
 
         async function cargarModuloTareas(vista) {
             const puedeGestionarEquipo = puedeGestionarEquipoCRM();
+            const puedeGestionarTareas = tienePermiso("tareas.gestionar");
             if (puedeGestionarEquipo && tareasFiltroActivo === "mias") {
                 tareasFiltroActivo = "hoy";
             }
@@ -99,7 +100,7 @@
                     <article class="metric-card"><span class="metric-label">Completadas</span><strong class="metric-value">${resumen.completadas}</strong></article>
                 </section>
                 <section class="task-workspace">
-                    <form id="quickTaskForm" class="user-form task-form">
+                    ${puedeGestionarTareas ? `<form id="quickTaskForm" class="user-form task-form">
                         <input name="titulo" maxlength="200" placeholder="Nueva tarea o seguimiento" required>
                         <input name="fechaVencimiento" type="datetime-local" required>
                         ${puedeGestionarEquipo ? `<select name="asignadoAId">
@@ -107,7 +108,7 @@
                             ${usuarios.map(usuario => `<option value="${usuario.id}" ${Number(usuario.id) === Number(sesionActual?.id) ? "selected" : ""}>${escapeHtml(usuario.nombre)}</option>`).join("")}
                         </select>` : ""}
                         <button type="submit">Crear tarea</button>
-                    </form>
+                    </form>` : ""}
                     <div class="task-filters">
                         ${filtros.map(([id, label, total]) => `<button type="button" class="filter-button ${tareasFiltroActivo === id ? "active" : ""}" data-task-filter="${id}">${label} <span>${total}</span></button>`).join("")}
                     </div>
@@ -121,13 +122,13 @@
                                 </div>
                                 <div class="task-actions">
                                     ${tarea.conversacionId ? `<button type="button" class="mini-action" data-open-task-chat="${tarea.conversacionId}">Abrir chat</button>` : ""}
-                                    ${tarea.estado !== "COMPLETADA" && tarea.estado !== "CANCELADA" ? `<button type="button" class="mini-action" data-complete-task-module="${tarea.id}">Completar</button>` : ""}
+                                    ${puedeGestionarTareas && tarea.estado !== "COMPLETADA" && tarea.estado !== "CANCELADA" ? `<button type="button" class="mini-action" data-complete-task-module="${tarea.id}">Completar</button>` : ""}
                                 </div>
                             </article>`).join("") || '<div class="empty">No hay tareas para este filtro.</div>'}
                     </div>
                 </section>`;
 
-            vista.querySelector("#quickTaskForm").addEventListener("submit", async event => {
+            vista.querySelector("#quickTaskForm")?.addEventListener("submit", async event => {
                 event.preventDefault();
                 const datos = Object.fromEntries(new FormData(event.currentTarget));
                 datos.asignadoAId = datos.asignadoAId ? Number(datos.asignadoAId) : null;
@@ -198,6 +199,8 @@
 
         async function cargarModuloVentas(vista) {
             const puedeGestionarEquipo = puedeGestionarEquipoCRM();
+            const puedeGestionarVentas = tienePermiso("ventas.gestionar");
+            const puedeExportar = tienePermiso("datos.exportar");
             const fechaMinimaCierre = new Date().toISOString().slice(0, 10);
             const [ventasResponse, contactosResponse, usuarios] = await Promise.all([
                 api("/api/oportunidades?pageSize=200"),
@@ -222,7 +225,7 @@
                         <h1>Ventas</h1>
                         <p>Embudo comercial con oportunidades, montos y cierre.</p>
                     </div>
-                    <button id="salesExportButton" class="secondary-btn" type="button">Exportar CSV</button>
+                    ${puedeExportar ? '<button id="salesExportButton" class="secondary-btn" type="button">Exportar CSV</button>' : ""}
                 </div>
                 <section class="task-summary">
                     <article class="metric-card"><span class="metric-label">Abiertas</span><strong class="metric-value">${resumen.abiertas}</strong></article>
@@ -231,7 +234,7 @@
                     <article class="metric-card ${resumen.cierreSemana ? "warning-card" : ""}"><span class="metric-label">Cierre 7 días</span><strong class="metric-value">${resumen.cierreSemana}</strong><small>${resumen.winRate}% win rate</small></article>
                 </section>
                 <section class="sales-workspace">
-                    <form id="quickDealForm" class="user-form sales-form">
+                    ${puedeGestionarVentas ? `<form id="quickDealForm" class="user-form sales-form">
                         <input name="titulo" maxlength="200" placeholder="Nueva oportunidad" required>
                         <input id="salesClientSearch" class="sales-client-search" type="search" placeholder="Buscar cliente por nombre o teléfono">
                         <select id="salesClientSelect" name="clienteId" required>
@@ -247,7 +250,7 @@
                             ${usuarios.map(usuario => `<option value="${usuario.id}" ${Number(usuario.id) === Number(sesionActual?.id) ? "selected" : ""}>${escapeHtml(usuario.nombre)}</option>`).join("")}
                         </select>` : ""}
                         <button type="submit">Crear venta</button>
-                    </form>
+                    </form>` : ""}
                     <div class="task-filters">
                         ${["TODAS", ...etapas].map(etapa => {
                             const total = etapa === "TODAS" ? oportunidades.length : oportunidades.filter(op => op.etapa === etapa).length;
@@ -272,9 +275,9 @@
                                             <small>${op.probabilidad}% probabilidad${op.fechaCierreEstimada ? ` · Cierre ${formatearFecha(op.fechaCierreEstimada)}` : " · Sin fecha de cierre"}${op.asesor ? ` · ${escapeHtml(op.asesor)}` : ""}</small>
                                             ${op.motivoPerdida ? `<small>Motivo: ${escapeHtml(op.motivoPerdida)}</small>` : ""}
                                         </div>
-                                        <select class="mini-select" data-sales-stage="${op.id}">
+                                        ${puedeGestionarVentas ? `<select class="mini-select" data-sales-stage="${op.id}">
                                             ${etapas.map(opcion => `<option value="${opcion}" ${opcion === op.etapa ? "selected" : ""}>${opcion}</option>`).join("")}
-                                        </select>
+                                        </select>` : `<span class="role-badge">${escapeHtml(op.etapa)}</span>`}
                                         <div class="task-actions">
                                             ${op.conversacionId ? `<button type="button" class="mini-action" data-open-sales-chat="${op.conversacionId}">Abrir chat</button>` : ""}
                                         </div>
@@ -286,7 +289,7 @@
 
             vista.querySelector("#salesExportButton")?.addEventListener("click", () => descargarArchivo(`/api/oportunidades/exportar${ventasEtapaFiltro !== "TODAS" ? `?etapa=${encodeURIComponent(ventasEtapaFiltro)}` : ""}`));
 
-            vista.querySelector("#quickDealForm").addEventListener("submit", async event => {
+            vista.querySelector("#quickDealForm")?.addEventListener("submit", async event => {
                 event.preventDefault();
                 const datos = Object.fromEntries(new FormData(event.currentTarget));
                 datos.clienteId = Number(datos.clienteId);

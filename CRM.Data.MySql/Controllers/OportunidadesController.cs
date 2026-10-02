@@ -24,7 +24,7 @@ namespace CRM.Data.Controllers;
 
 [ApiController]
 [Route("api/oportunidades")]
-[Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+[Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
 [EnableRateLimiting("api")]
 public class OportunidadesController : ControllerBase
 {
@@ -310,7 +310,7 @@ public class OportunidadesController : ControllerBase
     }
 
     [HttpPut("{id:long}/asignar")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     public async Task<IActionResult> Asignar(long id, [FromBody] AsignacionDto dto)
     {
         var oportunidad = await _context.Oportunidades.FindAsync(id);

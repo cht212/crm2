@@ -24,7 +24,7 @@ namespace CRM.Data.Controllers;
 
 [ApiController]
 [Route("api/tareas")]
-[Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+[Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
 [EnableRateLimiting("api")]
 public class TareasController : ControllerBase
 {
@@ -141,7 +141,7 @@ public class TareasController : ControllerBase
     }
 
     [HttpPost("revisar-vencidas")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     public async Task<IActionResult> RevisarVencidas()
     {
         var ahora = DateTime.Now;

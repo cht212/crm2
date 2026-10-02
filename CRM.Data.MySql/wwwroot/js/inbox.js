@@ -270,6 +270,7 @@
 
         function cambiarCanalBandeja(canal, opciones = {}) {
             const nuevoCanal = normalizarCanal(canal || "TODOS");
+            if (nuevoCanal !== "TODOS" && !puedeVerCanalComunicaciones(nuevoCanal)) return;
             const cambioCanal = inboxCanalActivo !== nuevoCanal;
             inboxCanalActivo = nuevoCanal;
             comunicacionesMenuAbierto = true;
@@ -444,11 +445,12 @@
             const contieneComentarios = (conversacion.mensajes || []).some(mensaje =>
                 String(mensaje.tipo || "").toLowerCase() === "comment");
             const detalleContacto = [cliente.telefono, nombreAsesor].filter(Boolean).join(" · ");
+            const puedeVerFicha = tienePermiso("comunicaciones.ficha") || tienePermiso("comunicaciones.ficha.contacto");
             document.getElementById("chatHeader").classList.add("chat-header--conversation");
             document.getElementById("chatHeader").innerHTML = `
                         <button id="mobileChatBack" class="mobile-chat-back" type="button" aria-label="Volver a conversaciones"><i data-lucide="arrow-left"></i></button>
                         <div class="chat-title-row">
-                            <div class="chat-contact-summary" role="button" tabindex="0" title="Ver ficha del cliente">
+                            <div class="chat-contact-summary" ${puedeVerFicha ? 'role="button" tabindex="0" title="Ver ficha del cliente"' : ""}>
                                 ${renderClienteAvatar(cliente, "chat-contact-avatar")}
                                 <div class="chat-contact-copy">
                                 <div class="chat-name">${escapeHtml(cliente.nombre || "Sin nombre")}</div>
@@ -465,12 +467,12 @@
                                 </button>` : ""}
                                 ${contieneComentarios ? '<span class="chat-public-comment-badge" title="Esta conversación contiene comentarios públicos"><i data-lucide="message-square-text"></i><span>Comentario público</span></span>' : ""}
                                 <span class="chat-channel-badge" role="img" title="${escapeAttribute(red.nombre)}" aria-label="${escapeAttribute(red.nombre)}">${crearLogoRed(red.clase)}</span>
-                                <button id="toggleCustomerDetails" class="chat-details-toggle" type="button"
+                                ${puedeVerFicha ? `<button id="toggleCustomerDetails" class="chat-details-toggle" type="button"
                                     title="${fichaClienteColapsada ? "Mostrar ficha del cliente" : "Ocultar ficha del cliente"}"
                                     aria-label="${fichaClienteColapsada ? "Mostrar ficha del cliente" : "Ocultar ficha del cliente"}"
                                     aria-expanded="${!fichaClienteColapsada}">
                                     <i data-lucide="${fichaClienteColapsada ? "panel-right-open" : "panel-right-close"}"></i>
-                                </button>
+                                </button>` : ""}
                             </div>
                         </div>`;
             document.getElementById("mobileChatBack")?.addEventListener("click", () => {
@@ -486,6 +488,7 @@
                 }
             });
             const abrirFichaDesdeChat = () => {
+                if (!puedeVerFicha) return;
                 document.body.classList.add("mobile-contact-details-open");
                 mostrarFichaCliente(conversacion);
             };
@@ -503,7 +506,7 @@
                 solicitarReasignacionDesdeChat(conversacion.id);
             });
             document.getElementById("toggleCustomerDetails")?.addEventListener("click", alternarFichaCliente);
-            document.querySelector(".main")?.classList.toggle("customer-details-collapsed", fichaClienteColapsada);
+            document.querySelector(".main")?.classList.toggle("customer-details-collapsed", !puedeVerFicha || fichaClienteColapsada);
             renderizarMensajesConversacion(conversacion.mensajes || []);
             renderizarPlantillasRapidas();
             const puedeEnviar = tienePermiso("mensajes.enviar");
@@ -515,7 +518,7 @@
                 : contieneComentarios
                     ? "Mensaje privado al contacto (no responde el comentario público)"
                     : "Escribir mensaje...";
-            if (refrescarFicha) {
+            if (refrescarFicha && puedeVerFicha) {
                 mostrarFichaCliente(conversacion);
             }
         }

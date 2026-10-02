@@ -67,11 +67,13 @@ public static class ServiceCollectionExtensions
         services.AddScoped<SocialInboundService>();
         services.AddScoped<MetaWebhookService>();
         services.AddHostedService<SocialInboxRecoveryWorker>();
-        services.AddHttpClient<SocialPublicationsService>();
+        services.AddHttpClient<SocialPublicationsService>(client =>
+            client.Timeout = TimeSpan.FromSeconds(15));
         services.AddSingleton<BotSettingsService>();
         services.AddSingleton<QuickReplyTemplatesService>();
         services.AddSingleton<SocialIntegrationService>();
         services.AddHttpClient<SocialOAuthService>()
+            .ConfigureHttpClient(client => client.Timeout = TimeSpan.FromSeconds(15))
             .ConfigurePrimaryHttpMessageHandler(CreateExternalHttpHandler);
         services.AddHostedService<SocialOAuthRefreshWorker>();
         services.AddSingleton<WhatsAppNumberRegistry>();
@@ -80,12 +82,15 @@ public static class ServiceCollectionExtensions
         services.AddScoped<R2StorageService>();
 
         services.AddHttpClient<WhatsAppCloudApiService>()
+            .ConfigureHttpClient(client => client.Timeout = TimeSpan.FromSeconds(15))
             .ConfigurePrimaryHttpMessageHandler(CreateExternalHttpHandler);
 
         services.AddHttpClient<MetaGraphApiService>()
+            .ConfigureHttpClient(client => client.Timeout = TimeSpan.FromSeconds(15))
             .ConfigurePrimaryHttpMessageHandler(CreateExternalHttpHandler);
 
         services.AddHttpClient<MetaMessagingService>()
+            .ConfigureHttpClient(client => client.Timeout = TimeSpan.FromSeconds(15))
             .ConfigurePrimaryHttpMessageHandler(CreateExternalHttpHandler);
 
         return services;

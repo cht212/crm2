@@ -305,11 +305,45 @@ public sealed class SocialPublicationsService
         if (cancellationToken.IsCancellationRequested)
             return "La sincronización de comentarios fue cancelada.";
 
+        try
+        {
+            await PersistCommentsAsync(commentGroups.SelectMany(group => group.Comments), cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return "La sincronización de comentarios fue cancelada.";
+        }
+
+        return commentGroups.FirstOrDefault(group => !group.Success)?.Error;
+    }
+
+    public async Task<MetaPublicationCommentsResult> SyncPublicationCommentsAsync(
+        string canal,
+        string publicationId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _meta.ObtenerComentariosPublicacionAsync(
+            canal,
+            publicationId,
+            cancellationToken);
+        if (!result.Success || result.Comments.Count == 0)
+        {
+            return result;
+        }
+
+        await PersistCommentsAsync(result.Comments, cancellationToken);
+        return result;
+    }
+
+    private async Task PersistCommentsAsync(
+        IEnumerable<MetaPublicationComment> comments,
+        CancellationToken cancellationToken)
+    {
         await _databaseSync.WaitAsync(cancellationToken);
         try
         {
             var perfiles = new Dictionary<string, MetaContactProfile?>(StringComparer.OrdinalIgnoreCase);
-            foreach (var comment in commentGroups.SelectMany(group => group.Comments))
+            foreach (var comment in comments)
             {
                 var nombre = comment.Username;
                 string? fotoPerfil = null;
@@ -349,16 +383,10 @@ public sealed class SocialPublicationsService
                     comment.CreatedAt));
             }
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            return "La sincronización de comentarios fue cancelada.";
-        }
         finally
         {
             _databaseSync.Release();
         }
-
-        return commentGroups.FirstOrDefault(group => !group.Success)?.Error;
     }
 
     private static bool EsNombreGenericoMeta(string? nombre, string canal) =>

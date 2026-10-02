@@ -7,6 +7,16 @@
                 modulo = typeof moduloInicialPorRol === "function" ? moduloInicialPorRol() : "inbox";
             }
 
+            if (!modulo) {
+                moduloActual = null;
+                window.__crmNavigationController?.abort();
+                document.querySelectorAll(".sidebar, .chat, .details").forEach(item => item.classList.add("hidden"));
+                const sinAcceso = document.getElementById("moduleView");
+                sinAcceso.classList.remove("hidden");
+                sinAcceso.innerHTML = '<div class="empty">No tienes apartados habilitados. Contacta al administrador para solicitar acceso.</div>';
+                return;
+            }
+
             const version = ++moduloNavegacionVersion;
 
             // Cancela peticiones pendientes del módulo anterior para impedir
@@ -41,10 +51,12 @@
             vista.dataset.module = modulo;
 
             if (modulo === "inbox") {
+                const puedeVerFicha = tienePermiso("comunicaciones.ficha") || tienePermiso("comunicaciones.ficha.contacto");
                 vista.classList.add("hidden");
                 sidebar.classList.remove("hidden");
                 chat.classList.remove("hidden");
-                details.classList.remove("hidden");
+                details.classList.toggle("hidden", !puedeVerFicha);
+                document.querySelector(".main")?.classList.toggle("customer-details-collapsed", !puedeVerFicha || fichaClienteColapsada);
                 return;
             }
 

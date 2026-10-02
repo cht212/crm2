@@ -4,6 +4,7 @@ using CRM.Data.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Security.Claims;
@@ -16,6 +17,8 @@ namespace CRM.Data.Controllers;
 [Route("api/integraciones")]
 public sealed class IntegracionesController : ControllerBase
 {
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> MarketingCacheLocks = new();
+
     private readonly IConfiguration _configuration;
     private readonly BotSettingsService _botSettings;
     private readonly SocialIntegrationService _socialIntegrations;
@@ -125,7 +128,7 @@ public sealed class IntegracionesController : ControllerBase
     }
 
     [HttpGet("{canal}/configuracion")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     [CrmPermission(CrmPermissionService.ModuleConnections)]
     public async Task<IActionResult> Configuracion(string canal, [FromQuery] bool revealSecrets = false)
     {
@@ -155,7 +158,7 @@ public sealed class IntegracionesController : ControllerBase
     }
 
     [HttpPut("{canal}/configuracion")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     [CrmPermission(CrmPermissionService.ManageIntegrations)]
     public IActionResult GuardarConfiguracion(string canal, SocialIntegrationSaveDto dto)
     {
@@ -274,30 +277,21 @@ public sealed class IntegracionesController : ControllerBase
     public async Task<IActionResult> EstadisticasMeta(
         [FromQuery] DateTime? desde = null,
         [FromQuery] DateTime? hasta = null,
-        [FromQuery] bool refresh = false)
+        [FromQuery] bool refresh = false,
+        CancellationToken cancellationToken = default)
     {
         var key = $"marketing:meta:{desde?.Date:yyyyMMdd}:{hasta?.Date:yyyyMMdd}";
-        if (refresh)
-        {
-            _cache.Remove(key);
-        }
-        else if (_cache.TryGetValue<MetaDashboardResult>(key, out var cachedDashboard))
-        {
-            Response.Headers["X-CRM-Cache"] = "HIT";
-            return Ok(cachedDashboard);
-        }
-
-        var dashboard = await _cache.GetOrCreateAsync(key, async entry =>
-        {
-            var result = await _metaGraph.ObtenerDashboardAsync(desde, hasta);
-            // Una caída breve de Meta o de DNS no debe dejar Marketing mostrando
-            // un error obsoleto durante el mismo tiempo que una respuesta válida.
-            entry.AbsoluteExpirationRelativeToNow = result.Success
-                ? TimeSpan.FromMinutes(30)
-                : TimeSpan.FromSeconds(10);
-            return result;
-        });
-        Response.Headers["X-CRM-Cache"] = refresh ? "REFRESH" : "MISS";
+        var (dashboard, cacheStatus) = await GetMarketingDataAsync(
+            key,
+            refresh,
+            async () =>
+            {
+                var result = await _metaGraph.ObtenerDashboardAsync(desde, hasta);
+                var duration = result.Success ? TimeSpan.FromMinutes(30) : TimeSpan.FromSeconds(10);
+                return (result, duration);
+            },
+            cancellationToken);
+        Response.Headers["X-CRM-Cache"] = cacheStatus;
         return Ok(dashboard);
     }
 
@@ -315,27 +309,85 @@ public sealed class IntegracionesController : ControllerBase
         if (start > end || end.DayNumber - start.DayNumber > 365 || end > DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1))
             return BadRequest(new { message = "El rango debe ser valido y no superar 365 dias." });
         var key = $"marketing:publicaciones:{start:yyyyMMdd}:{end:yyyyMMdd}";
+        var (report, cacheStatus) = await GetMarketingDataAsync(
+            key,
+            refresh,
+            async () =>
+            {
+                var result = await _publications.GetReportAsync(start, end, cancellationToken);
+                var duration = result.Canales.Any(channel =>
+                    !string.IsNullOrWhiteSpace(channel.Error) ||
+                    !string.IsNullOrWhiteSpace(channel.CommentsError))
+                    ? TimeSpan.FromSeconds(10)
+                    : TimeSpan.FromMinutes(30);
+                return (result, duration);
+            },
+            cancellationToken);
+        Response.Headers["X-CRM-Cache"] = cacheStatus;
+        return Ok(report);
+    }
+
+    [HttpPost("publicaciones/{canal}/{publicationId}/comentarios/sincronizar")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
+    [CrmPermission(CrmPermissionService.ModuleMarketing)]
+    public async Task<IActionResult> SincronizarComentariosPublicacion(
+        string canal,
+        string publicationId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _publications.SyncPublicationCommentsAsync(
+            canal,
+            publicationId,
+            cancellationToken);
+        if (!result.Success)
+        {
+            return StatusCode(StatusCodes.Status502BadGateway, new
+            {
+                success = false,
+                message = result.Error ?? "Instagram no permitió consultar los comentarios."
+            });
+        }
+
+        return Ok(new
+        {
+            success = true,
+            count = result.Comments.Count
+        });
+    }
+
+    private async Task<(T Value, string Status)> GetMarketingDataAsync<T>(
+        string key,
+        bool refresh,
+        Func<Task<(T Value, TimeSpan Duration)>> factory,
+        CancellationToken cancellationToken)
+    {
+        T? cached;
         if (refresh)
         {
             _cache.Remove(key);
         }
-        else if (_cache.TryGetValue<SocialPublicationReport>(key, out var cachedReport))
+        else if (_cache.TryGetValue<T>(key, out cached) && cached is not null)
         {
-            Response.Headers["X-CRM-Cache"] = "HIT";
-            return Ok(cachedReport);
+            return (cached, "HIT");
         }
 
-        var report = await _cache.GetOrCreateAsync(key, async entry =>
+        var gate = MarketingCacheLocks.GetOrAdd(key, static _ => new SemaphoreSlim(1, 1));
+        await gate.WaitAsync(cancellationToken);
+        try
         {
-            var result = await _publications.GetReportAsync(start, end, cancellationToken);
-            entry.AbsoluteExpirationRelativeToNow = result.Canales.Any(channel =>
-                !string.IsNullOrWhiteSpace(channel.Error))
-                ? TimeSpan.FromSeconds(10)
-                : TimeSpan.FromMinutes(30);
-            return result;
-        });
-        Response.Headers["X-CRM-Cache"] = refresh ? "REFRESH" : "MISS";
-        return Ok(report);
+            if (_cache.TryGetValue<T>(key, out cached) && cached is not null)
+            {
+                return (cached, "COALESCED");
+            }
+
+            var (value, duration) = await factory();
+            _cache.Set(key, value, duration);
+            return (value, refresh ? "REFRESH" : "MISS");
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     [HttpGet("meta/facebook/feed")]
@@ -361,7 +413,7 @@ public sealed class IntegracionesController : ControllerBase
     }
 
     [HttpGet("meta/credenciales/diagnostico")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     [CrmPermission(CrmPermissionService.ModuleConnections)]
     public async Task<IActionResult> DiagnosticoCredencialesMeta()
     {
@@ -369,7 +421,7 @@ public sealed class IntegracionesController : ControllerBase
     }
 
     [HttpPost("instagram/sincronizar")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
     public async Task<IActionResult> SincronizarInstagramLogin()
     {
         var result = await _metaGraph.SincronizarInstagramLoginAsync(_inbound);

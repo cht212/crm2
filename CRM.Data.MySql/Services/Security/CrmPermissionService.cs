@@ -11,6 +11,13 @@ public sealed record CrmPermissionDefinition(
 
 public sealed class CrmPermissionService
 {
+    public const string DeniedPrefix = "denegado.";
+    public const string ModuleDashboard = "modulo.dashboard";
+    public const string ModuleInbox = "modulo.inbox";
+    public const string ModuleContacts = "modulo.contactos";
+    public const string ModuleTasks = "modulo.tareas";
+    public const string ModuleLeads = "modulo.leads";
+    public const string ModuleSales = "modulo.ventas";
     public const string ModuleReports = "modulo.reportes";
     public const string ModuleMarketing = "modulo.marketing";
     public const string ModuleBot = "modulo.bot";
@@ -18,6 +25,12 @@ public sealed class CrmPermissionService
     public const string ModuleActivity = "modulo.actividad";
     public const string ModuleFailures = "modulo.fallos";
     public const string ModuleUsers = "modulo.usuarios";
+    public const string ViewCustomerDetails = "comunicaciones.ficha";
+    public const string EditConversationContact = "comunicaciones.ficha.contacto";
+    public const string ViewWhatsApp = "comunicaciones.canal.whatsapp";
+    public const string ViewInstagram = "comunicaciones.canal.instagram";
+    public const string ViewFacebook = "comunicaciones.canal.facebook";
+    public const string ViewTikTok = "comunicaciones.canal.tiktok";
     public const string EditContacts = "contactos.editar";
     public const string SendMessages = "mensajes.enviar";
     public const string AssignConversations = "conversaciones.asignar";
@@ -33,25 +46,37 @@ public sealed class CrmPermissionService
 
     public static readonly IReadOnlyList<CrmPermissionDefinition> Catalog =
     [
-        new(ModuleReports, "Módulos", "Ver reportes", "Consulta indicadores y reportes del CRM."),
-        new(ModuleMarketing, "Módulos", "Ver marketing", "Consulta campañas, publicaciones y estadísticas."),
-        new(ModuleBot, "Módulos", "Ver bot", "Consulta la configuración operativa del bot."),
-        new(ModuleConnections, "Módulos", "Ver conexiones", "Consulta el estado de integraciones sin revelar secretos."),
-        new(ModuleActivity, "Módulos", "Ver actividad", "Consulta el historial de auditoría."),
-        new(ModuleFailures, "Módulos", "Ver fallos", "Consulta errores de mensajes, webhooks e integraciones."),
-        new(ModuleUsers, "Módulos", "Ver usuarios", "Consulta nombres y roles, sin cambiar claves ni permisos."),
-        new(CreateContacts, "Operación", "Crear contactos", "Registra nuevos clientes en el CRM."),
-        new(EditContacts, "Operación", "Editar contactos", "Modifica los datos principales de clientes."),
-        new(SendMessages, "Operación", "Enviar mensajes y archivos", "Responde conversaciones y adjunta archivos."),
-        new(AttendConversations, "Operación", "Atender conversaciones", "Toma conversaciones y cambia su estado operativo."),
-        new(AssignConversations, "Operación", "Asignar conversaciones", "Asigna o reasigna conversaciones al equipo."),
-        new(ManageNotes, "Operación", "Gestionar notas y etiquetas", "Añade notas internas y clasifica clientes con etiquetas."),
-        new(ManageTasks, "Operación", "Gestionar tareas", "Crea, completa y elimina tareas."),
-        new(ManageSales, "Operación", "Gestionar ventas", "Crea y actualiza oportunidades comerciales."),
-        new(ManageMarketing, "Operación", "Gestionar marketing", "Crea campañas y ejecuta automatizaciones."),
-        new(ManageBot, "Operación", "Configurar bot", "Modifica respuestas y plantillas del bot."),
-        new(ManageIntegrations, "Operación", "Configurar integraciones", "Modifica conexiones externas sin mostrar secretos guardados."),
-        new(ExportData, "Datos", "Exportar información", "Descarga reportes y archivos de datos."),
+        new(ModuleDashboard, "Inicio", "Ver apartado", "Consulta el panel de inicio y sus indicadores."),
+        new(ModuleInbox, "Comunicaciones", "Ver apartado", "Consulta las conversaciones disponibles para su cuenta."),
+        new(ViewCustomerDetails, "Comunicaciones", "Ficha completa del cliente", "Muestra datos, notas, tareas, oportunidades y actividad al abrir una conversación."),
+        new(EditConversationContact, "Comunicaciones", "Ficha de datos del contacto", "Permite ver y editar nombre, teléfono, email y documento desde la conversación, sin actividad, tareas ni oportunidades."),
+        new(ViewWhatsApp, "Comunicaciones", "Ver WhatsApp", "Muestra las conversaciones del canal WhatsApp."),
+        new(ViewInstagram, "Comunicaciones", "Ver Instagram", "Muestra las conversaciones del canal Instagram."),
+        new(ViewFacebook, "Comunicaciones", "Ver Facebook", "Muestra las conversaciones del canal Facebook."),
+        new(ViewTikTok, "Comunicaciones", "Ver TikTok", "Muestra las conversaciones del canal TikTok."),
+        new(SendMessages, "Comunicaciones", "Enviar mensajes y archivos", "Responde conversaciones y adjunta archivos."),
+        new(AttendConversations, "Comunicaciones", "Atender conversaciones", "Toma conversaciones y cambia su estado en Comunicaciones y Leads."),
+        new(AssignConversations, "Comunicaciones", "Asignar conversaciones", "Asigna o reasigna conversaciones en Comunicaciones y Leads."),
+        new(ModuleContacts, "Contactos", "Ver apartado", "Consulta la lista de contactos."),
+        new(CreateContacts, "Contactos", "Crear contactos", "Registra nuevos clientes en el CRM."),
+        new(EditContacts, "Contactos", "Editar contactos", "Modifica los datos principales de clientes."),
+        new(ManageNotes, "Contactos", "Gestionar notas y etiquetas", "Añade notas y etiquetas en las fichas de clientes de Contactos, Comunicaciones y Leads."),
+        new(ModuleTasks, "Tareas", "Ver apartado", "Consulta las tareas disponibles para su cuenta."),
+        new(ManageTasks, "Tareas", "Gestionar tareas", "Crea, completa y elimina tareas."),
+        new(ModuleLeads, "Leads", "Ver apartado", "Consulta leads. Las acciones de atención y asignación se configuran en Comunicaciones."),
+        new(ModuleSales, "Ventas", "Ver apartado", "Consulta las oportunidades comerciales disponibles para su cuenta."),
+        new(ManageSales, "Ventas", "Gestionar ventas", "Crea y actualiza oportunidades comerciales."),
+        new(ModuleReports, "Reportes", "Ver apartado", "Consulta indicadores y reportes del CRM."),
+        new(ExportData, "Reportes", "Exportar información", "Permiso compartido para descargar reportes y archivos de datos del CRM."),
+        new(ModuleMarketing, "Marketing", "Ver apartado", "Consulta campañas, publicaciones y estadísticas."),
+        new(ManageMarketing, "Marketing", "Gestionar marketing", "Crea campañas, ejecuta automatizaciones y responde comentarios."),
+        new(ModuleBot, "Bot", "Ver apartado", "Consulta la configuración operativa del bot."),
+        new(ManageBot, "Bot", "Configurar bot", "Modifica respuestas y plantillas del bot."),
+        new(ModuleConnections, "Conexiones", "Ver apartado", "Consulta el estado de integraciones sin revelar secretos."),
+        new(ManageIntegrations, "Conexiones", "Configurar integraciones", "Modifica conexiones externas sin mostrar secretos guardados."),
+        new(ModuleActivity, "Actividad", "Ver apartado", "Consulta el historial de auditoría."),
+        new(ModuleFailures, "Fallos", "Ver apartado", "Consulta errores de mensajes, webhooks e integraciones."),
+        new(ModuleUsers, "Usuarios", "Ver apartado", "Consulta nombres y roles. Crear cuentas, cambiar claves y administrar permisos es exclusivo del Administrador."),
     ];
 
     private static readonly HashSet<string> ConfigurableCodes =
@@ -77,8 +102,41 @@ public sealed class CrmPermissionService
 
     public async Task<HashSet<string>> GetEffectiveAsync(int userId, string? role)
     {
+        return ResolveEffective(role, await GetGrantedAsync(userId));
+    }
+
+    // Conserva los permisos adicionales existentes y almacena las excepciones
+    // negativas en la misma tabla, sin alterar el esquema ni los roles.
+    public static HashSet<string> ResolveEffective(string? role, IEnumerable<string> overrides)
+    {
         var result = GetBasePermissions(role);
-        result.UnionWith(await GetGrantedAsync(userId));
+        if (CrmRoles.Normalize(role).Equals(CrmRoles.Administrador, StringComparison.OrdinalIgnoreCase))
+            return result;
+        var stored = overrides.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        result.UnionWith(stored.Where(IsConfigurable));
+        result.ExceptWith(stored.Where(item => item.StartsWith(DeniedPrefix, StringComparison.OrdinalIgnoreCase))
+            .Select(item => item[DeniedPrefix.Length..]));
+        foreach (var group in Catalog.GroupBy(item => item.Group, StringComparer.OrdinalIgnoreCase))
+        {
+            var module = group.FirstOrDefault(item => item.Code.StartsWith("modulo.", StringComparison.OrdinalIgnoreCase));
+            if (module != null && !result.Contains(module.Code))
+                result.ExceptWith(group.Select(item => item.Code));
+        }
+        return result;
+    }
+
+    public static HashSet<string> BuildOverrides(string? role, IEnumerable<string> selected)
+    {
+        var requested = selected.Where(IsConfigurable).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var group in Catalog.GroupBy(item => item.Group, StringComparer.OrdinalIgnoreCase))
+        {
+            var module = group.FirstOrDefault(item => item.Code.StartsWith("modulo.", StringComparison.OrdinalIgnoreCase));
+            if (module != null && !requested.Contains(module.Code))
+                requested.ExceptWith(group.Select(item => item.Code));
+        }
+        var inherited = GetBasePermissions(role);
+        var result = requested.Except(inherited, StringComparer.OrdinalIgnoreCase).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        result.UnionWith(inherited.Except(requested, StringComparer.OrdinalIgnoreCase).Select(item => DeniedPrefix + item));
         return result;
     }
 
@@ -89,16 +147,40 @@ public sealed class CrmPermissionService
             return true;
         }
 
-        if (GetBasePermissions(role).Contains(permission))
-        {
-            return true;
-        }
-
-        return await _context.UsuarioPermisos.AsNoTracking().AnyAsync(item =>
-            item.nUsuario == userId && item.cPermiso == permission);
+        return (await GetEffectiveAsync(userId, role)).Contains(permission);
     }
 
     public static HashSet<string> GetBasePermissions(string? role)
+    {
+        var result = GetBaseActionPermissions(role);
+        result.UnionWith(Catalog.Where(item => item.Code.StartsWith("modulo.") &&
+            CrmRolePermissions.CanAccessModule(role, item.Code["modulo.".Length..])).Select(item => item.Code));
+        if (result.Contains(ModuleInbox))
+        {
+            result.UnionWith([ViewCustomerDetails, ViewWhatsApp, ViewInstagram, ViewFacebook, ViewTikTok]);
+        }
+        return result;
+    }
+
+    public static string? GetChannelPermission(string? channel) =>
+        (channel ?? string.Empty).Trim().ToUpperInvariant() switch
+        {
+            "WHATSAPP" => ViewWhatsApp,
+            "INSTAGRAM" => ViewInstagram,
+            "FACEBOOK" => ViewFacebook,
+            "TIKTOK" => ViewTikTok,
+            _ => null
+        };
+
+    public static string[] GetAllowedChannels(IEnumerable<string> effectivePermissions)
+    {
+        var permissions = effectivePermissions.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return new[] { "WHATSAPP", "INSTAGRAM", "FACEBOOK", "TIKTOK" }
+            .Where(channel => permissions.Contains(GetChannelPermission(channel)!))
+            .ToArray();
+    }
+
+    private static HashSet<string> GetBaseActionPermissions(string? role)
     {
         var normalized = CrmRoles.Normalize(role);
         if (normalized.Equals(CrmRoles.Administrador, StringComparison.OrdinalIgnoreCase))
@@ -174,5 +256,37 @@ public sealed class CrmPermissionService
         }
         if (value.StartsWith("/api/crm/conversaciones")) return AttendConversations;
         return "operacion.no_asignada";
+    }
+
+    public static bool IsContactUpdatePath(PathString path) =>
+        System.Text.RegularExpressions.Regex.IsMatch(
+            (path.Value ?? string.Empty).TrimEnd('/'),
+            @"^/api/crm/contactos/\d+$",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    public static string[] ResolveReadPermissions(PathString path)
+    {
+        var value = (path.Value?.ToLowerInvariant() ?? "").TrimEnd('/');
+        if (value.EndsWith("/exportar")) return [ExportData];
+        if (value.StartsWith("/api/crm/reportes")) return [ModuleReports, ModuleDashboard];
+        if (value.StartsWith("/api/dashboard")) return [ModuleDashboard];
+        if (value.StartsWith("/api/crm/leads")) return [ModuleLeads];
+        if (value.StartsWith("/api/crm/fallos")) return [ModuleFailures];
+        if (value == "/api/crm/actividad") return [ModuleActivity];
+        if (value.StartsWith("/api/crm/actividad/historial")) return [ModuleActivity, ModuleContacts, ModuleInbox, ModuleLeads];
+        if (value.StartsWith("/api/crm/comentarios") || value.StartsWith("/api/campanas") || value.StartsWith("/api/automatizacion"))
+            return [ModuleMarketing];
+        if (value.StartsWith("/api/bot") || value == "/api/plantillas-rapidas/admin") return [ModuleBot];
+        if (value == "/api/plantillas-rapidas") return [ModuleBot, ModuleInbox, ModuleLeads];
+        if (value.StartsWith("/api/tareas")) return [ModuleTasks, ModuleInbox, ModuleLeads, ModuleContacts];
+        if (value.StartsWith("/api/oportunidades")) return [ModuleSales, ModuleLeads, ModuleInbox, ModuleContacts];
+        if (value.StartsWith("/api/exportaciones")) return [ExportData];
+        // Los selectores y fichas utilizan datos compartidos entre apartados.
+        // Permitirlos cuando existe un apartado que los necesita.
+        if (value == "/api/crm/usuarios") return [ModuleUsers, ModuleDashboard, ModuleInbox, ModuleContacts, ModuleTasks, ModuleLeads, ModuleSales, ModuleReports];
+        if (value.StartsWith("/api/crm/contactos") || value.StartsWith("/api/clientes") || value.StartsWith("/api/etiquetas"))
+            return [ModuleContacts, ModuleInbox, ModuleLeads, ModuleSales, ModuleTasks];
+        if (value.StartsWith("/api/whatsapp/conversaciones")) return [ModuleInbox, ModuleLeads, ModuleContacts];
+        return [];
     }
 }

@@ -12,7 +12,7 @@ namespace CRM.Data.Controllers;
 
 [ApiController]
 [Route("api/crm/comentarios")]
-[Authorize(Roles = "Administrador,Supervisor,Auditor,Marketing")]
+[Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
 [EnableRateLimiting("api")]
 public sealed class MarketingCommentsController : ControllerBase
 {
@@ -94,7 +94,6 @@ public sealed class MarketingCommentsController : ControllerBase
     }
 
     [HttpPost("{id:long}/respuestas")]
-    [Authorize(Roles = "Administrador,Supervisor,Marketing")]
     [CrmPermission(CrmPermissionService.ManageMarketing)]
     public async Task<IActionResult> Responder(long id, [FromBody] ResponderComentarioDto dto)
     {

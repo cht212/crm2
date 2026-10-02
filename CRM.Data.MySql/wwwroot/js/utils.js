@@ -42,7 +42,107 @@
                 });
 
                 tabla.classList.add("responsive-table-ready");
+                if (!tabla.classList.contains("contacts-table")) crearTarjetasTablaMovil(tabla, encabezados);
             });
+        }
+
+        function crearTarjetasTablaMovil(tabla, encabezados) {
+            tabla.parentElement?.querySelector(`.table-mobile-list[data-table-mobile-id="${tabla.dataset.mobileTableId || ""}"]`)?.remove();
+            const identificador = tabla.dataset.mobileTableId || `table-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+            tabla.dataset.mobileTableId = identificador;
+
+            const lista = document.createElement("div");
+            lista.className = "table-mobile-list";
+            lista.dataset.tableMobileId = identificador;
+            lista.setAttribute("aria-label", "Vista móvil de la tabla");
+
+            const filas = [...tabla.querySelectorAll("tbody tr")];
+            filas.forEach(fila => {
+                const celdas = [...fila.children].filter(celda => celda.tagName === "TD");
+                const esFilaVacia = celdas.length === 1 && Number(celdas[0].colSpan || 1) > 1;
+                if (esFilaVacia) {
+                    const vacio = document.createElement("div");
+                    vacio.className = "table-mobile-empty";
+                    vacio.textContent = celdas[0].textContent.trim() || "No hay información.";
+                    lista.append(vacio);
+                    return;
+                }
+
+                const indicePrincipal = ["Nombre", "Asesor", "Usuario", "Estado", "Etapa", "Fecha", "Publicación"]
+                    .map(nombre => encabezados.findIndex(encabezado => encabezado.toLowerCase() === nombre.toLowerCase()))
+                    .find(indice => indice >= 0) ?? 0;
+                const titulo = celdas[indicePrincipal]?.textContent.trim() || "Detalle";
+                const indiceSecundario = celdas.findIndex((celda, indice) =>
+                    indice !== indicePrincipal &&
+                    !/acciones/i.test(encabezados[indice] || "") &&
+                    celda.textContent.trim());
+                const subtitulo = indiceSecundario >= 0 ? celdas[indiceSecundario].textContent.trim() : "";
+                const encabezadoPrincipal = encabezados[indicePrincipal] || "";
+                const icono = /nombre|asesor|usuario/i.test(encabezadoPrincipal) ? "user-round" :
+                    /fecha/i.test(encabezadoPrincipal) ? "calendar-range" :
+                    /publicación/i.test(encabezadoPrincipal) ? "image-up" : "file-text";
+
+                const tarjeta = document.createElement("article");
+                tarjeta.className = "table-mobile-card";
+                tarjeta.innerHTML = `
+                    <span class="table-mobile-avatar" aria-hidden="true"><i data-lucide="${icono}"></i></span>
+                    <span class="table-mobile-summary">
+                        <strong>${escapeHtml(titulo)}</strong>
+                        ${subtitulo && subtitulo !== titulo ? `<small>${escapeHtml(subtitulo)}</small>` : ""}
+                    </span>
+                    <button type="button" class="secondary-btn table-mobile-view"><i data-lucide="eye" aria-hidden="true"></i><span>Ver</span></button>`;
+                tarjeta.querySelector(".table-mobile-view").addEventListener("click", () => abrirDetalleTablaMovil(tabla, fila, encabezados, titulo, icono));
+                lista.append(tarjeta);
+            });
+
+            tabla.insertAdjacentElement("afterend", lista);
+            window.lucide?.createIcons(lista);
+        }
+
+        function abrirDetalleTablaMovil(tabla, fila, encabezados, titulo, icono) {
+            const celdas = [...fila.children].filter(celda => celda.tagName === "TD");
+            const detalles = celdas.map((celda, indice) => {
+                const etiqueta = encabezados[indice] || `Campo ${indice + 1}`;
+                if (/acciones/i.test(etiqueta)) return "";
+                const enlace = celda.querySelector('a[href^="https://"]');
+                const valor = celda.textContent.trim() || "—";
+                const contenido = enlace
+                    ? `<a href="${escapeAttribute(enlace.href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(valor)}</a>`
+                    : `<strong>${escapeHtml(valor)}</strong>`;
+                return `<div><span>${escapeHtml(etiqueta)}</span>${contenido}</div>`;
+            }).join("");
+            const accionesOriginales = [...fila.querySelectorAll("button")];
+            const acciones = accionesOriginales.map((boton, indice) => {
+                const nombre = boton.getAttribute("aria-label") || boton.getAttribute("title") || boton.textContent.trim() || `Acción ${indice + 1}`;
+                return `<button type="button" class="secondary-btn" data-mobile-table-action="${indice}">${escapeHtml(nombre)}</button>`;
+            }).join("");
+
+            modalHost.innerHTML = `
+                <div class="modal-backdrop" data-mobile-table-close></div>
+                <section class="crm-modal table-detail-modal" role="dialog" aria-modal="true" aria-labelledby="mobileTableDetailTitle">
+                    <div class="crm-modal-head table-detail-head">
+                        <span class="table-mobile-avatar" aria-hidden="true"><i data-lucide="${icono}"></i></span>
+                        <div><span class="contact-detail-eyebrow">Detalle</span><h2 id="mobileTableDetailTitle">${escapeHtml(titulo)}</h2></div>
+                        <button type="button" class="modal-close" data-mobile-table-close aria-label="Cerrar">×</button>
+                    </div>
+                    <div class="table-detail-facts">${detalles}</div>
+                    <div class="table-detail-actions">
+                        ${acciones}
+                        <button type="button" class="secondary-btn" data-mobile-table-close>Cerrar</button>
+                    </div>
+                </section>`;
+            modalHost.classList.remove("hidden");
+            modalHost.setAttribute("aria-hidden", "false");
+            modalHost.querySelectorAll("[data-mobile-table-close]").forEach(elemento => elemento.addEventListener("click", cerrarModal));
+            modalHost.querySelectorAll("[data-mobile-table-action]").forEach(boton => {
+                boton.addEventListener("click", () => {
+                    const accionOriginal = accionesOriginales[Number(boton.dataset.mobileTableAction)];
+                    cerrarModal();
+                    accionOriginal?.click();
+                });
+            });
+            window.lucide?.createIcons(modalHost);
+            modalHost.querySelector("[data-mobile-table-close]")?.focus();
         }
 
         function escapeHtml(text) {

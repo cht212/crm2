@@ -50,17 +50,19 @@ namespace CRM.Data.Data
             modelBuilder.Entity<Cliente>().Property(c => c.cEmail).HasColumnName("c_email");
             modelBuilder.Entity<Cliente>().Property(c => c.cDocumento).HasColumnName("c_documento");
             modelBuilder.Entity<Cliente>().Property(c => c.cFotoPerfilUrl).HasColumnName("c_foto_perfil_url");
-            modelBuilder.Entity<Cliente>().Property(c => c.cCanalOrigen).HasColumnName("c_canal_origen");
+            modelBuilder.Entity<Cliente>().Property(c => c.cCanalOrigen).HasColumnName("c_canal_origen").HasMaxLength(32);
             modelBuilder.Entity<Cliente>().Property(c => c.dFechaRegistro).HasColumnName("d_fecha_registro");
             modelBuilder.Entity<Cliente>().Property(c => c.cEstado).HasColumnName("c_estado");
+            modelBuilder.Entity<Cliente>().HasIndex(c => c.dFechaRegistro);
+            modelBuilder.Entity<Cliente>().HasIndex(c => new { c.cCanalOrigen, c.dFechaRegistro });
 
             modelBuilder.Entity<Conversacion>().ToTable("crm_conversacion");
             modelBuilder.Entity<Conversacion>().HasKey(c => c.nConversacion);
             modelBuilder.Entity<Conversacion>().Property(c => c.nConversacion).HasColumnName("n_conversacion");
             modelBuilder.Entity<Conversacion>().Property(c => c.nCliente).HasColumnName("n_cliente");
             modelBuilder.Entity<Conversacion>().Property(c => c.nUsuarioAsignado).HasColumnName("n_usuario_asignado");
-            modelBuilder.Entity<Conversacion>().Property(c => c.cEstado).HasColumnName("c_estado");
-            modelBuilder.Entity<Conversacion>().Property(c => c.cCanal).HasColumnName("c_canal");
+            modelBuilder.Entity<Conversacion>().Property(c => c.cEstado).HasColumnName("c_estado").HasMaxLength(32);
+            modelBuilder.Entity<Conversacion>().Property(c => c.cCanal).HasColumnName("c_canal").HasMaxLength(32);
             modelBuilder.Entity<Conversacion>().Property(c => c.cExternalThreadId).HasColumnName("c_external_thread_id");
             modelBuilder.Entity<Conversacion>().Property(c => c.cPhoneNumberId).HasColumnName("c_phone_number_id").HasMaxLength(100);
             modelBuilder.Entity<Conversacion>().Property(c => c.cBotEstado).HasColumnName("c_bot_estado");
@@ -69,6 +71,11 @@ namespace CRM.Data.Data
             modelBuilder.Entity<Conversacion>().Property(c => c.dUltimoMensajeCliente).HasColumnName("d_ultimo_mensaje_cliente");
             modelBuilder.Entity<Conversacion>().Property(c => c.dBotPausadoDesde).HasColumnName("d_bot_pausado_desde");
             modelBuilder.Entity<Conversacion>().Property(c => c.nBotPausadoPor).HasColumnName("n_bot_pausado_por");
+            modelBuilder.Entity<Conversacion>()
+                .HasIndex(c => new { c.nUsuarioAsignado, c.cEstado, c.dUltimoMensaje });
+            modelBuilder.Entity<Conversacion>()
+                .HasIndex(c => new { c.cCanal, c.cEstado, c.dUltimoMensaje });
+            modelBuilder.Entity<Conversacion>().HasIndex(c => c.dFechaInicio);
 
             modelBuilder.Entity<Conversacion>()
                 .HasOne(c => c.Cliente)
@@ -89,7 +96,7 @@ namespace CRM.Data.Data
             modelBuilder.Entity<Mensaje>().Property(m => m.cExternalId).HasColumnName("c_external_id").HasMaxLength(450);
             modelBuilder.Entity<Mensaje>().Property(m => m.cReplyToExternalId).HasColumnName("c_reply_to_external_id").HasMaxLength(450);
             modelBuilder.Entity<Mensaje>().Property(m => m.cDireccion).HasColumnName("c_direccion");
-            modelBuilder.Entity<Mensaje>().Property(m => m.cTipo).HasColumnName("c_tipo");
+            modelBuilder.Entity<Mensaje>().Property(m => m.cTipo).HasColumnName("c_tipo").HasMaxLength(50);
             modelBuilder.Entity<Mensaje>().Property(m => m.cMensaje).HasColumnName("c_mensaje");
             modelBuilder.Entity<Mensaje>().Property(m => m.cEstado).HasColumnName("c_estado");
             modelBuilder.Entity<Mensaje>().Property(m => m.dFecha).HasColumnName("d_fecha");
@@ -102,6 +109,13 @@ namespace CRM.Data.Data
             modelBuilder.Entity<Mensaje>()
                 .HasIndex(m => new { m.cCanal, m.cDireccion, m.cExternalId })
                 .IsUnique();
+            modelBuilder.Entity<Mensaje>()
+                .HasIndex(m => new { m.cTipo, m.cCanal, m.dFecha });
+            modelBuilder.Entity<Mensaje>()
+                .HasIndex(m => new { m.nConversacion, m.dFecha });
+            modelBuilder.Entity<Mensaje>()
+                .HasIndex(m => new { m.nConversacion, m.cTipo, m.cReplyToExternalId, m.dFecha });
+            modelBuilder.Entity<Mensaje>().HasIndex(m => m.dFecha);
 
             modelBuilder.Entity<CrmUsuario>().ToTable("crm_usuario");
             modelBuilder.Entity<CrmUsuario>().HasKey(u => u.nUsuario);
@@ -167,7 +181,7 @@ namespace CRM.Data.Data
             modelBuilder.Entity<Oportunidad>().Property(o => o.cTitulo).HasColumnName("c_titulo");
             modelBuilder.Entity<Oportunidad>().Property(o => o.nMonto).HasColumnName("n_monto").HasColumnType("decimal(12,2)");
             modelBuilder.Entity<Oportunidad>().Property(o => o.cMoneda).HasColumnName("c_moneda");
-            modelBuilder.Entity<Oportunidad>().Property(o => o.cEtapa).HasColumnName("c_etapa");
+            modelBuilder.Entity<Oportunidad>().Property(o => o.cEtapa).HasColumnName("c_etapa").HasMaxLength(32);
             modelBuilder.Entity<Oportunidad>().Property(o => o.nProbabilidad).HasColumnName("n_probabilidad");
             modelBuilder.Entity<Oportunidad>().Property(o => o.dFechaCierreEstimada).HasColumnName("d_fecha_cierre_estimada");
             modelBuilder.Entity<Oportunidad>().Property(o => o.dFechaCierreReal).HasColumnName("d_fecha_cierre_real");
@@ -175,6 +189,9 @@ namespace CRM.Data.Data
             modelBuilder.Entity<Oportunidad>().Property(o => o.dFechaCreacion).HasColumnName("d_fecha_creacion");
             modelBuilder.Entity<Oportunidad>().Property(o => o.dFechaActualizacion).HasColumnName("d_fecha_actualizacion");
             modelBuilder.Entity<Oportunidad>().Property(o => o.nCreadoPor).HasColumnName("n_creado_por");
+            modelBuilder.Entity<Oportunidad>()
+                .HasIndex(o => new { o.nUsuarioAsignado, o.cEtapa, o.dFechaCierreEstimada });
+            modelBuilder.Entity<Oportunidad>().HasIndex(o => o.dFechaCreacion);
 
             modelBuilder.Entity<Oportunidad>()
                 .HasOne(o => o.Cliente)
@@ -205,11 +222,14 @@ namespace CRM.Data.Data
             modelBuilder.Entity<Tarea>().Property(t => t.cTitulo).HasColumnName("c_titulo");
             modelBuilder.Entity<Tarea>().Property(t => t.cDescripcion).HasColumnName("c_descripcion");
             modelBuilder.Entity<Tarea>().Property(t => t.dFechaVencimiento).HasColumnName("d_fecha_vencimiento");
-            modelBuilder.Entity<Tarea>().Property(t => t.cEstado).HasColumnName("c_estado");
+            modelBuilder.Entity<Tarea>().Property(t => t.cEstado).HasColumnName("c_estado").HasMaxLength(32);
             modelBuilder.Entity<Tarea>().Property(t => t.nAsignadoA).HasColumnName("n_asignado_a");
             modelBuilder.Entity<Tarea>().Property(t => t.nCreadoPor).HasColumnName("n_creado_por");
             modelBuilder.Entity<Tarea>().Property(t => t.dFechaCreacion).HasColumnName("d_fecha_creacion");
             modelBuilder.Entity<Tarea>().Property(t => t.dFechaCompletada).HasColumnName("d_fecha_completada");
+            modelBuilder.Entity<Tarea>()
+                .HasIndex(t => new { t.nAsignadoA, t.cEstado, t.dFechaVencimiento });
+            modelBuilder.Entity<Tarea>().HasIndex(t => t.dFechaCreacion);
 
             modelBuilder.Entity<Tarea>()
                 .HasOne(t => t.Cliente)
@@ -276,6 +296,8 @@ namespace CRM.Data.Data
             modelBuilder.Entity<ActividadLog>().Property(a => a.nUsuario).HasColumnName("n_usuario");
             modelBuilder.Entity<ActividadLog>().Property(a => a.dFecha).HasColumnName("d_fecha");
             modelBuilder.Entity<ActividadLog>().HasIndex(a => new { a.cEntidad, a.nEntidadId });
+            modelBuilder.Entity<ActividadLog>().HasIndex(a => a.dFecha);
+            modelBuilder.Entity<ActividadLog>().HasIndex(a => new { a.nUsuario, a.dFecha });
 
             modelBuilder.Entity<ActividadLog>()
                 .HasOne(a => a.Usuario)

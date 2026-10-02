@@ -11,7 +11,7 @@ namespace CRM.Data.Controllers;
 
 [ApiController]
 [Route("api/exportaciones")]
-[Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+[Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
 [EnableRateLimiting("api")]
 public class ExportacionesController : ControllerBase
 {

@@ -15,19 +15,19 @@ public sealed class SocialOAuthRefreshWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        try
+        if (!await stoppingToken.WaitForDelayAsync(TimeSpan.FromSeconds(30)))
         {
-            await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
-            using var timer = new PeriodicTimer(TimeSpan.FromMinutes(30));
-            do
-            {
-                await RefreshAsync(stoppingToken);
-            }
-            while (await timer.WaitForNextTickAsync(stoppingToken));
+            return;
         }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+
+        while (!stoppingToken.IsCancellationRequested)
         {
-            // Cierre normal de la aplicación.
+            await RefreshAsync(stoppingToken);
+
+            if (!await stoppingToken.WaitForDelayAsync(TimeSpan.FromMinutes(30)))
+            {
+                break;
+            }
         }
     }
 
@@ -39,6 +39,10 @@ public sealed class SocialOAuthRefreshWorker : BackgroundService
             var oauth = scope.ServiceProvider.GetRequiredService<SocialOAuthService>();
             if (await oauth.RefreshTikTokIfNeededAsync(cancellationToken))
                 _logger.LogInformation("El token OAuth de TikTok se renovó correctamente.");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Cierre normal de la aplicación.
         }
         catch (Exception ex)
         {

@@ -12,7 +12,7 @@ namespace CRM.Data.Controllers;
 
 [ApiController]
 [Route("api/campanas")]
-[Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+[Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
 [EnableRateLimiting("api")]
 public class CampanasController : ControllerBase
 {
@@ -116,7 +116,7 @@ public class CampanasController : ControllerBase
             return NotFound("Campaña no encontrada.");
         }
 
-        if (!_access.PuedeAccederModulo("inbox"))
+        if (!await _access.PuedeAccederModuloAsync("inbox"))
         {
             return Forbid();
         }

@@ -19,6 +19,7 @@ namespace CRM.Data.Controllers
         private readonly IConfiguration _configuration;
         private readonly SocialIntegrationService _socialIntegrations;
         private readonly CrmAccessService _access;
+        private readonly CrmPermissionService _permissions;
         private readonly WhatsAppNumberRegistry _numbers;
         private readonly ILogger<WhatsAppController> _logger;
 
@@ -29,6 +30,7 @@ namespace CRM.Data.Controllers
             IConfiguration configuration,
             SocialIntegrationService socialIntegrations,
             CrmAccessService access,
+            CrmPermissionService permissions,
             WhatsAppNumberRegistry numbers,
             ILogger<WhatsAppController> logger)
         {
@@ -38,6 +40,7 @@ namespace CRM.Data.Controllers
             _configuration = configuration;
             _socialIntegrations = socialIntegrations;
             _access = access;
+            _permissions = permissions;
             _numbers = numbers;
             _logger = logger;
         }
@@ -759,10 +762,14 @@ namespace CRM.Data.Controllers
         [HttpGet("conversaciones/{conversacionId:long}")]
         public async Task<IActionResult> Conversacion(long conversacionId)
         {
+            var permisos = await ObtenerPermisosEfectivosAsync();
             var resultado = await _whatsappService.ObtenerConversacionAsync(
                 conversacionId,
-                _access.EsAsesor ? _access.UsuarioActualId : null,
-                _access.EsAsesor);
+                _access.TieneAccesoGlobal ? null : _access.UsuarioActualId,
+                !_access.TieneAccesoGlobal,
+                CrmPermissionService.GetAllowedChannels(permisos),
+                permisos.Contains(CrmPermissionService.ViewCustomerDetails) ||
+                permisos.Contains(CrmPermissionService.EditConversationContact));
             if (resultado == null)
             {
                 return NotFound(new { message = "Conversacion no encontrada." });
@@ -774,11 +781,18 @@ namespace CRM.Data.Controllers
         [HttpGet("conversaciones")]
         public async Task<IActionResult> Todas()
         {
+            var permisos = await ObtenerPermisosEfectivosAsync();
             var conversaciones = await _whatsappService.ObtenerTodasConversacionesAsync(
-                _access.EsAsesor ? _access.UsuarioActualId : null,
-                _access.EsAsesor);
+                _access.TieneAccesoGlobal ? null : _access.UsuarioActualId,
+                !_access.TieneAccesoGlobal,
+                CrmPermissionService.GetAllowedChannels(permisos));
             return Ok(conversaciones);
         }
+
+        private async Task<HashSet<string>> ObtenerPermisosEfectivosAsync() =>
+            _access.UsuarioActualId.HasValue
+                ? await _permissions.GetEffectiveAsync(_access.UsuarioActualId.Value, _access.RolActual)
+                : [];
 
         [HttpPost("conversaciones/{conversacionId:long}/escribiendo")]
         public async Task<IActionResult> MostrarEscribiendo(long conversacionId)
@@ -847,7 +861,7 @@ namespace CRM.Data.Controllers
         }
 
         [HttpPost("conversaciones/asignar-pendientes")]
-        [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor")]
+        [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
         public async Task<IActionResult> AsignarConversacionesPendientes()
         {
             var cantidad = await _whatsappService.AsignarConversacionesPendientesAsync();

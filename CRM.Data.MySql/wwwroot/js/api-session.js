@@ -78,13 +78,15 @@
                     iniciarActualizacionesTiempoReal();
                 }
 
-                if (typeof actualizarCRM === "function") {
+                if (moduloActual === "inbox" && typeof actualizarCRM === "function") {
                     await Promise.resolve(actualizarCRM()).catch(error =>
                         console.warn("No se pudo actualizar el CRM al iniciar:", error)
                     );
 
                     setInterval(() => {
-                        if (typeof actualizarCRM === "function") {
+                        if (document.visibilityState === "visible" &&
+                            moduloActual === "inbox" &&
+                            typeof actualizarCRM === "function") {
                             Promise.resolve(actualizarCRM()).catch(error =>
                                 console.warn("No se pudo actualizar el CRM:", error)
                             );
@@ -117,6 +119,21 @@
         function tienePermiso(codigo) {
             return Array.isArray(sesionActual?.permisos) &&
                 sesionActual.permisos.some(item => String(item).toLowerCase() === String(codigo).toLowerCase());
+        }
+
+        function permisoCanalComunicaciones(canal) {
+            const permisos = {
+                WHATSAPP: "comunicaciones.canal.whatsapp",
+                INSTAGRAM: "comunicaciones.canal.instagram",
+                FACEBOOK: "comunicaciones.canal.facebook",
+                TIKTOK: "comunicaciones.canal.tiktok"
+            };
+            return permisos[String(canal || "").toUpperCase()] || null;
+        }
+
+        function puedeVerCanalComunicaciones(canal) {
+            const permiso = permisoCanalComunicaciones(canal);
+            return !permiso || tienePermiso(permiso);
         }
 
         function puedeGestionarEquipoCRM() {
@@ -180,6 +197,13 @@
         };
 
         function modulosPermitidosPorRol() {
+            // La API entrega todos los accesos efectivos, incluidas las
+            // excepciones al rol. No reintroducir aquí accesos desmarcados.
+            if (Array.isArray(sesionActual?.permisos)) {
+                return new Set(sesionActual.permisos
+                    .filter(item => String(item).startsWith("modulo."))
+                    .map(item => String(item).slice("modulo.".length)));
+            }
             const rol = normalizarRol(rolActual);
 
             let modulos;
@@ -206,16 +230,9 @@
         }
 
         function moduloInicialPorRol() {
-            if (esRol("marketing")) {
-                return "marketing";
-            }
-            if (esRol("auditor")) {
-                return "fallos";
-            }
-            if (esRol("asesor")) {
-                return "dashboard";
-            }
-            return "dashboard";
+            const permitidos = modulosPermitidosPorRol();
+            const preferido = esRol("marketing") ? "marketing" : esRol("auditor") ? "fallos" : "dashboard";
+            return permitidos.has(preferido) ? preferido : permitidos.values().next().value || null;
         }
 
         function puedeVerModulo(modulo) {
@@ -224,6 +241,15 @@
 
         function aplicarNavegacionPorRol() {
             const permitidos = modulosPermitidosPorRol();
+            document.querySelector('[data-nav-group="comunicaciones"]')?.classList.toggle("hidden", !permitidos.has("inbox"));
+            document.querySelectorAll('.nav-subitem[data-channel]').forEach(item => {
+                const visible = item.dataset.channel === "TODOS" || puedeVerCanalComunicaciones(item.dataset.channel);
+                item.classList.toggle("hidden", !visible);
+                item.hidden = !visible;
+            });
+            if (inboxCanalActivo !== "TODOS" && !puedeVerCanalComunicaciones(inboxCanalActivo)) {
+                inboxCanalActivo = "TODOS";
+            }
             document.querySelectorAll(".nav-item[data-module]").forEach(item => {
                 const permitido = permitidos.has(item.dataset.module);
                 item.classList.toggle("hidden", !permitido);

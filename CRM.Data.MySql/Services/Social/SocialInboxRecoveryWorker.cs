@@ -21,14 +21,20 @@ public sealed class SocialInboxRecoveryWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken);
+        if (!await stoppingToken.WaitForDelayAsync(TimeSpan.FromSeconds(15)))
+        {
+            return;
+        }
 
-        using var timer = new PeriodicTimer(_interval);
-        do
+        while (!stoppingToken.IsCancellationRequested)
         {
             await RecoverAsync(stoppingToken);
+
+            if (!await stoppingToken.WaitForDelayAsync(_interval))
+            {
+                break;
+            }
         }
-        while (await timer.WaitForNextTickAsync(stoppingToken));
     }
 
     private async Task RecoverAsync(CancellationToken cancellationToken)

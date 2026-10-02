@@ -13,7 +13,9 @@ public partial class WhatsAppService
 public async Task<object?> ObtenerConversacionAsync(
     long conversacionId,
     int? usuarioAsignadoId = null,
-    bool incluirDisponiblesParaTomar = false)
+    bool incluirDisponiblesParaTomar = false,
+    IReadOnlyCollection<string>? canalesPermitidos = null,
+    bool incluirFichaCliente = true)
 {
     IQueryable<Conversacion> query =
         _context.Conversaciones
@@ -31,6 +33,11 @@ public async Task<object?> ObtenerConversacionAsync(
              (c.cEstado == "NUEVO" ||
               c.cEstado == "ABIERTO" ||
               c.cEstado == "EN_ATENCION")));
+    }
+
+    if (canalesPermitidos != null)
+    {
+        query = query.Where(c => canalesPermitidos.Contains(c.cCanal));
     }
 
     var conversacion = await query.FirstOrDefaultAsync();
@@ -68,11 +75,9 @@ public async Task<object?> ObtenerConversacionAsync(
             telefono =
                 conversacion.Cliente.cTelefono,
 
-            email =
-                conversacion.Cliente.cEmail,
+            email = incluirFichaCliente ? conversacion.Cliente.cEmail : null,
 
-            documento =
-                conversacion.Cliente.cDocumento,
+            documento = incluirFichaCliente ? conversacion.Cliente.cDocumento : null,
 
             fotoPerfilUrl =
                 conversacion.Cliente.cFotoPerfilUrl
@@ -172,7 +177,8 @@ public async Task<object?> ObtenerConversacionAsync(
 
 public async Task<object> ObtenerTodasConversacionesAsync(
     int? usuarioAsignadoId = null,
-    bool incluirDisponiblesParaTomar = false)
+    bool incluirDisponiblesParaTomar = false,
+    IReadOnlyCollection<string>? canalesPermitidos = null)
 {
     IQueryable<Conversacion> query =
         _context.Conversaciones
@@ -192,6 +198,12 @@ public async Task<object> ObtenerTodasConversacionesAsync(
              (c.cEstado == "NUEVO" ||
               c.cEstado == "ABIERTO" ||
               c.cEstado == "EN_ATENCION")));
+    }
+
+
+    if (canalesPermitidos != null)
+    {
+        query = query.Where(c => canalesPermitidos.Contains(c.cCanal));
     }
 
     var conversaciones =
