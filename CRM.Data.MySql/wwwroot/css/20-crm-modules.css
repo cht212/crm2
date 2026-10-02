@@ -224,10 +224,6 @@
     font: inherit;
 }
 
-.table-input:focus {
-    outline: 0;
-}
-
 .table-field-with-icon {
     display: grid;
     grid-template-columns: 20px minmax(0, 1fr);
@@ -616,12 +612,11 @@
     font: inherit;
     font-weight: 500;
     padding: 0 12px;
-    outline: none;
 }
 
-.report-filter-form input:focus,
-.report-filter-form select:focus {
-    border-color: var(--green);
+.report-filter-form input:focus-visible,
+.report-filter-form select:focus-visible {
+    border-color: var(--primary);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 13%, transparent);
 }
 
@@ -956,7 +951,7 @@
     font-size: 12px;
 }
 
-.connection-public-url input:focus {
+.connection-public-url input:focus-visible {
     border-color: var(--primary);
     outline: 2px solid color-mix(in srgb, var(--primary) 16%, transparent);
 }
@@ -1189,11 +1184,10 @@
     font: inherit;
     font-weight: 500;
     padding: 10px 12px;
-    outline: none;
 }
 
-.integration-config-form input:focus {
-    border-color: var(--green);
+.integration-config-form input:focus-visible {
+    border-color: var(--primary);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
@@ -1288,11 +1282,10 @@
     min-height: 120px;
 }
 
-.bot-form textarea:focus,
-.bot-form input[type="text"]:focus,
-.bot-form input[type="number"]:focus {
-    outline: none;
-    border-color: var(--green);
+.bot-form textarea:focus-visible,
+.bot-form input[type="text"]:focus-visible,
+.bot-form input[type="number"]:focus-visible {
+    border-color: var(--primary);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
@@ -1476,7 +1469,6 @@ button.bot-channel-card.active {
     font: inherit;
     font-weight: 500;
     padding: 10px;
-    outline: none;
 }
 
 .bot-template-row textarea {
@@ -1485,9 +1477,9 @@ button.bot-channel-card.active {
     line-height: 1.45;
 }
 
-.bot-template-row input[type="text"]:focus,
-.bot-template-row textarea:focus {
-    border-color: var(--green);
+.bot-template-row input[type="text"]:focus-visible,
+.bot-template-row textarea:focus-visible {
+    border-color: var(--primary);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
@@ -1809,52 +1801,33 @@ button.bot-channel-card.active {
     font-size: 12px;
     font-weight: 500;
 }
-.users-table td { vertical-align: top; }
-.user-row-actions { display: flex; align-items: center; gap: 8px; }
-.user-permissions-button,
-.user-edit-button { display: inline-grid; place-items: center; width: 38px; height: 38px; padding: 8px; }
-.user-permissions-button svg,
-.user-edit-button svg { width: 22px; height: 22px; }
-.user-edit-form { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(240px, 1.4fr) minmax(120px, .7fr); gap: 14px; align-items: end; margin-top: 18px; }
-.user-edit-form label { display: grid; gap: 7px; color: var(--muted); font-size: 13px; }
-.user-edit-form input { min-width: 0; min-height: var(--control-height); padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; }
-.permission-sections { display: grid; gap: 18px; }
+.permission-sections { display: grid; gap: 12px; }
 .permission-section { min-width: 0; margin: 0; padding: 16px; border: 1px solid var(--line); border-radius: 12px; }
-.permission-section legend { padding: 0 8px; font-size: 16px; font-weight: 600; color: var(--ink); }
-.permission-section .permissions-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+.permission-section-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.permission-section-header h4 { margin: 0; color: var(--ink); font-size: 16px; font-weight: 600; }
+.permission-module-toggle { display: inline-flex; align-items: center; gap: 7px; color: var(--ink); font-size: 13px; font-weight: 500; cursor: pointer; }
+.permission-module-toggle input { width: 18px; height: 18px; margin: 0; accent-color: var(--primary); }
+.permission-module-toggle em { color: var(--success-darken-1); font-size: 12px; font-style: normal; font-weight: 500; }
 .permission-section-note { margin: 12px 0 0; color: var(--muted); font-size: 13px; }
-.permission-option.permission-visibility { background: color-mix(in srgb, var(--primary) 6%, var(--surface)); }
+.permission-section-empty { margin: 0; color: var(--muted); font-size: 13px; }
 .permission-option input { flex-shrink: 0; width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--primary); }
 .permission-section.module-disabled .permission-child { opacity: .45; cursor: not-allowed; }
+.permission-section.module-disabled .permission-section-empty { opacity: .55; }
 .permission-section.module-disabled .permission-section-note { opacity: .6; }
 
 @media (max-width: 760px) {
-    .user-edit-form { grid-template-columns: 1fr; }
-}
-
-.user-password-action {
-    display: flex;
-    gap: 8px;
-    min-width: 280px;
-}
-
-.user-password-action input {
-    min-width: 0;
-    padding: 8px 10px;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: var(--surface);
-    color: var(--on-surface);
-    font: inherit;
+    .permission-section-header { align-items: flex-start; flex-direction: column; gap: 9px; }
 }
 
 .permissions-form {
+    display: grid;
+    gap: 12px;
     margin-top: 18px;
 }
 
 .permissions-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
     gap: 12px;
 }
 
@@ -1879,7 +1852,6 @@ button.bot-channel-card.active {
     gap: 4px;
 }
 
-.permission-option small,
 .permission-option small {
     color: var(--text-muted, #65758b);
     font-size: .82rem;
@@ -1889,23 +1861,6 @@ button.bot-channel-card.active {
     color: var(--success-darken-1);
     font-style: normal;
     font-size: .82rem;
-    font-weight: 500;
-}
-
-.user-password-action input {
-    flex: 1;
-}
-
-.user-password-action button {
-    min-width: 0;
-    padding: 8px 10px;
-    border: 1px solid var(--primary);
-    border-radius: var(--radius-sm);
-    background: var(--primary);
-    border-color: var(--primary);
-    color: var(--on-primary);
-    cursor: pointer;
-    font: inherit;
     font-weight: 500;
 }
 

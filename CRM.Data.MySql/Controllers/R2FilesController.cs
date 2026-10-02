@@ -45,7 +45,7 @@ public sealed class R2FilesController : ControllerBase
             return BadRequest("La referencia del archivo es obligatoria.");
         }
 
-        var authorized = await _access.FiltrarMensajes(_db.Mensajes.AsNoTracking())
+        var authorized = await (await _access.FiltrarMensajesLecturaAsync(_db.Mensajes.AsNoTracking()))
             .AnyAsync(message => message.cMensaje.Contains(key), cancellationToken);
         if (!authorized) return NotFound();
 
@@ -81,7 +81,7 @@ public sealed class R2FilesController : ControllerBase
         long messageId,
         CancellationToken cancellationToken)
     {
-        var message = await _access.FiltrarMensajes(_db.Mensajes.AsNoTracking())
+        var message = await (await _access.FiltrarMensajesLecturaAsync(_db.Mensajes.AsNoTracking()))
             .Where(item => item.nMensaje == messageId)
             .Select(item => item.cMensaje)
             .FirstOrDefaultAsync(cancellationToken);

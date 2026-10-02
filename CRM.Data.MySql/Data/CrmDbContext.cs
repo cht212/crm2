@@ -26,6 +26,8 @@ namespace CRM.Data.Data
         public DbSet<ReporteExportacion> ReportesExportacion { get; set; }
         public DbSet<LoginAttempt> LoginAttempts { get; set; }
         public DbSet<UsuarioPermiso> UsuarioPermisos { get; set; }
+        public DbSet<CrmRol> Roles { get; set; }
+        public DbSet<CrmRolPermiso> RolPermisos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -95,6 +97,8 @@ namespace CRM.Data.Data
             modelBuilder.Entity<Mensaje>().Property(m => m.cCanal).HasColumnName("c_canal").HasMaxLength(32);
             modelBuilder.Entity<Mensaje>().Property(m => m.cExternalId).HasColumnName("c_external_id").HasMaxLength(450);
             modelBuilder.Entity<Mensaje>().Property(m => m.cReplyToExternalId).HasColumnName("c_reply_to_external_id").HasMaxLength(450);
+            modelBuilder.Entity<Mensaje>().Property(m => m.cClientRequestId).HasColumnName("c_client_request_id").HasMaxLength(80);
+            modelBuilder.Entity<Mensaje>().HasIndex(m => new { m.nConversacion, m.cClientRequestId }).IsUnique();
             modelBuilder.Entity<Mensaje>().Property(m => m.cDireccion).HasColumnName("c_direccion");
             modelBuilder.Entity<Mensaje>().Property(m => m.cTipo).HasColumnName("c_tipo").HasMaxLength(50);
             modelBuilder.Entity<Mensaje>().Property(m => m.cMensaje).HasColumnName("c_mensaje");
@@ -125,6 +129,38 @@ namespace CRM.Data.Data
             modelBuilder.Entity<CrmUsuario>().Property(u => u.cEstado).HasColumnName("c_estado");
             modelBuilder.Entity<CrmUsuario>().Property(u => u.cPasswordHash).HasColumnName("c_password_hash");
             modelBuilder.Entity<CrmUsuario>().Property(u => u.cRol).HasColumnName("c_rol");
+            modelBuilder.Entity<CrmUsuario>().Property(u => u.nRol).HasColumnName("n_rol");
+
+            modelBuilder.Entity<CrmRol>().ToTable("crm_rol");
+            modelBuilder.Entity<CrmRol>().HasKey(item => item.nRol);
+            modelBuilder.Entity<CrmRol>().Property(item => item.nRol).HasColumnName("n_rol");
+            modelBuilder.Entity<CrmRol>().Property(item => item.cNombre).HasColumnName("c_nombre").HasMaxLength(80);
+            modelBuilder.Entity<CrmRol>().Property(item => item.cDescripcion).HasColumnName("c_descripcion").HasMaxLength(250);
+            modelBuilder.Entity<CrmRol>().Property(item => item.cRolBase).HasColumnName("c_rol_base").HasMaxLength(30);
+            modelBuilder.Entity<CrmRol>().Property(item => item.cEstado).HasColumnName("c_estado");
+            modelBuilder.Entity<CrmRol>().Property(item => item.dFechaCreacion).HasColumnName("d_fecha_creacion");
+            modelBuilder.Entity<CrmRol>().Property(item => item.nCreadoPor).HasColumnName("n_creado_por");
+            modelBuilder.Entity<CrmRol>().HasIndex(item => item.cNombre).IsUnique();
+            modelBuilder.Entity<CrmRol>()
+                .HasOne(item => item.CreadoPor)
+                .WithMany()
+                .HasForeignKey(item => item.nCreadoPor)
+                .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<CrmUsuario>()
+                .HasOne(item => item.RolPersonalizado)
+                .WithMany(item => item.Usuarios)
+                .HasForeignKey(item => item.nRol)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<CrmRolPermiso>().ToTable("crm_rol_permiso");
+            modelBuilder.Entity<CrmRolPermiso>().HasKey(item => new { item.nRol, item.cPermiso });
+            modelBuilder.Entity<CrmRolPermiso>().Property(item => item.nRol).HasColumnName("n_rol");
+            modelBuilder.Entity<CrmRolPermiso>().Property(item => item.cPermiso).HasColumnName("c_permiso").HasMaxLength(100);
+            modelBuilder.Entity<CrmRolPermiso>()
+                .HasOne(item => item.Rol)
+                .WithMany(item => item.Permisos)
+                .HasForeignKey(item => item.nRol)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<UsuarioPermiso>().ToTable("crm_usuario_permiso");
             modelBuilder.Entity<UsuarioPermiso>().HasKey(item => new { item.nUsuario, item.cPermiso });

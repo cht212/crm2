@@ -49,7 +49,9 @@ public class TareasController : ControllerBase
         [FromQuery] long? conversacionId = null,
         [FromQuery] string? estado = null,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 50)
+        [FromQuery] int pageSize = 50,
+        [FromQuery] string? filtro = null,
+        [FromQuery] bool soloMias = false)
     {
         page = page < 1 ? 1 : page;
         pageSize = pageSize is < 1 or > 200 ? 50 : pageSize;
@@ -63,13 +65,36 @@ public class TareasController : ControllerBase
             query = query.Where(t => t.cEstado == estado.Trim().ToUpperInvariant());
         }
 
-        var total = await query.CountAsync();
         var ahora = DateTime.Now;
+        var hoy = ahora.Date;
+        var manana = hoy.AddDays(1);
+        if (soloMias) query = query.Where(t => t.nAsignadoA == UsuarioActualId);
+        var resumen = await query.GroupBy(_ => 1).Select(g => new
+        {
+            total = g.Count(t => t.cEstado != "CANCELADA"),
+            pendientes = g.Count(t => t.cEstado == "PENDIENTE" && t.dFechaVencimiento >= ahora),
+            vencidas = g.Count(t => t.cEstado == "PENDIENTE" && t.dFechaVencimiento < ahora),
+            hoy = g.Count(t => t.cEstado == "PENDIENTE" && t.dFechaVencimiento >= hoy && t.dFechaVencimiento < manana),
+            completadas = g.Count(t => t.cEstado == "COMPLETADA"),
+            mias = g.Count(t => t.nAsignadoA == UsuarioActualId && t.cEstado != "COMPLETADA" && t.cEstado != "CANCELADA")
+        }).FirstOrDefaultAsync();
+        query = filtro switch
+        {
+            "mias" => query.Where(t => t.nAsignadoA == UsuarioActualId && t.cEstado != "COMPLETADA" && t.cEstado != "CANCELADA"),
+            "hoy" => query.Where(t => t.cEstado == "PENDIENTE" && t.dFechaVencimiento >= hoy && t.dFechaVencimiento < manana),
+            "vencidas" => query.Where(t => t.cEstado == "PENDIENTE" && t.dFechaVencimiento < ahora),
+            "completadas" => query.Where(t => t.cEstado == "COMPLETADA"),
+            "todas" => query.Where(t => t.cEstado != "CANCELADA"),
+            _ => query
+        };
+        var total = await query.CountAsync();
+        page = Math.Min(page, Math.Max(1, (int)Math.Ceiling(total / (double)pageSize)));
 
         var items = await query
             .Include(t => t.Cliente)
             .Include(t => t.AsignadoA)
             .OrderBy(t => t.dFechaVencimiento)
+            .ThenBy(t => t.nTarea)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(t => new
@@ -87,7 +112,7 @@ public class TareasController : ControllerBase
             })
             .ToListAsync();
 
-        return Ok(new { total, page, pageSize, items });
+        return Ok(new { total, page, pageSize, items, resumen });
     }
 
     [HttpGet("alertas")]

@@ -25,6 +25,7 @@ public class EtiquetasController : ControllerBase
     }
 
     [HttpGet]
+    [CrmPermission(CrmPermissionService.ViewCustomerDetails)]
     public async Task<IActionResult> Listar()
     {
         var etiquetas = await _context.Etiquetas
@@ -106,6 +107,7 @@ public class EtiquetasController : ControllerBase
     }
 
     [HttpGet("clientes/{clienteId:long}")]
+    [CrmPermission(CrmPermissionService.ViewCustomerDetails)]
     public async Task<IActionResult> DeCliente(long clienteId)
     {
         if (!await _access.PuedeAccederClienteAsync(clienteId))

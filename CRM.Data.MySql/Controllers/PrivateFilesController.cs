@@ -32,7 +32,7 @@ public sealed class PrivateFilesController : ControllerBase
             return NotFound();
 
         var url = $"/api/archivos/local/{fileName}";
-        if (!await _access.FiltrarMensajes(_db.Mensajes.AsNoTracking())
+        if (!await (await _access.FiltrarMensajesLecturaAsync(_db.Mensajes.AsNoTracking()))
                 .AnyAsync(m => m.cMensaje.Contains(url)))
             return NotFound();
 

@@ -1,12 +1,13 @@
 // Control operativo: fallos de integración.
 
+let fallosPagina = 1;
 async function cargarModuloFallos(vista) {
     if (!puedeVerModulo("fallos")) {
         vista.innerHTML = '<div class="error">No tienes permiso para ver fallos.</div>';
         return;
     }
 
-    const response = await api("/api/crm/fallos?pageSize=150");
+    const response = await api(`/api/crm/fallos?page=${fallosPagina}&pageSize=${obtenerTamanoPagina("fallos")}`);
     if (!response.ok) throw new Error("Fallos no disponibles");
     const pagina = await response.json();
     const fallos = pagina.items || [];
@@ -20,7 +21,10 @@ async function cargarModuloFallos(vista) {
         </div>
         <section class="failure-list">
             ${fallos.map(renderFallo).join("") || '<div class="empty">Sin fallos registrados.</div>'}
-        </section>`;
+        </section>
+        ${renderPaginacion(pagina, "fallos")}`;
+
+    enlazarPaginacion(vista, page => { fallosPagina = page; return cargarModuloFallos(vista); });
 
     vista.querySelectorAll("[data-open-failure-chat]").forEach(button => {
         button.addEventListener("click", () => abrirDetalleConversacion(button.dataset.openFailureChat, "fallos"));

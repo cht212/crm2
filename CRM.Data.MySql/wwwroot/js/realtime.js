@@ -7,6 +7,7 @@ let crmRealtimeLastRefresh = 0;
 let crmRealtimeFallbackTimer = null;
 
 function hayEditorCrmActivo() {
+    if (document.querySelector("#modalHost [role='dialog']")) return true;
     const vista = document.getElementById("moduleView");
     return document.activeElement?.matches("input, textarea, select, [contenteditable='true']") &&
         (vista?.contains(document.activeElement) || document.getElementById("details")?.contains(document.activeElement));
@@ -36,7 +37,7 @@ function programarActualizacionTiempoReal() {
         crmRealtimeLastRefresh = Date.now();
 
         try {
-            if (moduloActual === "inbox" && typeof actualizarCRM === "function") {
+            if ((moduloActual === "inbox" || modoDetalleConversacion) && typeof actualizarCRM === "function") {
                 await actualizarCRM();
                 return;
             }

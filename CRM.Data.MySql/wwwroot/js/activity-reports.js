@@ -1,12 +1,16 @@
 // Módulo frontend del CRM.
 
-        async function cargarModuloActividad(vista, entidad = "") {
+        let actividadPagina = 1;
+        let actividadEntidad = "";
+        async function cargarModuloActividad(vista, entidad = actividadEntidad) {
+            if (entidad !== actividadEntidad) actividadPagina = 1;
+            actividadEntidad = entidad;
             if (!puedeVerModulo("actividad")) {
                 vista.innerHTML = '<div class="error">No tienes permiso para ver la actividad.</div>';
                 return;
             }
 
-            const query = entidad ? `?entidad=${encodeURIComponent(entidad)}&pageSize=100` : "?pageSize=100";
+            const query = `?page=${actividadPagina}&pageSize=${obtenerTamanoPagina("actividad")}${entidad ? `&entidad=${encodeURIComponent(entidad)}` : ""}`;
             const response = await api(`/api/crm/actividad${query}`);
             if (!response.ok) throw new Error("Actividad no disponible");
             const pagina = await response.json();
@@ -45,7 +49,10 @@
                                 </div>
                             </article>`).join("") || '<div class="empty">Sin actividad registrada.</div>'}
                     </div>
+                    ${renderPaginacion(pagina, "actividad")}
                 </section>`;
+
+            enlazarPaginacion(vista, page => { actividadPagina = page; return cargarModuloActividad(vista); });
 
             vista.querySelectorAll("[data-activity-filter]").forEach(button => {
                 button.addEventListener("click", () => cargarModuloActividad(vista, button.dataset.activityFilter));
@@ -262,6 +269,7 @@
         let marketingCargaVersion = 0;
         const marketingComentariosSincronizados = new Set();
         const marketingErroresComentarios = new Map();
+        const marketingDatosCache = new Map();
 
         async function cargarModuloMarketing(vista, opciones = {}) {
             const cargaActual = ++marketingCargaVersion;
@@ -282,8 +290,13 @@
                 : `/api/crm/comentarios?pageSize=200&canal=${encodeURIComponent(canalActivo)}`;
             if (!opciones.silenciosa) {
                 vista.innerHTML = `
-                    <div class="module-heading marketing-heading"><div><h1>Marketing</h1><p>Preparando publicaciones, comentarios e indicadores de las redes conectadas.</p></div></div>
-                    <div class="marketing-loading"><i data-lucide="loader-circle"></i><span>Cargando analítica social…</span></div>`;
+                    <div class="module-heading marketing-heading"><div><h1>Marketing</h1><p>Las publicaciones y métricas de redes se cargan en segundo plano.</p></div></div>
+                    <section class="marketing-loading" role="status" aria-live="polite" aria-busy="true">
+                        <div class="marketing-loading-status"><i data-lucide="loader-circle"></i><span>Abriendo Marketing mientras consultamos las redes…</span></div>
+                        <div class="marketing-loading-skeleton" aria-hidden="true">
+                            <div></div><div></div><div></div><div></div>
+                        </div>
+                    </section>`;
                 if (window.lucide) window.lucide.createIcons();
             }
 
@@ -303,23 +316,15 @@
                     navigationSignal?.removeEventListener("abort", cancelarNavegacion);
                 }
             };
-            const comentariosIniciales = consultarConLimite(comentariosUrl, 8000);
-            const [publicacionesResponse, metaResponse] = await Promise.all([
-                consultarConLimite(`/api/integraciones/publicaciones/estadisticas?${params}`),
-                consultarConLimite(`/api/integraciones/meta/estadisticas?${params}`)
-            ]);
-            // Publicaciones sincroniza primero los comentarios que Meta reporta.
-            // Si hubo consulta externa real, se releen después para incluir los nuevos.
-            let comentariosResponse = await comentariosIniciales;
-            const huboConsultaExterna = [publicacionesResponse, metaResponse].some(response =>
-                response?.ok && response.headers?.get("X-CRM-Cache") !== "HIT");
-            if (huboConsultaExterna) {
-                comentariosResponse = await consultarConLimite(comentariosUrl, 8000);
-            }
 
-            const publicacionesData = publicacionesResponse?.ok ? await publicacionesResponse.json() : { canales: [], serie: [] };
-            const metaData = metaResponse?.ok ? await metaResponse.json() : { canales: [], success: false };
-            const comentariosData = comentariosResponse?.ok ? await comentariosResponse.json() : { items: [], total: 0 };
+            const cacheKey = `${marketingFiltros.desde}:${marketingFiltros.hasta}:${canalActivo}`;
+            const cached = marketingDatosCache.get(cacheKey);
+            let publicacionesData = cached?.publicaciones || { canales: [], serie: [], cargando: true };
+            let metaData = cached?.meta || { canales: [], cargando: true };
+            let comentariosData = cached?.comentarios || { items: [], total: 0 };
+            let primerRender = false;
+
+            function pintarMarketing() {
             const perteneceAlCanal = canal => canalActivo === "TODOS" || String(canal || "").toUpperCase() === canalActivo;
             const canalesPublicacion = (publicacionesData.canales || []).filter(canal => perteneceAlCanal(canal.canal));
             const publicaciones = canalesPublicacion.flatMap(canal => (canal.posts || []).map(item => ({
@@ -338,10 +343,10 @@
                 canal: "TIKTOK",
                 nombre: "TikTok",
                 configurado: Boolean(fuenteTikTok?.configured ?? fuenteTikTok?.configurado),
-                estado: fuenteTikTok?.error
+                estado: publicacionesData.cargando ? "CARGANDO" : publicacionesData.error ? "ERROR" : fuenteTikTok?.error
                     ? "ERROR"
                     : (fuenteTikTok?.configured ?? fuenteTikTok?.configurado) ? "OPERATIVO" : "PENDIENTE",
-                mensaje: fuenteTikTok?.error || ((fuenteTikTok?.configured ?? fuenteTikTok?.configurado)
+                mensaje: publicacionesData.error || (publicacionesData.cargando ? "Consultando publicaciones..." : null) || fuenteTikTok?.error || ((fuenteTikTok?.configured ?? fuenteTikTok?.configurado)
                     ? "Métricas de TikTok leídas correctamente desde Display API."
                     : "Configura el token de TikTok Display API con permiso video.list."),
                 vistas: publicacionesTikTok.reduce((total, item) => total + Number(item.visualizaciones || 0), 0),
@@ -361,9 +366,9 @@
                     canal,
                     nombre,
                     configurado,
-                    estado: fuente?.error ? "ERROR" : configurado ? "SIN DATOS" : "PENDIENTE",
+                    estado: metaData.cargando ? "CARGANDO" : metaData.error || fuente?.error ? "ERROR" : configurado ? "SIN DATOS" : "PENDIENTE",
                     commentsError: fuente?.commentsError,
-                    mensaje: fuente?.error || (configurado
+                    mensaje: metaData.error || (metaData.cargando ? "Consultando metricas..." : null) || fuente?.error || (configurado
                         ? `No se recibieron estadísticas de ${nombre} en esta consulta.`
                         : `Configura la conexión de ${nombre} para consultar sus estadísticas.`)
                 };
@@ -610,12 +615,24 @@
             // Evita que una respuesta lenta sobrescriba un filtro o una navegación
             // más reciente mientras Marketing se actualiza silenciosamente.
             if (cargaActual !== marketingCargaVersion || moduloActual !== "marketing") return;
+            const formAnterior = vista.querySelector("#marketingFilterForm");
+            const borrador = formAnterior ? Object.fromEntries(new FormData(formAnterior)) : null;
+            const foco = formAnterior?.contains(document.activeElement) ? document.activeElement.name : null;
+            const erroresPublicaciones = canalesPublicacion.map(c => c.error || c.commentsError).filter(Boolean);
+            const errorCarga = [publicacionesData.error, metaData.error, comentariosData.error, ...erroresPublicaciones].filter(Boolean).join(" ");
+            const sinDatosPublicaciones = canalesPublicacion.length > 0 && canalesPublicacion.every(c => c.error) && !publicaciones.length;
+            const cifra = valor => publicacionesData.cargando || sinDatosPublicaciones || (publicacionesData.error && !cached?.publicaciones)
+                ? "—" : formatearNumero(valor);
+            const publicacionesVacias = publicacionesData.cargando ? "Consultando publicaciones..."
+                : publicacionesData.error || sinDatosPublicaciones ? "Las publicaciones no estan disponibles en esta consulta."
+                : "No hay publicaciones de esta red en el periodo seleccionado.";
 
             vista.innerHTML = `
                 <div class="module-heading marketing-heading">
                     <div><h1>Marketing</h1><p>Rendimiento de redes, publicaciones y conversaciones generadas por la audiencia.</p></div>
                     ${puedeVerModulo("conexiones") ? '<button type="button" class="secondary-btn" data-marketing-connections><i data-lucide="plug-zap"></i><span>Revisar conexiones</span></button>' : ""}
                 </div>
+                ${errorCarga ? `<div class="marketing-load-warning" role="status"><span>${escapeHtml(errorCarga)}</span><button type="button" class="secondary-btn" data-marketing-retry><i data-lucide="refresh-cw"></i><span>Volver a intentar</span></button></div>` : ""}
 
                 <section class="marketing-network-picker" aria-labelledby="marketingNetworkTitle">
                     <div><span class="panel-kicker">Canal</span><h2 id="marketingNetworkTitle">Red social a evaluar</h2></div>
@@ -636,10 +653,10 @@
                 </form>
 
                 <section class="marketing-kpis" aria-label="Resumen de publicaciones">
-                    <article><i data-lucide="panels-top-left"></i><span>Publicaciones</span><strong>${formatearNumero(total.publicaciones)}</strong></article>
-                    <article><i data-lucide="heart"></i><span>Me gusta</span><strong>${formatearNumero(total.meGusta)}</strong></article>
-                    <article><i data-lucide="message-circle"></i><span>Comentarios</span><strong>${formatearNumero(total.comentarios)}</strong></article>
-                    <article><i data-lucide="share-2"></i><span>Compartidos</span><strong>${formatearNumero(total.compartidos)}</strong></article>
+                    <article><i data-lucide="panels-top-left"></i><span>Publicaciones</span><strong>${cifra(total.publicaciones)}</strong></article>
+                    <article><i data-lucide="heart"></i><span>Me gusta</span><strong>${cifra(total.meGusta)}</strong></article>
+                    <article><i data-lucide="message-circle"></i><span>Comentarios</span><strong>${cifra(total.comentarios)}</strong></article>
+                    <article><i data-lucide="share-2"></i><span>Compartidos</span><strong>${cifra(total.compartidos)}</strong></article>
                     <article><i data-lucide="eye"></i><span>Vistas disponibles</span><strong>${total.publicacionesConVistas ? formatearNumero(total.visualizaciones) : "—"}</strong></article>
                 </section>
 
@@ -647,7 +664,7 @@
                     ${tarjetasCanal.map(canal => `
                         <article class="marketing-channel-card ${canal.estado === "ERROR" ? "danger" : canal.commentsError ? "warning" : canal.configurado ? "ready" : "warning"}">
                             <div class="marketing-channel-head">${crearLogoRed(String(canal.canal || "").toLowerCase())}<div><h2>${escapeHtml(canal.nombre || canal.canal)}</h2><span>${escapeHtml(canal.commentsError ? "PERMISO PENDIENTE" : canal.estado || "Sin datos")}</span></div></div>
-                            <div class="marketing-channel-metrics">
+                            <div class="marketing-channel-metrics" ${["ERROR", "CARGANDO"].includes(canal.estado) ? 'hidden' : ""}>
                                 ${String(canal.canal).toUpperCase() === "TIKTOK"
                                     ? `<span><small>Vistas</small><strong>${formatearNumero(canal.vistas || 0)}</strong></span><span><small>Me gusta</small><strong>${formatearNumero(canal.meGusta || 0)}</strong></span><span><small>Comentarios</small><strong>${formatearNumero(canal.comentarios || 0)}</strong></span><span><small>Compartidos</small><strong>${formatearNumero(canal.compartidos || 0)}</strong></span>`
                                     : `<span><small>Alcance</small><strong>${formatearNumero(canal.alcance || 0)}</strong></span>
@@ -671,7 +688,7 @@
                 </section>
 
                 <section class="meta-panel marketing-publications-panel">
-                    <div class="panel-heading-with-action"><div><span class="panel-kicker">Contenido</span><h2>Publicaciones y rendimiento</h2><p>Revisa la pieza publicada junto con sus resultados.</p></div><span class="alert-chip">${formatearNumero(publicaciones.length)} resultados</span></div>
+                    <div class="panel-heading-with-action"><div><span class="panel-kicker">Contenido</span><h2>Publicaciones y rendimiento</h2><p>Revisa la pieza publicada junto con sus resultados.</p></div><span class="alert-chip">${cifra(publicaciones.length)} resultados</span></div>
                     <div class="marketing-publication-grid">${publicaciones.map((item, index) => {
                         const imagen = urlSegura(item.imagenUrl);
                         const enlace = urlSegura(item.url);
@@ -685,12 +702,20 @@
                                 <div class="marketing-publication-actions"><button type="button" data-marketing-publication="${index}"><span>Ver insights y comentarios</span><i data-lucide="arrow-right"></i></button>${enlace ? `<a href="${escapeAttribute(enlace)}" target="_blank" rel="noopener noreferrer" aria-label="Abrir publicación original"><i data-lucide="external-link"></i></a>` : ""}</div>
                             </div>
                         </article>`;
-                    }).join("") || '<div class="empty marketing-publications-empty">No hay publicaciones de esta red en el periodo seleccionado.</div>'}</div>
+                    }).join("") || `<div class="empty marketing-publications-empty" role="status">${publicacionesVacias}</div>`}</div>
                 </section>
 
                 <p class="marketing-data-note">Las cifras dependen de los permisos aprobados por cada red. TikTok entrega vistas, me gusta, comentarios y compartidos por video; los clics y ciertos insights solo aparecerán cuando la API de la cuenta los autorice.</p>`;
 
             if (window.lucide) window.lucide.createIcons();
+            primerRender = true;
+            const formActual = vista.querySelector("#marketingFilterForm");
+            if (borrador) Object.entries(borrador).forEach(([name, value]) => {
+                if (formActual.elements[name]) formActual.elements[name].value = value;
+            });
+            if (foco) formActual.elements[foco]?.focus();
+            vista.querySelector("[data-marketing-retry]")?.addEventListener("click", () =>
+                cargarModuloMarketing(vista, { forzarActualizacion: true }));
             vista.querySelectorAll("[data-marketing-connections]").forEach(button =>
                 button.addEventListener("click", () => abrirModulo("conexiones")));
             vista.querySelector("#marketingFilterForm")?.addEventListener("submit", async event => {
@@ -720,4 +745,57 @@
                 const item = publicaciones[Number(card.dataset.marketingPublicationCard)];
                 if (item) mostrarDetallePublicacion(item);
             }));
+            }
+
+            void (async () => {
+                try {
+                    pintarMarketing();
+                    const consultarFuente = async (fuente, url, limite) => {
+                        const response = await consultarConLimite(url, limite);
+                        const anterior = fuente === "publicaciones" ? publicacionesData : fuente === "meta" ? metaData : comentariosData;
+                        let data;
+                        try {
+                            data = response?.ok ? await response.json() : {
+                                ...anterior, cargando: false,
+                                error: `No se pudieron consultar ${fuente === "meta" ? "las metricas de Meta" : fuente}. Intenta actualizar.`
+                            };
+                        } catch {
+                            data = { ...anterior, cargando: false, error: "La red devolvio una respuesta no valida." };
+                        }
+                        if (cargaActual !== marketingCargaVersion || moduloActual !== "marketing") return;
+                        if (fuente === "publicaciones") publicacionesData = data;
+                        else if (fuente === "meta") metaData = data;
+                        else comentariosData = data;
+                        const anteriorCache = marketingDatosCache.get(cacheKey) || {};
+                        if (!data.error) marketingDatosCache.set(cacheKey, { ...anteriorCache, [fuente]: data });
+                        if (marketingDatosCache.size > 20) marketingDatosCache.delete(marketingDatosCache.keys().next().value);
+                        if (fuente !== "comentarios" || primerRender) pintarMarketing();
+                        if (fuente === "publicaciones" && response?.ok && response.headers?.get("X-CRM-Cache") !== "HIT")
+                            await consultarFuente("comentarios", comentariosUrl, 8000);
+                    };
+                    await Promise.all([
+                        consultarFuente("publicaciones", `/api/integraciones/publicaciones/estadisticas?${params}`, 15000),
+                        consultarFuente("meta", `/api/integraciones/meta/estadisticas?${params}`, 15000),
+                        consultarFuente("comentarios", comentariosUrl, 8000)
+                    ]);
+                } catch (error) {
+                    if (error?.name === "AbortError") return;
+                    console.error("No se pudo actualizar Marketing.", error);
+                    if (cargaActual !== marketingCargaVersion || moduloActual !== "marketing") return;
+                    vista.innerHTML = `
+                        <div class="module-heading marketing-heading">
+                            <div><h1>Marketing</h1><p>El apartado ya esta disponible, pero las redes no respondieron a tiempo.</p></div>
+                            ${puedeVerModulo("conexiones") ? '<button type="button" class="secondary-btn" data-marketing-connections><i data-lucide="plug-zap"></i><span>Revisar conexiones</span></button>' : ""}
+                        </div>
+                        <section class="marketing-loading marketing-loading-error" role="status">
+                            <div class="marketing-loading-status"><i data-lucide="wifi-off"></i><span>No se pudieron cargar las metricas de redes en este intento.</span></div>
+                            <button type="button" class="marketing-apply-button" data-marketing-retry><i data-lucide="refresh-cw"></i><span>Volver a intentar</span></button>
+                        </section>`;
+                    if (window.lucide) window.lucide.createIcons();
+                    vista.querySelector("[data-marketing-retry]")?.addEventListener("click", () =>
+                        cargarModuloMarketing(vista, { forzarActualizacion: true }));
+                    vista.querySelectorAll("[data-marketing-connections]").forEach(button =>
+                        button.addEventListener("click", () => abrirModulo("conexiones")));
+                }
+            })();
         }

@@ -24,16 +24,16 @@ public sealed class MetaGraphApiService
         _logger = logger;
     }
 
-    public async Task<MetaDashboardResult> ObtenerDashboardAsync(DateTime? desde, DateTime? hasta)
+    public async Task<MetaDashboardResult> ObtenerDashboardAsync(DateTime? desde, DateTime? hasta, CancellationToken cancellationToken = default)
     {
         var since = new DateTimeOffset((desde ?? DateTime.Today.AddDays(-30)).Date).ToUnixTimeSeconds();
         var until = new DateTimeOffset((hasta ?? DateTime.Today).Date.AddDays(1)).ToUnixTimeSeconds();
 
-        var canales = new List<MetaChannelInsight>
-        {
-            await ObtenerFacebookAsync(since, until),
-            await ObtenerInstagramAsync(since, until)
-        };
+        using var budget = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        budget.CancelAfter(TimeSpan.FromSeconds(12));
+        var canales = await Task.WhenAll(
+            ObtenerFacebookAsync(since, until, budget.Token),
+            ObtenerInstagramAsync(since, until, budget.Token));
 
         return new MetaDashboardResult(
             canales,
@@ -59,7 +59,7 @@ public sealed class MetaGraphApiService
     public Task<MetaFacebookFeedResult> ObtenerFacebookFeedAsync(int limit = 10) =>
         ObtenerFacebookFeedAsync(null, null, limit);
 
-    public async Task<MetaFacebookFeedResult> ObtenerFacebookFeedAsync(DateTime? desde, DateTime? hasta, int limit = 10)
+    public async Task<MetaFacebookFeedResult> ObtenerFacebookFeedAsync(DateTime? desde, DateTime? hasta, int limit = 10, CancellationToken cancellationToken = default)
     {
         var pageId = GetValue("Meta:Facebook:PageId");
         var configuredToken = GetValue("Meta:Facebook:AccessToken");
@@ -71,7 +71,7 @@ public sealed class MetaGraphApiService
         }
 
         var apiVersion = GetValue("Meta:ApiVersion") ?? _configuration["Meta:ApiVersion"] ?? "v25.0";
-        var pageToken = await ResolvePageAccessTokenAsync(apiVersion, pageId, configuredToken);
+        var pageToken = await ResolvePageAccessTokenAsync(apiVersion, pageId, configuredToken, cancellationToken);
         var since = new DateTimeOffset((desde ?? DateTime.Today.AddDays(-30)).Date).ToUnixTimeSeconds();
         var until = new DateTimeOffset((hasta ?? DateTime.Today).Date.AddDays(1)).ToUnixTimeSeconds();
         var fields = string.Join(",",
@@ -94,8 +94,8 @@ public sealed class MetaGraphApiService
 
         try
         {
-            using var response = await _httpClient.SendAsync(request);
-            var body = await response.Content.ReadAsStringAsync();
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
                 var detail = BuildInsightError(body);
@@ -113,9 +113,10 @@ public sealed class MetaGraphApiService
 
             using var metricConcurrency = new SemaphoreSlim(5);
             var posts = await Task.WhenAll(data.EnumerateArray()
-                .Select(post => EnrichFacebookPostAsync(post.Clone(), pageToken, apiVersion, metricConcurrency)));
+                .Select(post => EnrichFacebookPostAsync(post.Clone(), pageToken, apiVersion, metricConcurrency, cancellationToken)));
             return new MetaFacebookFeedResult(true, posts, null, []);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "No se pudo leer el feed de Facebook.");
@@ -186,14 +187,15 @@ public sealed class MetaGraphApiService
         JsonElement post,
         string accessToken,
         string apiVersion,
-        SemaphoreSlim concurrency)
+        SemaphoreSlim concurrency,
+        CancellationToken cancellationToken = default)
     {
         var parsed = ParseFacebookPost(post);
         if (string.IsNullOrWhiteSpace(parsed.Id)) return parsed;
         var hasCurrentReactionSummary = HasSummary(post, "reactions");
         var hasCurrentCommentSummary = HasSummary(post, "comments");
 
-        await concurrency.WaitAsync();
+        await concurrency.WaitAsync(cancellationToken);
         try
         {
             var metrics =
@@ -203,10 +205,10 @@ public sealed class MetaGraphApiService
                 $"?metric={Uri.EscapeDataString(metrics)}";
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-            using var response = await _httpClient.SendAsync(request);
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
             if (!response.IsSuccessStatusCode) return parsed;
 
-            using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
             if (!document.RootElement.TryGetProperty("data", out var data) ||
                 data.ValueKind != JsonValueKind.Array)
             {
@@ -272,6 +274,7 @@ public sealed class MetaGraphApiService
                 ReactionsByType = reactionsByType
             };
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
         {
             return parsed;
@@ -1056,12 +1059,13 @@ public sealed class MetaGraphApiService
     public async Task<MetaProfileLookupResult> ObtenerPerfilContactoDetalladoAsync(
         string canal,
         string externalUserId,
-        string? pageId = null)
+        string? pageId = null,
+        CancellationToken cancellationToken = default)
     {
         var normalized = CanalSocial.Normalizar(canal);
         if (normalized == CanalSocial.Instagram)
         {
-            return await ObtenerPerfilInstagramDetalladoAsync(externalUserId, pageId);
+            return await ObtenerPerfilInstagramDetalladoAsync(externalUserId, pageId, cancellationToken);
         }
 
         var configuredPageId = GetValue("Meta:Facebook:PageId");
@@ -1087,7 +1091,7 @@ public sealed class MetaGraphApiService
         var apiVersion = GetValue("Meta:ApiVersion") ??
             _configuration["Meta:ApiVersion"] ??
             "v25.0";
-        var accessToken = await ResolvePageAccessTokenAsync(apiVersion, configuredPageId, configuredToken);
+        var accessToken = await ResolvePageAccessTokenAsync(apiVersion, configuredPageId, configuredToken, cancellationToken);
         return await ConsultarPerfilMetaAsync(
             normalized,
             externalUserId,
@@ -1096,12 +1100,13 @@ public sealed class MetaGraphApiService
             accessToken,
             "https://graph.facebook.com",
             apiVersion,
-            "first_name,last_name,name,profile_pic");
+            "first_name,last_name,name,profile_pic", cancellationToken);
     }
 
     private async Task<MetaProfileLookupResult> ObtenerPerfilInstagramDetalladoAsync(
         string externalUserId,
-        string? webhookAccountId)
+        string? webhookAccountId,
+        CancellationToken cancellationToken = default)
     {
         var loginUserId = GetValue("Meta:Instagram:LoginUserId");
         var businessAccountId = GetValue("Meta:Instagram:InstagramBusinessAccountId");
@@ -1148,11 +1153,12 @@ public sealed class MetaGraphApiService
         {
             try
             {
-                var pageToken = await ResolvePageAccessTokenAsync(apiVersion, legacyPageId, legacyToken);
+                var pageToken = await ResolvePageAccessTokenAsync(apiVersion, legacyPageId, legacyToken, cancellationToken);
                 attempts.Add(("Facebook Login", "https://graph.facebook.com", pageToken));
             }
             catch (Exception ex)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 errors.Add($"Facebook Login: {ex.Message}");
             }
         }
@@ -1167,7 +1173,7 @@ public sealed class MetaGraphApiService
                 attempt.Token,
                 attempt.Host,
                 apiVersion,
-                "name,username,profile_pic");
+                "name,username,profile_pic", cancellationToken);
             if (result.Success)
             {
                 return result;
@@ -1190,7 +1196,8 @@ public sealed class MetaGraphApiService
         string accessToken,
         string graphHost,
         string apiVersion,
-        string fields)
+        string fields,
+        CancellationToken cancellationToken = default)
     {
         var url =
             $"{graphHost}/{apiVersion}/{Uri.EscapeDataString(externalUserId)}" +
@@ -1201,8 +1208,8 @@ public sealed class MetaGraphApiService
 
         try
         {
-            using var response = await _httpClient.SendAsync(request);
-            var body = await response.Content.ReadAsStringAsync();
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -1244,6 +1251,7 @@ public sealed class MetaGraphApiService
         }
         catch (Exception ex)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             _logger.LogWarning(
                 ex,
                 "No se pudo consultar perfil de Meta para {Canal}/{ExternalUserId}.",
@@ -1434,7 +1442,8 @@ public sealed class MetaGraphApiService
     private async Task<string> ResolvePageAccessTokenAsync(
         string apiVersion,
         string? pageId,
-        string configuredToken)
+        string configuredToken,
+        CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(pageId))
         {
@@ -1447,8 +1456,8 @@ public sealed class MetaGraphApiService
 
         try
         {
-            using var meResponse = await _httpClient.GetAsync(meUrl);
-            var meBody = await meResponse.Content.ReadAsStringAsync();
+            using var meResponse = await _httpClient.GetAsync(meUrl, cancellationToken);
+            var meBody = await meResponse.Content.ReadAsStringAsync(cancellationToken);
             if (meResponse.IsSuccessStatusCode)
             {
                 using var meDocument = JsonDocument.Parse(meBody);
@@ -1464,6 +1473,7 @@ public sealed class MetaGraphApiService
         }
         catch (Exception ex)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             _logger.LogWarning(ex, "No se pudo validar si el token de Meta pertenece a la pagina.");
         }
 
@@ -1471,8 +1481,8 @@ public sealed class MetaGraphApiService
             $"https://graph.facebook.com/{apiVersion}/me/accounts" +
             $"?fields=id,name,access_token&access_token={Uri.EscapeDataString(configuredToken)}";
 
-        using var accountsResponse = await _httpClient.GetAsync(accountsUrl);
-        var accountsBody = await accountsResponse.Content.ReadAsStringAsync();
+        using var accountsResponse = await _httpClient.GetAsync(accountsUrl, cancellationToken);
+        var accountsBody = await accountsResponse.Content.ReadAsStringAsync(cancellationToken);
         if (!accountsResponse.IsSuccessStatusCode)
         {
             return configuredToken;
@@ -1507,7 +1517,7 @@ public sealed class MetaGraphApiService
         return configuredToken;
     }
 
-    private async Task<MetaChannelInsight> ObtenerFacebookAsync(long since, long until)
+    private async Task<MetaChannelInsight> ObtenerFacebookAsync(long since, long until, CancellationToken cancellationToken = default)
     {
         var pageId = GetValue("Meta:Facebook:PageId");
         var token = GetValue("Meta:Facebook:AccessToken");
@@ -1535,7 +1545,7 @@ public sealed class MetaGraphApiService
         var apiVersion = GetValue("Meta:ApiVersion") ??
             _configuration["Meta:ApiVersion"] ??
             "v25.0";
-        var insightsToken = await ResolvePageAccessTokenAsync(apiVersion, pageId!, token!);
+        var insightsToken = await ResolvePageAccessTokenAsync(apiVersion, pageId!, token!, cancellationToken);
 
         var metrics = await GetInsightsAsync(
             pageId!,
@@ -1543,7 +1553,7 @@ public sealed class MetaGraphApiService
             "page_media_view,page_total_media_view_unique,page_post_engagements,page_follows",
             "day",
             since,
-            until);
+            until, cancellationToken);
 
         var hasErrors = metrics.Errors.Count > 0;
         var impresiones = GetMetric(metrics, "page_media_view");
@@ -1572,7 +1582,7 @@ public sealed class MetaGraphApiService
             DateTimeOffset.UtcNow);
     }
 
-    private async Task<MetaChannelInsight> ObtenerInstagramAsync(long since, long until)
+    private async Task<MetaChannelInsight> ObtenerInstagramAsync(long since, long until, CancellationToken cancellationToken = default)
     {
         var instagramId = GetValue("Meta:Instagram:InstagramBusinessAccountId") ??
             GetValue("Meta:Instagram:LoginUserId");
@@ -1604,7 +1614,7 @@ public sealed class MetaGraphApiService
             token!,
             "views,reach,total_interactions,profile_views,website_clicks",
             since,
-            until);
+            until, cancellationToken);
 
         var hasErrors = metrics.Errors.Count > 0;
         var alcance = GetMetric(metrics, "reach");
@@ -1613,7 +1623,7 @@ public sealed class MetaGraphApiService
         var visitasPerfil = GetMetric(metrics, "profile_views");
         var clicksSitio = GetMetric(metrics, "website_clicks");
         var audience = await GetInstagramAudienceBreakdownAsync(
-            instagramId!, token!, since, until);
+            instagramId!, token!, since, until, cancellationToken);
 
         return new MetaChannelInsight(
             CanalSocial.Instagram,
@@ -1643,7 +1653,8 @@ public sealed class MetaGraphApiService
         string instagramId,
         string accessToken,
         long since,
-        long until)
+        long until,
+        CancellationToken cancellationToken = default)
     {
         var apiVersion = GetValue("Meta:ApiVersion") ??
             _configuration["Meta:ApiVersion"] ??
@@ -1659,10 +1670,11 @@ public sealed class MetaGraphApiService
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             try
             {
-                using var response = await _httpClient.SendAsync(request);
+                using var response = await _httpClient.SendAsync(request, cancellationToken);
                 if (!response.IsSuccessStatusCode) return null;
-                return JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+                return JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
             catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
             {
                 return null;
@@ -1858,7 +1870,8 @@ public sealed class MetaGraphApiService
         string metric,
         string period,
         long since,
-        long until)
+        long until,
+        CancellationToken cancellationToken = default)
     {
         var apiVersion = GetValue("Meta:ApiVersion") ??
             _configuration["Meta:ApiVersion"] ??
@@ -1875,8 +1888,8 @@ public sealed class MetaGraphApiService
 
         try
         {
-            using var response = await _httpClient.SendAsync(request);
-            var body = await response.Content.ReadAsStringAsync();
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -1892,6 +1905,7 @@ public sealed class MetaGraphApiService
         }
         catch (Exception ex)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             _logger.LogWarning(ex, "No se pudieron obtener métricas de Meta para {ObjectId}.", objectId);
             return MetaInsightMetrics.WithError(ex.Message);
         }
@@ -1902,7 +1916,8 @@ public sealed class MetaGraphApiService
         string accessToken,
         string metric,
         long since,
-        long until)
+        long until,
+        CancellationToken cancellationToken = default)
     {
         var apiVersion = GetValue("Meta:ApiVersion") ??
             _configuration["Meta:ApiVersion"] ??
@@ -1920,8 +1935,8 @@ public sealed class MetaGraphApiService
 
         try
         {
-            using var response = await _httpClient.SendAsync(request);
-            var body = await response.Content.ReadAsStringAsync();
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogWarning(
@@ -1935,6 +1950,7 @@ public sealed class MetaGraphApiService
         }
         catch (Exception ex)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             _logger.LogWarning(ex, "No se pudieron obtener metricas de Instagram para {ObjectId}.", objectId);
             return MetaInsightMetrics.WithError(ex.Message);
         }

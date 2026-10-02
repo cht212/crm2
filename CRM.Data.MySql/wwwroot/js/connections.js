@@ -1,13 +1,14 @@
 // Módulo frontend del CRM.
 
         async function cargarModuloConexiones(vista) {
-            const [response, resumenResponse] = await Promise.all([
-                api("/api/integraciones/estado"),
-                api("/api/crm/reportes/resumen")
-            ]);
+            const navigationSignal = window.__crmNavigationController?.signal;
+            const resumenPromise = api("/api/crm/reportes/resumen?incluirEquipo=false").catch(() => null);
+            const response = await api("/api/integraciones/estado");
             if (!response.ok) throw new Error("Conexiones no disponibles");
             const estadoIntegraciones = await response.json();
-            const resumenCrm = resumenResponse.ok ? await resumenResponse.json() : {};
+            if (navigationSignal?.aborted || moduloActual !== "conexiones") return;
+            let resumenCrm = {};
+            function pintarConexiones() {
             const whatsapp = estadoIntegraciones.whatsapp || {};
             const r2 = estadoIntegraciones.r2 || {};
             const bot = estadoIntegraciones.bot || {};
@@ -347,6 +348,16 @@
                 });
             });
 
+        }
+
+            pintarConexiones();
+            void resumenPromise.then(async resumenResponse => {
+                if (!resumenResponse?.ok) return;
+                const data = await resumenResponse.json();
+                if (navigationSignal?.aborted || moduloActual !== "conexiones") return;
+                resumenCrm = data;
+                pintarConexiones();
+            }).catch(error => console.warn("No se pudieron actualizar los indicadores", error));
         }
 
         function mostrarDiagnosticoInstagram(vista, data) {

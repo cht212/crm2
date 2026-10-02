@@ -3,6 +3,7 @@ using System;
 using CRM.Data.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CRM.Data.Migrations
 {
     [DbContext(typeof(CrmDbContext))]
-    partial class CrmDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261002181944_AddCustomRoles")]
+    partial class AddCustomRoles
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -504,11 +507,6 @@ namespace CRM.Data.Migrations
                         .HasColumnType("varchar(32)")
                         .HasColumnName("c_canal");
 
-                    b.Property<string>("cClientRequestId")
-                        .HasMaxLength(80)
-                        .HasColumnType("varchar(80)")
-                        .HasColumnName("c_client_request_id");
-
                     b.Property<string>("cDireccion")
                         .IsRequired()
                         .HasColumnType("varchar(1)")
@@ -553,9 +551,6 @@ namespace CRM.Data.Migrations
                     b.HasKey("nMensaje");
 
                     b.HasIndex("dFecha");
-
-                    b.HasIndex("nConversacion", "cClientRequestId")
-                        .IsUnique();
 
                     b.HasIndex("nConversacion", "dFecha");
 

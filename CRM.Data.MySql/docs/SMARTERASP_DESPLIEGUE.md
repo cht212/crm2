@@ -127,7 +127,8 @@ Comprueba en este orden:
 
 1. `/api/health/live` devuelve `Healthy`.
 2. `/api/health/ready` devuelve `Healthy` y `database: Available`.
-3. El login funciona y obliga a usar HTTPS.
+3. La URL raíz del sitio muestra directamente el login si no hay una sesión
+   activa; con una sesión válida abre el CRM. El login funciona y obliga a usar HTTPS.
 4. En **Conexiones**, las claves aparecen como configuradas.
 5. Envía un mensaje de prueba y prueba la subida/descarga de un archivo.
 6. Recicla el Application Pool y comprueba que las conexiones siguen activas.

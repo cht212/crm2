@@ -124,9 +124,16 @@ public sealed class AuthenticationController : ControllerBase
     {
         var idValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var role = User.FindFirstValue(ClaimTypes.Role);
-        var permissions = int.TryParse(idValue, out var userId)
+        var hasUserId = int.TryParse(idValue, out var userId);
+        var permissions = hasUserId
             ? await _permissions.GetEffectiveAsync(userId, role)
             : [];
+        var customRoleName = hasUserId
+            ? await _context.Usuarios.AsNoTracking()
+                .Where(item => item.nUsuario == userId && item.RolPersonalizado != null)
+                .Select(item => item.RolPersonalizado!.cNombre)
+                .FirstOrDefaultAsync()
+            : null;
 
         return Ok(new
         {
@@ -134,6 +141,7 @@ public sealed class AuthenticationController : ControllerBase
             id = idValue,
             usuario = User.Identity?.Name,
             rol = role,
+            rolNombre = customRoleName ?? role,
             permisos = permissions.OrderBy(item => item)
         });
     }

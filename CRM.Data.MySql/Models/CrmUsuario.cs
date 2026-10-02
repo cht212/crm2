@@ -10,6 +10,8 @@ namespace CRM.Data.Models
         public char cEstado { get; set; } = 'A';
         public string? cPasswordHash { get; set; }
         public string cRol { get; set; } = "Asesor";
+        public int? nRol { get; set; }
+        public CrmRol? RolPersonalizado { get; set; }
 
         // Relación: Un usuario puede tener varias conversaciones asignadas
         public ICollection<Conversacion> ConversacionesAsignadas { get; set; } = new List<Conversacion>();

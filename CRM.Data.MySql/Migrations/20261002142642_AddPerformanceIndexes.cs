@@ -8,11 +8,9 @@ public partial class AddPerformanceIndexes : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
     {
-        migrationBuilder.DropIndex("IX_crm_tarea_n_asignado_a", "crm_tarea");
-        migrationBuilder.DropIndex("IX_crm_oportunidad_n_usuario_asignado", "crm_oportunidad");
-        migrationBuilder.DropIndex("IX_crm_mensaje_n_conversacion", "crm_mensaje");
-        migrationBuilder.DropIndex("IX_crm_conversacion_n_usuario_asignado", "crm_conversacion");
-        migrationBuilder.DropIndex("IX_crm_actividad_log_n_usuario", "crm_actividad_log");
+        // Los índices simples también respaldan claves foráneas en MySQL.
+        // Se conservan mientras se agregan los índices compuestos para evitar
+        // que MySQL rechace la migración antes de crear sus reemplazos.
 
         migrationBuilder.AlterColumn<string>("c_estado", "crm_tarea", "varchar(32)", maxLength: 32, nullable: false, oldClrType: typeof(string), oldType: "longtext");
         migrationBuilder.AlterColumn<string>("c_etapa", "crm_oportunidad", "varchar(32)", maxLength: 32, nullable: false, oldClrType: typeof(string), oldType: "longtext");
@@ -63,10 +61,5 @@ public partial class AddPerformanceIndexes : Migration
         migrationBuilder.AlterColumn<string>("c_canal", "crm_conversacion", "longtext", nullable: false, oldClrType: typeof(string), oldType: "varchar(32)", oldMaxLength: 32);
         migrationBuilder.AlterColumn<string>("c_canal_origen", "crm_cliente", "longtext", nullable: false, oldClrType: typeof(string), oldType: "varchar(32)", oldMaxLength: 32);
 
-        migrationBuilder.CreateIndex("IX_crm_tarea_n_asignado_a", "crm_tarea", "n_asignado_a");
-        migrationBuilder.CreateIndex("IX_crm_oportunidad_n_usuario_asignado", "crm_oportunidad", "n_usuario_asignado");
-        migrationBuilder.CreateIndex("IX_crm_mensaje_n_conversacion", "crm_mensaje", "n_conversacion");
-        migrationBuilder.CreateIndex("IX_crm_conversacion_n_usuario_asignado", "crm_conversacion", "n_usuario_asignado");
-        migrationBuilder.CreateIndex("IX_crm_actividad_log_n_usuario", "crm_actividad_log", "n_usuario");
     }
 }

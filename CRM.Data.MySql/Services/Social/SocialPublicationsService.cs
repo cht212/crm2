@@ -60,7 +60,7 @@ public sealed class SocialPublicationsService
         CancellationToken ct)
     {
         var result = await _meta.ObtenerFacebookFeedAsync(desde.ToDateTime(TimeOnly.MinValue),
-            hasta.ToDateTime(TimeOnly.MinValue), 25);
+            hasta.ToDateTime(TimeOnly.MinValue), 25, ct);
         var posts = result.Posts.Select(p => new SocialPublication(CanalSocial.Facebook, p.Id,
             DateTimeOffset.TryParse(p.CreatedTime, out var at) ? at : DateTimeOffset.MinValue,
             p.Message, p.PermalinkUrl, p.MediaUrl, p.Likes, p.Comments, p.Shares,
@@ -345,6 +345,7 @@ public sealed class SocialPublicationsService
             var perfiles = new Dictionary<string, MetaContactProfile?>(StringComparer.OrdinalIgnoreCase);
             foreach (var comment in comments)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var nombre = comment.Username;
                 string? fotoPerfil = null;
                 if (EsNombreGenericoMeta(nombre, comment.Canal) &&
@@ -355,7 +356,7 @@ public sealed class SocialPublicationsService
                     {
                         var profileResult = await _meta.ObtenerPerfilContactoDetalladoAsync(
                             comment.Canal,
-                            comment.UserId);
+                            comment.UserId, cancellationToken: cancellationToken);
                         perfil = profileResult.Profile;
                         perfiles[profileKey] = perfil;
                     }

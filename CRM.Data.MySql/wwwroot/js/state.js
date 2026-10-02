@@ -4,6 +4,8 @@
 // llegan por /api/realtime/events y ya no requieren consultar cada 15 segundos.
 const POLLING_MS = 60000;
         let conversaciones = [];
+        let inboxPagina = 1;
+        let inboxPaginacion = { total: 0, page: 1, pageSize: 50 };
         let conversacionSeleccionada = null;
         let actualizacionEnCurso = false;
         let filtroActivo = "all";

@@ -89,9 +89,50 @@ public sealed class MetaGraphApiServiceTests : IDisposable
         Assert.Equal("media-1", comment.PublicationId);
     }
 
+    [Fact]
+    public async Task DashboardStartsBothNetworksBeforeEitherFinishes()
+    {
+        var started = 0;
+        var bothStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var service = CreateService(new AsyncHandler(async (request, ct) =>
+        {
+            if (Interlocked.Increment(ref started) >= 2) bothStarted.TrySetResult();
+            await bothStarted.Task.WaitAsync(ct);
+            return Json(HttpStatusCode.OK, request.RequestUri!.AbsolutePath.EndsWith("/me")
+                ? """{"id":"page-1"}""" : """{"data":[]}""");
+        }), NetworkSettings());
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+        await service.ObtenerDashboardAsync(DateTime.Today.AddDays(-7), DateTime.Today, timeout.Token);
+        Assert.True(bothStarted.Task.IsCompletedSuccessfully);
+    }
+
+    [Fact]
+    public async Task DashboardPropagatesCancellationToNetworkRequests()
+    {
+        var cancelled = 0;
+        var service = CreateService(new AsyncHandler(async (_, ct) =>
+        {
+            try { await Task.Delay(Timeout.Infinite, ct); }
+            catch (OperationCanceledException) { Interlocked.Increment(ref cancelled); throw; }
+            return Json(HttpStatusCode.OK, "{}");
+        }), NetworkSettings());
+        using var timeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            service.ObtenerDashboardAsync(DateTime.Today.AddDays(-7), DateTime.Today, timeout.Token));
+        Assert.True(cancelled >= 2);
+    }
+
+    private static Dictionary<string, string?> NetworkSettings() => new()
+    {
+        ["Meta:Facebook:PageId"] = "page-1", ["Meta:Facebook:AccessToken"] = "test-token",
+        ["Meta:Instagram:InstagramBusinessAccountId"] = "ig-1", ["Meta:Instagram:AccessToken"] = "test-token"
+    };
+
     private MetaGraphApiService CreateService(
         Func<HttpRequestMessage, HttpResponseMessage> responder,
-        IReadOnlyDictionary<string, string?> values)
+        IReadOnlyDictionary<string, string?> values) => CreateService(new DelegateHandler(responder), values);
+
+    private MetaGraphApiService CreateService(HttpMessageHandler handler, IReadOnlyDictionary<string, string?> values)
     {
         Directory.CreateDirectory(_root);
         var configurationValues = new Dictionary<string, string?>(values)
@@ -106,7 +147,7 @@ public sealed class MetaGraphApiServiceTests : IDisposable
             dataProtection,
             NullLogger<SocialIntegrationService>.Instance);
         return new MetaGraphApiService(
-            new HttpClient(new DelegateHandler(responder)),
+            new HttpClient(handler),
             settings,
             configuration,
             NullLogger<MetaGraphApiService>.Instance);
@@ -127,6 +168,12 @@ public sealed class MetaGraphApiServiceTests : IDisposable
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
             CancellationToken cancellationToken) => Task.FromResult(responder(request));
+    }
+
+    private sealed class AsyncHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> responder) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            responder(request, cancellationToken);
     }
 
     private sealed class TestEnvironment(string contentRoot) : IWebHostEnvironment

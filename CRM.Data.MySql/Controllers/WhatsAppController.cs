@@ -468,8 +468,21 @@ namespace CRM.Data.Controllers
                                 "No se pudo procesar el archivo entrante de WhatsApp. Tipo: {Tipo}, MediaId: {MediaId}",
                                 tipo,
                                 mediaId ?? "URL del webhook");
-                            texto = $"[No se pudo descargar el archivo de WhatsApp. Tipo: {tipo}]";
-                            tipoGuardado = "text";
+                            tipoGuardado = tipo.ToLowerInvariant() switch
+                            {
+                                "image" => "image",
+                                "sticker" => "sticker",
+                                "audio" => "audio",
+                                "video" => "video",
+                                _ => "document"
+                            };
+                            texto = JsonSerializer.Serialize(new
+                            {
+                                nombre = NombreAdjuntoNoDisponible(tipoGuardado),
+                                noDisponible = true,
+                                tipoOriginal = tipoGuardado,
+                                motivo = "Meta no entregó el archivo al CRM."
+                            });
                         }
                     }
                 }
@@ -708,27 +721,33 @@ namespace CRM.Data.Controllers
             var (unsupportedType, errorCode) = ObtenerDetalleUnsupported(message);
             if (errorCode == 131051)
             {
-                return "Meta no entregó el archivo de este contenido al CRM (código 131051). " +
-                    "Esto puede ocurrir con algunos stickers animados o formatos nuevos de WhatsApp. " +
-                    "Pídele al cliente que lo reenvíe como sticker estático, imagen o video.";
+                return "Contenido de WhatsApp no disponible. Pídele al cliente que lo reenvíe como imagen, video o sticker estático.";
             }
 
             if (string.Equals(unsupportedType, "gif", StringComparison.OrdinalIgnoreCase))
             {
-                return "El cliente envió un GIF, pero WhatsApp Cloud API no entrega ese archivo al CRM. Pídele que lo reenvíe como sticker o video.";
+                return "GIF no disponible. Pídele al cliente que lo reenvíe como sticker o video.";
             }
 
             if (errorCode == 131060)
             {
-                return "WhatsApp no pudo entregar el contenido de este mensaje. Pídele al cliente que lo reenvíe.";
+                return "Contenido de WhatsApp no disponible. Pídele al cliente que lo reenvíe.";
             }
 
             var detalle = string.IsNullOrWhiteSpace(unsupportedType)
                 ? "tipo no compatible"
                 : unsupportedType;
-            var codigo = errorCode.HasValue ? $" (código {errorCode.Value})" : string.Empty;
-            return $"WhatsApp no proporcionó este contenido al CRM: {detalle}{codigo}. Pídele al cliente que lo envíe como sticker, imagen o documento.";
+            return $"Contenido de WhatsApp no disponible ({detalle}). Pídele al cliente que lo reenvíe.";
         }
+
+        private static string NombreAdjuntoNoDisponible(string tipo) => tipo.ToLowerInvariant() switch
+        {
+            "audio" or "voice" => "Audio no disponible",
+            "sticker" => "Sticker no disponible",
+            "image" => "Imagen no disponible",
+            "video" => "Video no disponible",
+            _ => "Archivo no disponible"
+        };
 
         private async Task<R2UploadResult> GuardarArchivoEntranteAsync(
             WhatsAppMediaDownload mediaFile,
@@ -760,16 +779,19 @@ namespace CRM.Data.Controllers
         // =========================================================
 
         [HttpGet("conversaciones/{conversacionId:long}")]
-        public async Task<IActionResult> Conversacion(long conversacionId)
+        public async Task<IActionResult> Conversacion(long conversacionId, [FromQuery] long? antesDe = null, [FromQuery] int pageSize = 50)
         {
+            if (!_access.UsuarioActualId.HasValue) return Unauthorized();
             var permisos = await ObtenerPermisosEfectivosAsync();
+            var verTodas = permisos.Contains(CrmPermissionService.ViewAllChats);
             var resultado = await _whatsappService.ObtenerConversacionAsync(
                 conversacionId,
-                _access.TieneAccesoGlobal ? null : _access.UsuarioActualId,
-                !_access.TieneAccesoGlobal,
+                verTodas ? null : _access.UsuarioActualId,
+                !verTodas,
                 CrmPermissionService.GetAllowedChannels(permisos),
                 permisos.Contains(CrmPermissionService.ViewCustomerDetails) ||
-                permisos.Contains(CrmPermissionService.EditConversationContact));
+                permisos.Contains(CrmPermissionService.EditConversationContact),
+                pageSize, antesDe, _access.UsuarioActualId, _access.TieneAccesoGlobal && verTodas);
             if (resultado == null)
             {
                 return NotFound(new { message = "Conversacion no encontrada." });
@@ -779,13 +801,18 @@ namespace CRM.Data.Controllers
         }
 
         [HttpGet("conversaciones")]
-        public async Task<IActionResult> Todas()
+        public async Task<IActionResult> Todas([FromQuery] int page = 1, [FromQuery] int pageSize = 50,
+            [FromQuery] string? canal = null, [FromQuery] string? search = null,
+            [FromQuery] string? filtro = null, [FromQuery] string? asesor = null)
         {
+            if (!_access.UsuarioActualId.HasValue) return Unauthorized();
             var permisos = await ObtenerPermisosEfectivosAsync();
+            var verTodas = permisos.Contains(CrmPermissionService.ViewAllChats);
             var conversaciones = await _whatsappService.ObtenerTodasConversacionesAsync(
-                _access.TieneAccesoGlobal ? null : _access.UsuarioActualId,
-                !_access.TieneAccesoGlobal,
-                CrmPermissionService.GetAllowedChannels(permisos));
+                verTodas ? null : _access.UsuarioActualId,
+                !verTodas,
+                CrmPermissionService.GetAllowedChannels(permisos), page, pageSize, canal, search, filtro,
+                verTodas ? asesor : null, _access.UsuarioActualId);
             return Ok(conversaciones);
         }
 
@@ -818,6 +845,8 @@ namespace CRM.Data.Controllers
             {
                 return BadRequest("El mensaje es obligatorio.");
             }
+            if (dto.ClientRequestId != null && !Guid.TryParse(dto.ClientRequestId, out _))
+                return BadRequest("La referencia del envio no es valida.");
 
             if (!await _access.PuedeAccederConversacionAsync(conversacionId))
             {
@@ -830,7 +859,8 @@ namespace CRM.Data.Controllers
                 _access.UsuarioActualId,
                 dto.Tipo ?? "text",
                 null,
-                dto.ReplyToMessageId);
+                dto.ReplyToMessageId,
+                dto.ClientRequestId);
 
             return Ok(new { success = true, mensajeId });
         }
@@ -878,6 +908,7 @@ namespace CRM.Data.Controllers
 
     public class EnviarMensajeDto
     {
+        public string? ClientRequestId { get; set; }
         public string Mensaje { get; set; } = "";
 
         public long? UsuarioId { get; set; }

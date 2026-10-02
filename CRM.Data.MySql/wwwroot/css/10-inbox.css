@@ -42,7 +42,7 @@
     width: 100%;
 }
 
-.search:focus {
+.search:focus-visible {
     background: var(--surface);
 }
 
@@ -51,6 +51,60 @@
     flex-wrap: wrap;
     gap: 7px;
     margin-top: 12px;
+}
+
+.sidebar .filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(112px, 1.2fr);
+    align-items: center;
+    gap: 5px;
+}
+
+.sidebar .filters .filter-button {
+    min-width: 0;
+    min-height: 32px;
+    height: 32px;
+    padding: 0 6px;
+    font-size: 12px;
+    line-height: 16px;
+    white-space: nowrap;
+}
+
+.sidebar .filters .inbox-assignee-menu {
+    min-width: 0;
+    width: 100%;
+}
+
+.sidebar .filters .inbox-advisor-toggle {
+    width: 100%;
+    min-height: 32px;
+    height: 32px;
+    gap: 4px;
+    padding: 0 6px;
+}
+
+.sidebar .filters .inbox-advisor-label {
+    min-width: 0;
+    max-width: none;
+    flex: 1 1 auto;
+    font-size: 12px;
+}
+
+.sidebar .filters .inbox-advisor-avatar {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    flex: 0 0 20px;
+}
+
+.sidebar .filters .inbox-advisor-toggle svg {
+    width: 14px;
+    height: 14px;
+}
+
+.sidebar .filters .inbox-advisor-menu {
+    left: auto;
+    right: 0;
 }
 
 .inbox-network-filters {

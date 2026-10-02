@@ -26,6 +26,7 @@ public sealed class CrmPermissionService
     public const string ModuleFailures = "modulo.fallos";
     public const string ModuleUsers = "modulo.usuarios";
     public const string ViewCustomerDetails = "comunicaciones.ficha";
+    public const string ViewAllChats = "comunicaciones.chats.todos";
     public const string EditConversationContact = "comunicaciones.ficha.contacto";
     public const string ViewWhatsApp = "comunicaciones.canal.whatsapp";
     public const string ViewInstagram = "comunicaciones.canal.instagram";
@@ -48,6 +49,7 @@ public sealed class CrmPermissionService
     [
         new(ModuleDashboard, "Inicio", "Ver apartado", "Consulta el panel de inicio y sus indicadores."),
         new(ModuleInbox, "Comunicaciones", "Ver apartado", "Consulta las conversaciones disponibles para su cuenta."),
+        new(ViewAllChats, "Comunicaciones", "Ver todos los chats", "Consulta los chats de todos los asesores y los cerrados, dentro de los canales permitidos. Sin este permiso solo ve sus chats y los disponibles para tomar."),
         new(ViewCustomerDetails, "Comunicaciones", "Ficha completa del cliente", "Muestra datos, notas, tareas, oportunidades y actividad al abrir una conversación."),
         new(EditConversationContact, "Comunicaciones", "Ficha de datos del contacto", "Permite ver y editar nombre, teléfono, email y documento desde la conversación, sin actividad, tareas ni oportunidades."),
         new(ViewWhatsApp, "Comunicaciones", "Ver WhatsApp", "Muestra las conversaciones del canal WhatsApp."),
@@ -83,6 +85,7 @@ public sealed class CrmPermissionService
         Catalog.Select(item => item.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
     private readonly CrmDbContext _context;
+    private readonly Dictionary<(int UserId, string Role), HashSet<string>> _effectiveCache = new();
 
     public CrmPermissionService(CrmDbContext context)
     {
@@ -102,16 +105,45 @@ public sealed class CrmPermissionService
 
     public async Task<HashSet<string>> GetEffectiveAsync(int userId, string? role)
     {
-        return ResolveEffective(role, await GetGrantedAsync(userId));
+        var key = (userId, role ?? "");
+        if (_effectiveCache.TryGetValue(key, out var cached)) return cached;
+        if (CrmRoles.Normalize(role).Equals(CrmRoles.Administrador, StringComparison.OrdinalIgnoreCase))
+            return GetBasePermissions(role);
+        var inherited = await GetInheritedPermissionsAsync(userId, role);
+        var effective = ApplyOverrides(inherited, await GetGrantedAsync(userId));
+        _effectiveCache[key] = effective;
+        return effective;
+    }
+
+    public async Task<HashSet<string>> GetInheritedPermissionsAsync(int userId, string? role)
+    {
+        var assignedRole = await _context.Usuarios
+            .AsNoTracking()
+            .Where(item => item.nUsuario == userId && item.nRol != null && item.RolPersonalizado!.cEstado == 'A')
+            .Select(item => new
+            {
+                item.RolPersonalizado!.cRolBase,
+                Permisos = item.RolPersonalizado.Permisos.Select(permission => permission.cPermiso).ToList()
+            })
+            .FirstOrDefaultAsync();
+
+        return assignedRole == null
+            ? GetBasePermissions(role)
+            : ResolveEffective(assignedRole.cRolBase, assignedRole.Permisos);
     }
 
     // Conserva los permisos adicionales existentes y almacena las excepciones
     // negativas en la misma tabla, sin alterar el esquema ni los roles.
     public static HashSet<string> ResolveEffective(string? role, IEnumerable<string> overrides)
     {
-        var result = GetBasePermissions(role);
         if (CrmRoles.Normalize(role).Equals(CrmRoles.Administrador, StringComparison.OrdinalIgnoreCase))
-            return result;
+            return GetBasePermissions(role);
+        return ApplyOverrides(GetBasePermissions(role), overrides);
+    }
+
+    public static HashSet<string> ApplyOverrides(IEnumerable<string> inheritedPermissions, IEnumerable<string> overrides)
+    {
+        var result = inheritedPermissions.ToHashSet(StringComparer.OrdinalIgnoreCase);
         var stored = overrides.ToHashSet(StringComparer.OrdinalIgnoreCase);
         result.UnionWith(stored.Where(IsConfigurable));
         result.ExceptWith(stored.Where(item => item.StartsWith(DeniedPrefix, StringComparison.OrdinalIgnoreCase))
@@ -127,6 +159,11 @@ public sealed class CrmPermissionService
 
     public static HashSet<string> BuildOverrides(string? role, IEnumerable<string> selected)
     {
+        return BuildOverrides(GetBasePermissions(role), selected);
+    }
+
+    public static HashSet<string> BuildOverrides(IEnumerable<string> inheritedPermissions, IEnumerable<string> selected)
+    {
         var requested = selected.Where(IsConfigurable).ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (var group in Catalog.GroupBy(item => item.Group, StringComparer.OrdinalIgnoreCase))
         {
@@ -134,7 +171,7 @@ public sealed class CrmPermissionService
             if (module != null && !requested.Contains(module.Code))
                 requested.ExceptWith(group.Select(item => item.Code));
         }
-        var inherited = GetBasePermissions(role);
+        var inherited = inheritedPermissions.ToHashSet(StringComparer.OrdinalIgnoreCase);
         var result = requested.Except(inherited, StringComparer.OrdinalIgnoreCase).ToHashSet(StringComparer.OrdinalIgnoreCase);
         result.UnionWith(inherited.Except(requested, StringComparer.OrdinalIgnoreCase).Select(item => DeniedPrefix + item));
         return result;
@@ -194,7 +231,7 @@ public sealed class CrmPermissionService
             return new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
                 ModuleReports, ModuleMarketing, ModuleBot, ModuleActivity,
-                EditContacts, SendMessages, AssignConversations, ManageTasks,
+                ViewAllChats, EditContacts, SendMessages, AssignConversations, ManageTasks,
                 ManageSales, ManageMarketing, ManageBot, ManageIntegrations,
                 ExportData, CreateContacts, AttendConversations, ManageNotes
             };
@@ -214,7 +251,7 @@ public sealed class CrmPermissionService
             return new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
                 ModuleReports, ModuleMarketing, ModuleBot, ModuleConnections,
-                ModuleActivity, ModuleFailures, ModuleUsers, ExportData
+                ModuleActivity, ModuleFailures, ModuleUsers, ExportData, ViewAllChats
             };
         }
 
@@ -237,7 +274,7 @@ public sealed class CrmPermissionService
         // particular, login debe funcionar aunque el navegador conserve una
         // cookie de una sesión anterior con permisos limitados.
         if (value.StartsWith("/api/auth") || value.Contains("/webhook")) return null;
-        if (value.StartsWith("/api/crm/usuarios")) return "administracion.usuarios";
+        if (value.StartsWith("/api/crm/usuarios") || value.StartsWith("/api/crm/roles")) return ModuleUsers;
         if (value.Contains("/asignar") || value.Contains("/asignar-pendientes")) return AssignConversations;
         if (value.StartsWith("/api/whatsapp"))
             return value.EndsWith("/bot") ? AttendConversations : SendMessages;
@@ -284,6 +321,7 @@ public sealed class CrmPermissionService
         // Los selectores y fichas utilizan datos compartidos entre apartados.
         // Permitirlos cuando existe un apartado que los necesita.
         if (value == "/api/crm/usuarios") return [ModuleUsers, ModuleDashboard, ModuleInbox, ModuleContacts, ModuleTasks, ModuleLeads, ModuleSales, ModuleReports];
+        if (value.StartsWith("/api/crm/roles")) return [ModuleUsers];
         if (value.StartsWith("/api/crm/contactos") || value.StartsWith("/api/clientes") || value.StartsWith("/api/etiquetas"))
             return [ModuleContacts, ModuleInbox, ModuleLeads, ModuleSales, ModuleTasks];
         if (value.StartsWith("/api/whatsapp/conversaciones")) return [ModuleInbox, ModuleLeads, ModuleContacts];

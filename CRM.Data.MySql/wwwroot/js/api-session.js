@@ -14,7 +14,8 @@
 
             // Cada navegación crea un AbortController. Así una consulta lenta
             // del módulo anterior no puede terminar pintando encima del módulo actual.
-            if (!requestOptions.signal && window.__crmNavigationController?.signal) {
+            if (["GET", "HEAD"].includes(String(requestOptions.method || "GET").toUpperCase()) &&
+                !requestOptions.signal && window.__crmNavigationController?.signal) {
                 requestOptions.signal = window.__crmNavigationController.signal;
             }
 
@@ -23,6 +24,23 @@
                 window.location.href = "/login.html";
             }
             return response;
+        }
+
+        async function refrescarSesionActual() {
+            const response = await api("/api/auth/me");
+            if (!response.ok) {
+                throw new Error("No se pudieron actualizar los permisos de la sesión.");
+            }
+
+            const anterior = sesionActual;
+            sesionActual = await response.json();
+            rolActual = sesionActual.rol || "";
+            if (JSON.stringify(anterior?.permisos) !== JSON.stringify(sesionActual.permisos) || anterior?.rol !== rolActual) {
+                usuariosCache = null;
+                asesorFiltroActivo = tienePermiso("comunicaciones.chats.todos") ? "" : String(sesionActual.id || "");
+            }
+            aplicarNavegacionPorRol();
+            return sesionActual;
         }
 
         function ocultarTodoElMenu() {
@@ -51,21 +69,21 @@
                 }
 
                 const sesion = await response.json();
-                renderPerfilUsuario(sesion);
+                renderPerfilUsuario({ ...sesion, rol: sesion.rolNombre || sesion.rol });
                 cargarNotificacionesPersistidas();
                 renderFiltrosRedBandeja();
 
                 rolActual = sesion.rol || "";
                 sesionActual = sesion;
 
-                if (normalizarRol(rolActual) === "asesor" && sesion.id) {
+                if (normalizarRol(rolActual) === "asesor" && sesion.id && !tienePermiso("comunicaciones.chats.todos")) {
                     asesorFiltroActivo = String(sesion.id);
                 } else {
                     asesorFiltroActivo = "";
                 }
 
                 if (estado) {
-                    estado.textContent = `${sesion.usuario} · ${sesion.rol}`;
+                    estado.textContent = `${sesion.usuario} · ${sesion.rolNombre || sesion.rol}`;
                 }
 
                 aplicarNavegacionPorRol();
@@ -78,11 +96,7 @@
                     iniciarActualizacionesTiempoReal();
                 }
 
-                if (moduloActual === "inbox" && typeof actualizarCRM === "function") {
-                    await Promise.resolve(actualizarCRM()).catch(error =>
-                        console.warn("No se pudo actualizar el CRM al iniciar:", error)
-                    );
-
+                if (typeof actualizarCRM === "function") {
                     setInterval(() => {
                         if (document.visibilityState === "visible" &&
                             moduloActual === "inbox" &&

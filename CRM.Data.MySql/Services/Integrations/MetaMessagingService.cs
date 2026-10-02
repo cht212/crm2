@@ -111,25 +111,79 @@ public sealed class MetaMessagingService
         }
 
         var apiVersion = GetValue("Meta:ApiVersion") ?? _configuration["Meta:ApiVersion"] ?? "v26.0";
-        string accessToken;
-        string url;
 
         if (normalized == CanalSocial.Instagram)
         {
-            accessToken = GetInstagramLoginToken() ??
-                throw new InvalidOperationException("Falta el Access Token de Instagram.");
-            url = $"https://graph.instagram.com/{apiVersion}/{Uri.EscapeDataString(commentId)}/replies";
-        }
-        else
-        {
-            var pageId = GetPageId(normalized) ??
-                throw new InvalidOperationException("Falta el Page ID de Facebook.");
-            var configuredToken = GetAccessToken(normalized) ??
-                throw new InvalidOperationException("Falta el Access Token de Facebook.");
-            accessToken = await ResolvePageAccessTokenAsync(apiVersion, pageId, configuredToken);
-            url = $"https://graph.facebook.com/{apiVersion}/{Uri.EscapeDataString(commentId)}/comments";
+            return await ReplyToInstagramPublicCommentAsync(apiVersion, commentId, text);
         }
 
+        var pageId = GetPageId(normalized) ??
+            throw new InvalidOperationException("Falta el Page ID de Facebook.");
+        var configuredToken = GetAccessToken(normalized) ??
+            throw new InvalidOperationException("Falta el Access Token de Facebook.");
+        var accessToken = await ResolvePageAccessTokenAsync(apiVersion, pageId, configuredToken);
+        var url = $"https://graph.facebook.com/{apiVersion}/{Uri.EscapeDataString(commentId)}/comments";
+
+        return await PostPublicCommentReplyAsync(normalized, url, accessToken, text);
+    }
+
+    private async Task<string?> ReplyToInstagramPublicCommentAsync(
+        string apiVersion,
+        string commentId,
+        string text)
+    {
+        var errors = new List<string>();
+        var instagramLoginToken = GetValue("Meta:Instagram:LoginAccessToken");
+        if (!string.IsNullOrWhiteSpace(instagramLoginToken))
+        {
+            var instagramUrl = $"https://graph.instagram.com/{apiVersion}/{Uri.EscapeDataString(commentId)}/replies";
+            try
+            {
+                return await PostPublicCommentReplyAsync(CanalSocial.Instagram, instagramUrl, instagramLoginToken, text);
+            }
+            catch (InvalidOperationException ex)
+            {
+                errors.Add($"Instagram Login: {ex.Message}");
+            }
+        }
+
+        var pageId = GetValue("Meta:Instagram:PageId") ?? GetValue("Meta:Facebook:PageId");
+        var facebookLoginCandidates = new[]
+        {
+            ("Instagram/Page Token", GetValue("Meta:Instagram:AccessToken")),
+            ("Facebook Page Token", GetValue("Meta:Facebook:AccessToken"))
+        };
+
+        foreach (var (name, configuredToken) in facebookLoginCandidates)
+        {
+            if (string.IsNullOrWhiteSpace(configuredToken)) continue;
+
+            try
+            {
+                var accessToken = !string.IsNullOrWhiteSpace(pageId)
+                    ? await ResolvePageAccessTokenAsync(apiVersion, pageId, configuredToken)
+                    : configuredToken;
+                var facebookUrl = $"https://graph.facebook.com/{apiVersion}/{Uri.EscapeDataString(commentId)}/replies";
+                return await PostPublicCommentReplyAsync(CanalSocial.Instagram, facebookUrl, accessToken, text);
+            }
+            catch (InvalidOperationException ex)
+            {
+                errors.Add($"{name}: {ex.Message}");
+            }
+        }
+
+        var detail = errors.Count > 0 ? " " + string.Join(" | ", errors) : string.Empty;
+        throw new InvalidOperationException(
+            "Instagram no autorizó responder el comentario. Reconecta la cuenta con instagram_business_manage_comments o configura un Page Token con instagram_manage_comments." +
+            detail);
+    }
+
+    private async Task<string?> PostPublicCommentReplyAsync(
+        string canal,
+        string url,
+        string accessToken,
+        string text)
+    {
         using var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
@@ -144,7 +198,7 @@ public sealed class MetaMessagingService
             _logger.LogWarning(
                 "Meta devolvio HTTP {StatusCode} al responder un comentario de {Canal}: {Body}",
                 (int)response.StatusCode,
-                normalized,
+                canal,
                 body);
             throw new InvalidOperationException(BuildMetaMessagingError((int)response.StatusCode, body));
         }

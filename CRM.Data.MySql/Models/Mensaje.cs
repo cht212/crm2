@@ -10,6 +10,7 @@ namespace CRM.Data.Models
         public string cCanal { get; set; } = CanalSocial.WhatsApp;
         public string? cExternalId { get; set; }
         public string? cReplyToExternalId { get; set; }
+        public string? cClientRequestId { get; set; }
         public char cDireccion { get; set; } // 'E' = Entrante, 'S' = Saliente
         public string? cTipo { get; set; }
         public string cMensaje { get; set; } = string.Empty;

@@ -18,6 +18,73 @@
             return new Intl.NumberFormat("es-PE").format(Number(valor || 0));
         }
 
+        const tamanosPaginacion = new Map();
+        const opcionesTamanoPagina = [10, 25, 50, 100];
+
+        function obtenerTamanoPagina(clave) {
+            if (tamanosPaginacion.has(clave)) return tamanosPaginacion.get(clave);
+            let valor;
+            try { valor = Number(localStorage.getItem(`crm.pageSize.${clave}`)); } catch { /* Storage can be unavailable. */ }
+            const size = opcionesTamanoPagina.includes(valor) ? valor : 10;
+            tamanosPaginacion.set(clave, size);
+            return size;
+        }
+
+        function renderPaginacion(pagina, clave = "general") {
+            const total = Math.max(0, Number(pagina.total || 0));
+            const size = Number(pagina.pageSize || obtenerTamanoPagina(clave));
+            const pages = Math.max(1, Math.ceil(total / size));
+            const page = Math.max(1, Number(pagina.page || 1));
+            const desde = total ? Math.min(total, (page - 1) * size + 1) : 0;
+            const hasta = Math.min(total, page * size);
+            const opciones = [...new Set([...opcionesTamanoPagina, size])].sort((a, b) => a - b);
+            const control = (action, destino, icono, label, disabled) =>
+                `<button type="button" class="table-icon-action" data-pagination-action="${action}" data-page="${destino}" ${disabled ? "disabled" : ""} title="${label}" aria-label="${label}"><i data-lucide="${icono}"></i></button>`;
+            return `<nav class="list-pagination" aria-label="Paginacion">
+                <label class="list-pagination-size"><span>Elementos por página</span><select data-page-size data-list-key="${escapeAttribute(clave)}">${opciones.map(value => `<option value="${value}" ${value === size ? "selected" : ""}>${value}</option>`).join("")}</select></label>
+                <div class="list-pagination-navigation">
+                    <span class="list-pagination-range" aria-live="polite">${formatearNumero(desde)}-${formatearNumero(hasta)} de ${formatearNumero(total)}</span>
+                    <div class="list-pagination-buttons">
+                        ${control("first", 1, "skip-back", "Primera pagina", page <= 1)}
+                        ${control("previous", page - 1, "chevron-left", "Pagina anterior", page <= 1)}
+                        ${control("next", page + 1, "chevron-right", "Pagina siguiente", page >= pages)}
+                        ${control("last", pages, "skip-forward", "Ultima pagina", page >= pages)}
+                    </div>
+                </div>
+            </nav>`;
+        }
+
+        function enlazarPaginacion(vista, cargar) {
+            const ejecutar = async (control, page) => {
+                const pager = control.closest(".list-pagination");
+                if (pager.getAttribute("aria-busy") === "true") return;
+                const habilitados = [...pager.querySelectorAll("button, select")].filter(element => !element.disabled);
+                pager.setAttribute("aria-busy", "true");
+                habilitados.forEach(element => element.disabled = true);
+                try { await cargar(page); }
+                catch (error) {
+                    if (error?.name !== "AbortError") notificar("No se pudo cargar la pagina.", "error");
+                } finally {
+                    pager.removeAttribute("aria-busy");
+                    habilitados.forEach(element => element.disabled = false);
+                }
+            };
+            vista.querySelectorAll(".list-pagination [data-page]").forEach(button => {
+                button.addEventListener("click", () => ejecutar(button, Number(button.dataset.page)));
+            });
+            vista.querySelectorAll(".list-pagination [data-page-size]").forEach(selector => {
+                selector.addEventListener("change", () => {
+                    const size = Number(selector.value);
+                    const clave = selector.dataset.listKey;
+                    if (!opcionesTamanoPagina.includes(size)) return;
+                    tamanosPaginacion.set(clave, size);
+                    try { localStorage.setItem(`crm.pageSize.${clave}`, String(size)); } catch { /* Keep the session preference. */ }
+                    ejecutar(selector, 1);
+                });
+            });
+            window.lucide?.createIcons(vista);
+        }
+
         function prepararTablasResponsivas(raiz = document) {
             const tablas = [];
             if (raiz instanceof Element && raiz.matches("table.module-table")) tablas.push(raiz);

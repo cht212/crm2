@@ -64,8 +64,15 @@ public class CrmManagementController : ControllerBase
         [FromQuery] string? search = null,
         [FromQuery] string? canal = null,
         [FromQuery] int? usuarioId = null,
-        [FromQuery] int? etiquetaId = null)
+        [FromQuery] int? etiquetaId = null,
+        [FromQuery] int? page = null,
+        [FromQuery] int pageSize = 50)
     {
+        var puedeVerFicha = UsuarioActualId.HasValue &&
+            await _permissions.HasAsync(UsuarioActualId.Value, _access.RolActual, CrmPermissionService.ViewCustomerDetails);
+        if (etiquetaId.HasValue && !puedeVerFicha) return Forbid();
+        pageSize = Math.Clamp(pageSize, 1, 200);
+        var numeroPagina = Math.Max(1, page ?? 1);
         // En Contactos, cada asesor ve solamente clientes que tengan al menos
         // una conversación asignada a él. Los chats sin asignar siguen siendo
         // accesibles desde Comunicaciones para poder completar su ficha.
@@ -87,9 +94,9 @@ public class CrmManagementController : ControllerBase
                 cliente.Conversaciones.Any(conversacion =>
                     conversacion.cCanal.Contains(search) ||
                     (conversacion.UsuarioAsignado != null && conversacion.UsuarioAsignado.cNombre.Contains(search))) ||
-                _context.ClienteEtiquetas.Any(clienteEtiqueta =>
+                (puedeVerFicha && _context.ClienteEtiquetas.Any(clienteEtiqueta =>
                     clienteEtiqueta.nCliente == cliente.nCliente &&
-                    clienteEtiqueta.Etiqueta.cNombre.Contains(search)));
+                    clienteEtiqueta.Etiqueta.cNombre.Contains(search))));
         }
 
         if (!string.IsNullOrWhiteSpace(canal) && !canal.Equals("TODOS", StringComparison.OrdinalIgnoreCase))
@@ -117,8 +124,13 @@ public class CrmManagementController : ControllerBase
                     clienteEtiqueta.nEtiqueta == etiquetaId.Value));
         }
 
+        var total = page.HasValue ? await query.CountAsync() : 0;
+        if (page.HasValue) numeroPagina = Math.Min(numeroPagina, Math.Max(1, (int)Math.Ceiling(total / (double)pageSize)));
         var result = await query
             .OrderByDescending(cliente => cliente.dFechaRegistro)
+            .ThenByDescending(cliente => cliente.nCliente)
+            .Skip(page.HasValue ? (numeroPagina - 1) * pageSize : 0)
+            .Take(page.HasValue ? pageSize : 200)
             .Select(cliente => new
             {
                 id = cliente.nCliente,
@@ -130,7 +142,7 @@ public class CrmManagementController : ControllerBase
                 estado = cliente.cEstado,
                 canalOrigen = cliente.cCanalOrigen,
                 etiquetas = _context.ClienteEtiquetas
-                    .Where(clienteEtiqueta => clienteEtiqueta.nCliente == cliente.nCliente)
+                    .Where(clienteEtiqueta => puedeVerFicha && clienteEtiqueta.nCliente == cliente.nCliente)
                     .Select(clienteEtiqueta => new
                     {
                         id = clienteEtiqueta.nEtiqueta,
@@ -148,10 +160,9 @@ public class CrmManagementController : ControllerBase
                     .Select(conversacion => conversacion.dUltimoMensaje)
                     .FirstOrDefault()
             })
-            .Take(200)
             .ToListAsync();
 
-        return Ok(result);
+        return page.HasValue ? Ok(new { total, page = numeroPagina, pageSize, items = result }) : Ok(result);
     }
     [HttpPost("contactos")]
     [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
@@ -283,22 +294,29 @@ public class CrmManagementController : ControllerBase
         page = page < 1 ? 1 : page;
         pageSize = pageSize is < 1 or > 200 ? 50 : pageSize;
 
+        var permisos = await _permissions.GetEffectiveAsync(UsuarioActualId ?? 0, _access.RolActual);
+        var canales = CrmPermissionService.GetAllowedChannels(permisos);
         var query = _access
-            .FiltrarConversaciones(_context.Conversaciones.AsNoTracking())
+            .FiltrarConversaciones(_context.Conversaciones.AsNoTracking(), await _access.PuedeVerTodasConversacionesAsync())
+            .Where(c => canales.Contains(c.cCanal))
             .Where(conversacion => conversacion.Mensajes.Any(mensaje =>
                 mensaje.cTipo != "comment" &&
                 mensaje.cTipo != "comment_reply"));
+        var porEstado = await query.GroupBy(c => c.cEstado)
+            .Select(g => new { estado = g.Key, cantidad = g.Count() }).ToListAsync();
         if (!string.IsNullOrWhiteSpace(estado))
         {
             query = query.Where(c => c.cEstado == estado.Trim().ToUpperInvariant());
         }
 
         var total = await query.CountAsync();
+        page = Math.Min(page, Math.Max(1, (int)Math.Ceiling(total / (double)pageSize)));
 
         var items = await query
             .Include(conversacion => conversacion.Cliente)
             .Include(conversacion => conversacion.UsuarioAsignado)
             .OrderByDescending(conversacion => conversacion.dUltimoMensaje)
+            .ThenByDescending(conversacion => conversacion.nConversacion)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(conversacion => new
@@ -334,11 +352,11 @@ public class CrmManagementController : ControllerBase
             })
             .ToListAsync();
 
-        return Ok(new { total, page, pageSize, items });
+        return Ok(new { total, page, pageSize, items, porEstado });
     }
 
     [HttpGet("usuarios")]
-    public async Task<IActionResult> Usuarios()
+    public async Task<IActionResult> Usuarios([FromQuery] int? page = null, [FromQuery] int pageSize = 10, [FromQuery] string? search = null)
     {
         var canViewUsers = UsuarioActualId.HasValue &&
             await _permissions.HasAsync(UsuarioActualId.Value, _access.RolActual, CrmPermissionService.ModuleUsers);
@@ -347,23 +365,40 @@ public class CrmManagementController : ControllerBase
             .AsNoTracking()
             .Where(usuario => usuario.cEstado == 'A');
 
-        if (!_access.TieneAccesoGlobal && !canViewUsers)
+        if (!_access.TieneAccesoGlobal && !canViewUsers && !await _access.PuedeVerTodasConversacionesAsync())
         {
             query = query.Where(usuario => usuario.nUsuario == UsuarioActualId!.Value);
         }
 
-        var result = await query
-            .OrderBy(usuario => usuario.cNombre)
+        var resumen = page.HasValue ? await query.GroupBy(_ => 1).Select(g => new
+        {
+            activos = g.Count(), configurables = g.Count(u => u.cRol != "Administrador")
+        }).FirstOrDefaultAsync() : null;
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var termino = search.Trim();
+            query = query.Where(u => u.cNombre.Contains(termino) || u.cUsuario.Contains(termino) ||
+                u.cRol.Contains(termino) || (u.RolPersonalizado != null && u.RolPersonalizado.cNombre.Contains(termino)));
+        }
+        var total = page.HasValue ? await query.CountAsync() : 0;
+        pageSize = Math.Clamp(pageSize, 1, 100);
+        var numeroPagina = Math.Max(1, page ?? 1);
+        if (page.HasValue) numeroPagina = Math.Min(numeroPagina, Math.Max(1, (int)Math.Ceiling(total / (double)pageSize)));
+        var listado = query.OrderBy(u => u.cNombre).ThenBy(u => u.nUsuario).AsQueryable();
+        if (page.HasValue) listado = listado.Skip((numeroPagina - 1) * pageSize).Take(pageSize);
+        var result = await listado
             .Select(usuario => new
             {
                 id = usuario.nUsuario,
                 usuario = usuario.cUsuario,
                 nombre = usuario.cNombre,
-                rol = usuario.cRol
+                rol = usuario.RolPersonalizado != null ? usuario.RolPersonalizado.cNombre : usuario.cRol,
+                rolBase = usuario.cRol,
+                rolId = usuario.nRol
             })
             .ToListAsync();
 
-        return Ok(result);
+        return page.HasValue ? Ok(new { total, page = numeroPagina, pageSize, items = result, resumen }) : Ok(result);
     }
 
     [HttpPost("usuarios")]
@@ -372,7 +407,7 @@ public class CrmManagementController : ControllerBase
     {
         var usuario = (dto.Usuario ?? string.Empty).Trim();
         var nombre = (dto.Nombre ?? string.Empty).Trim();
-        var rol = (dto.Rol ?? string.Empty).Trim();
+        var rol = CrmRoles.Normalize(dto.Rol);
 
         if (string.IsNullOrWhiteSpace(usuario) || string.IsNullOrWhiteSpace(nombre) ||
             string.IsNullOrWhiteSpace(dto.Password))
@@ -383,6 +418,15 @@ public class CrmManagementController : ControllerBase
         if (dto.Password.Length < 8)
         {
             return BadRequest("La contraseña debe tener al menos 8 caracteres.");
+        }
+
+        CrmRol? rolPersonalizado = null;
+        if (dto.RolId.HasValue)
+        {
+            rolPersonalizado = await _context.Roles.FirstOrDefaultAsync(item =>
+                item.nRol == dto.RolId.Value && item.cEstado == 'A');
+            if (rolPersonalizado == null) return BadRequest("El rol seleccionado no existe o está inactivo.");
+            rol = rolPersonalizado.cRolBase;
         }
 
         if (!new[] { CrmRoles.Auditor, CrmRoles.Supervisor, CrmRoles.Asesor, CrmRoles.Marketing }
@@ -401,7 +445,8 @@ public class CrmManagementController : ControllerBase
             cUsuario = usuario,
             cNombre = nombre,
             cEstado = 'A',
-            cRol = CrmRoles.Normalize(rol)
+            cRol = rol,
+            nRol = rolPersonalizado?.nRol
         };
         nuevoUsuario.cPasswordHash = _hasher.HashPassword(nuevoUsuario, dto.Password);
         _context.Usuarios.Add(nuevoUsuario);
@@ -413,8 +458,144 @@ public class CrmManagementController : ControllerBase
             id = nuevoUsuario.nUsuario,
             usuario = nuevoUsuario.cUsuario,
             nombre = nuevoUsuario.cNombre,
-            rol = nuevoUsuario.cRol
+            rol = rolPersonalizado?.cNombre ?? nuevoUsuario.cRol,
+            rolBase = nuevoUsuario.cRol,
+            rolId = nuevoUsuario.nRol
         });
+    }
+
+    [HttpGet("roles")]
+    [Authorize(Roles = "Administrador")]
+    public async Task<IActionResult> Roles()
+    {
+        var roles = await _context.Roles
+            .AsNoTracking()
+            .Where(item => item.cEstado == 'A')
+            .OrderBy(item => item.cNombre)
+            .Select(item => new
+            {
+                id = item.nRol,
+                nombre = item.cNombre,
+                descripcion = item.cDescripcion,
+                rolBase = item.cRolBase,
+                usuarios = item.Usuarios.Count(usuario => usuario.cEstado == 'A'),
+                permisosGuardados = item.Permisos.Select(permission => permission.cPermiso).ToList()
+            })
+            .ToListAsync();
+
+        return Ok(new
+        {
+            bases = new[] { CrmRoles.Asesor, CrmRoles.Supervisor, CrmRoles.Marketing, CrmRoles.Auditor }
+                .Select(nombre => new { nombre, permisos = CrmPermissionService.GetBasePermissions(nombre).OrderBy(item => item) }),
+            catalogo = CrmPermissionService.Catalog.Select(item => new
+            {
+                codigo = item.Code,
+                grupo = item.Group,
+                nombre = item.Label,
+                descripcion = item.Description
+            }),
+            roles = roles.Select(item => new
+            {
+                item.id,
+                item.nombre,
+                item.descripcion,
+                item.rolBase,
+                item.usuarios,
+                permisos = CrmPermissionService.ResolveEffective(item.rolBase, item.permisosGuardados)
+                    .OrderBy(permission => permission)
+            })
+        });
+    }
+
+    [HttpPost("roles")]
+    [Authorize(Roles = "Administrador")]
+    public async Task<IActionResult> CrearRol([FromBody] GuardarRolDto dto)
+    {
+        return await GuardarRolAsync(null, dto);
+    }
+
+    [HttpPut("roles/{id:int}")]
+    [Authorize(Roles = "Administrador")]
+    public async Task<IActionResult> EditarRol(int id, [FromBody] GuardarRolDto dto)
+    {
+        return await GuardarRolAsync(id, dto);
+    }
+
+    [HttpDelete("roles/{id:int}")]
+    [Authorize(Roles = "Administrador")]
+    public async Task<IActionResult> EliminarRol(int id)
+    {
+        var role = await _context.Roles.FirstOrDefaultAsync(item => item.nRol == id && item.cEstado == 'A');
+        if (role == null) return NotFound("Rol no encontrado.");
+
+        var assignedUsers = await _context.Usuarios.CountAsync(item => item.nRol == id);
+        if (assignedUsers > 0)
+            return Conflict("No puedes eliminar este rol porque tiene usuarios asignados. Reasígnalos primero.");
+
+        var previous = role.cNombre;
+        _context.Roles.Remove(role);
+        await _context.SaveChangesAsync();
+        await _auditoria.RegistrarAsync("Rol", id, "ELIMINACION", previous, null, UsuarioActualId);
+        return Ok(new { success = true });
+    }
+
+    private async Task<IActionResult> GuardarRolAsync(int? id, GuardarRolDto dto)
+    {
+        var nombre = (dto.Nombre ?? string.Empty).Trim();
+        var descripcion = (dto.Descripcion ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(nombre)) return BadRequest("El nombre del rol es obligatorio.");
+        if (nombre.Length > 80 || descripcion.Length > 250) return BadRequest("El nombre o la descripción exceden el tamaño permitido.");
+        if (dto.Permisos == null || dto.Permisos.Any(item => !CrmPermissionService.IsConfigurable(item)))
+            return BadRequest("La lista contiene permisos no válidos.");
+        if (await _context.Roles.AnyAsync(item => item.cNombre == nombre && (!id.HasValue || item.nRol != id.Value)))
+            return Conflict("Ya existe un rol con ese nombre.");
+
+        CrmRol role;
+        string? previous = null;
+        if (id.HasValue)
+        {
+            var existingRole = await _context.Roles.Include(item => item.Permisos)
+                .FirstOrDefaultAsync(item => item.nRol == id.Value && item.cEstado == 'A');
+            if (existingRole == null) return NotFound("Rol no encontrado.");
+            role = existingRole;
+            previous = role.cNombre;
+        }
+        else
+        {
+            role = new CrmRol
+            {
+                cRolBase = CrmRoles.Asesor,
+                nCreadoPor = UsuarioActualId,
+                dFechaCreacion = DateTime.UtcNow
+            };
+            _context.Roles.Add(role);
+        }
+
+        role.cNombre = nombre;
+        role.cDescripcion = descripcion;
+        var stored = CrmPermissionService.BuildOverrides(role.cRolBase, dto.Permisos);
+        if (id.HasValue)
+        {
+            var currentPermissions = role.Permisos.Select(item => item.cPermiso)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            _context.RolPermisos.RemoveRange(role.Permisos.Where(item => !stored.Contains(item.cPermiso)).ToList());
+            foreach (var permission in stored.Where(item => !currentPermissions.Contains(item)))
+                role.Permisos.Add(new CrmRolPermiso { cPermiso = permission });
+        }
+        else
+        {
+            role.Permisos = stored.Select(permission => new CrmRolPermiso { cPermiso = permission }).ToList();
+        }
+        await _context.SaveChangesAsync();
+        if (id.HasValue)
+        {
+            await _context.Usuarios.Where(item => item.nRol == role.nRol)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.cRol, role.cRolBase));
+        }
+        await _auditoria.RegistrarAsync("Rol", role.nRol, id.HasValue ? "EDICION" : "CREACION", previous,
+            role.cNombre, UsuarioActualId);
+
+        return Ok(new { success = true, id = role.nRol, nombre = role.cNombre });
     }
 
     [HttpPut("usuarios/{id:int}/password")]
@@ -449,14 +630,60 @@ public class CrmManagementController : ControllerBase
         var usuario = await _context.Usuarios.FirstOrDefaultAsync(item => item.nUsuario == id);
         if (usuario == null) return NotFound("Usuario no encontrado.");
 
+        var rolAnterior = usuario.nRol;
+        var rolBaseAnterior = usuario.cRol;
+        if (!CrmRoles.Normalize(usuario.cRol).Equals(CrmRoles.Administrador, StringComparison.OrdinalIgnoreCase))
+        {
+            if (dto.RolId.HasValue)
+            {
+                var rol = await _context.Roles.FirstOrDefaultAsync(item => item.nRol == dto.RolId.Value && item.cEstado == 'A');
+                if (rol == null) return BadRequest("El rol seleccionado no existe o está inactivo.");
+                usuario.nRol = rol.nRol;
+                usuario.cRol = rol.cRolBase;
+            }
+            else if (!string.IsNullOrWhiteSpace(dto.Rol))
+            {
+                var rol = CrmRoles.Normalize(dto.Rol);
+                if (!new[] { CrmRoles.Auditor, CrmRoles.Supervisor, CrmRoles.Asesor, CrmRoles.Marketing }
+                    .Contains(rol, StringComparer.OrdinalIgnoreCase))
+                    return BadRequest("Selecciona un rol válido.");
+                usuario.nRol = null;
+                usuario.cRol = rol;
+            }
+        }
+
         var anterior = usuario.cNombre;
         usuario.cNombre = nombre;
         if (!string.IsNullOrWhiteSpace(dto.Password))
             usuario.cPasswordHash = _hasher.HashPassword(usuario, dto.Password);
 
+        if (rolAnterior != usuario.nRol || !rolBaseAnterior.Equals(usuario.cRol, StringComparison.OrdinalIgnoreCase))
+        {
+            var overrides = await _context.UsuarioPermisos.Where(item => item.nUsuario == id).ToListAsync();
+            _context.UsuarioPermisos.RemoveRange(overrides);
+        }
+
         await _context.SaveChangesAsync();
         await _auditoria.RegistrarAsync("Usuario", id, "EDICION", anterior, nombre, UsuarioActualId);
-        return Ok(new { success = true, nombre = usuario.cNombre, rol = usuario.cRol });
+        return Ok(new { success = true, nombre = usuario.cNombre, rol = usuario.cRol, rolId = usuario.nRol });
+    }
+
+    [HttpDelete("usuarios/{id:int}")]
+    [Authorize(Roles = "Administrador")]
+    public async Task<IActionResult> EliminarUsuario(int id)
+    {
+        if (UsuarioActualId == id)
+            return BadRequest("No puedes eliminar la cuenta con la que has iniciado sesión.");
+
+        var usuario = await _context.Usuarios.FirstOrDefaultAsync(item => item.nUsuario == id && item.cEstado == 'A');
+        if (usuario == null) return NotFound("Usuario no encontrado.");
+        if (CrmRoles.Normalize(usuario.cRol).Equals(CrmRoles.Administrador, StringComparison.OrdinalIgnoreCase))
+            return BadRequest("La cuenta Administrador principal no se puede eliminar.");
+
+        usuario.cEstado = 'I';
+        await _context.SaveChangesAsync();
+        await _auditoria.RegistrarAsync("Usuario", id, "ELIMINACION", usuario.cNombre, null, UsuarioActualId);
+        return Ok(new { success = true });
     }
 
     [HttpGet("usuarios/{id:int}/permisos")]
@@ -470,8 +697,8 @@ public class CrmManagementController : ControllerBase
             .Where(item => item.nUsuario == id)
             .Select(item => item.cPermiso)
             .ToListAsync();
-        var basePermissions = CrmPermissionService.GetBasePermissions(usuario.cRol);
-        var effective = CrmPermissionService.ResolveEffective(usuario.cRol, granted);
+        var basePermissions = await _permissions.GetInheritedPermissionsAsync(id, usuario.cRol);
+        var effective = CrmPermissionService.ApplyOverrides(basePermissions, granted);
 
         return Ok(new
         {
@@ -511,8 +738,8 @@ public class CrmManagementController : ControllerBase
         // El editor nuevo envía el conjunto efectivo completo. Se mantiene
         // compatible el contrato anterior, que sólo concedía adicionales.
         var stored = dto.Personalizar
-            ? CrmPermissionService.BuildOverrides(usuario.cRol, requested)
-            : requested.Except(CrmPermissionService.GetBasePermissions(usuario.cRol), StringComparer.OrdinalIgnoreCase)
+            ? CrmPermissionService.BuildOverrides(await _permissions.GetInheritedPermissionsAsync(id, usuario.cRol), requested)
+            : requested.Except(await _permissions.GetInheritedPermissionsAsync(id, usuario.cRol), StringComparer.OrdinalIgnoreCase)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var existing = await _context.UsuarioPermisos.Where(item => item.nUsuario == id).ToListAsync();
@@ -540,7 +767,8 @@ public class CrmManagementController : ControllerBase
             string.Join(", ", stored.OrderBy(item => item)),
             UsuarioActualId);
 
-        return Ok(new { success = true, permisos = CrmPermissionService.ResolveEffective(usuario.cRol, stored).OrderBy(item => item) });
+        return Ok(new { success = true, permisos = CrmPermissionService.ApplyOverrides(
+            await _permissions.GetInheritedPermissionsAsync(id, usuario.cRol), stored).OrderBy(item => item) });
     }
 
     [HttpPut("conversaciones/{id:long}/estado")]
@@ -620,6 +848,8 @@ public class CrmManagementController : ControllerBase
         {
             return Unauthorized();
         }
+
+        if (!await _access.PuedeAccederConversacionAsync(id)) return Forbid();
 
         var conversacion = await _context.Conversaciones.FindAsync(id);
         if (conversacion == null)
@@ -904,6 +1134,7 @@ public class CrmManagementController : ControllerBase
         if (entidadId.HasValue) query = query.Where(a => a.nEntidadId == entidadId.Value);
 
         var total = await query.CountAsync();
+        page = Math.Min(page, Math.Max(1, (int)Math.Ceiling(total / (double)pageSize)));
         var items = await query
             .Include(a => a.Usuario)
             .OrderByDescending(a => a.dFecha)
@@ -932,6 +1163,8 @@ public class CrmManagementController : ControllerBase
         [FromQuery] int? usuarioId = null,
         [FromQuery] int? etiquetaId = null)
     {
+        if (etiquetaId.HasValue && (!UsuarioActualId.HasValue ||
+            !await _permissions.HasAsync(UsuarioActualId.Value, _access.RolActual, CrmPermissionService.ViewCustomerDetails))) return Forbid();
         var query = _access.FiltrarClientes(_context.Clientes.AsNoTracking());
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -1024,6 +1257,7 @@ public class CrmManagementController : ControllerBase
 
         var query = mensajesFallidos.Concat(eventosFallidos);
         var total = await query.CountAsync();
+        page = Math.Min(page, Math.Max(1, (int)Math.Ceiling(total / (double)pageSize)));
         var items = await query.OrderByDescending(item => item.fecha).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
         return Ok(new { total, page, pageSize, items });
     }
@@ -1103,119 +1337,8 @@ public class CrmManagementController : ControllerBase
         return Ok(new { total, page, pageSize, items });
     }
 
-    [HttpGet("reportes/resumen")]
-    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
-    public async Task<IActionResult> ReporteResumen(
-        [FromQuery] DateTime? desde = null,
-        [FromQuery] DateTime? hasta = null,
-        [FromQuery] int? usuarioId = null)
+    private async Task<object[]> ObtenerCargaAsesoresAsync(int? usuarioId)
     {
-        if (!_access.TieneAccesoGlobal)
-        {
-            if (!UsuarioActualId.HasValue)
-            {
-                return Forbid();
-            }
-
-            if (usuarioId.HasValue && usuarioId.Value != UsuarioActualId.Value)
-            {
-                return Forbid();
-            }
-
-            usuarioId = UsuarioActualId.Value;
-        }
-
-        var fechaDesde = desde?.Date;
-        var fechaHasta = hasta?.Date;
-        var fechaHastaExclusiva = fechaHasta?.AddDays(1);
-
-        var clientesQuery = _context.Clientes.AsNoTracking().AsQueryable();
-        if (fechaDesde.HasValue) clientesQuery = clientesQuery.Where(cliente => cliente.dFechaRegistro >= fechaDesde.Value);
-        if (fechaHastaExclusiva.HasValue) clientesQuery = clientesQuery.Where(cliente => cliente.dFechaRegistro < fechaHastaExclusiva.Value);
-        if (usuarioId.HasValue)
-        {
-            clientesQuery = clientesQuery.Where(cliente =>
-                cliente.Conversaciones.Any(conversacion => conversacion.nUsuarioAsignado == usuarioId.Value));
-        }
-
-        var conversacionesQuery = _context.Conversaciones.AsNoTracking().AsQueryable();
-        if (fechaDesde.HasValue) conversacionesQuery = conversacionesQuery.Where(conversacion => conversacion.dFechaInicio >= fechaDesde.Value);
-        if (fechaHastaExclusiva.HasValue) conversacionesQuery = conversacionesQuery.Where(conversacion => conversacion.dFechaInicio < fechaHastaExclusiva.Value);
-        if (usuarioId.HasValue) conversacionesQuery = conversacionesQuery.Where(conversacion => conversacion.nUsuarioAsignado == usuarioId.Value);
-
-        var mensajesQuery = _context.Mensajes.AsNoTracking().AsQueryable();
-        if (fechaDesde.HasValue) mensajesQuery = mensajesQuery.Where(mensaje => mensaje.dFecha >= fechaDesde.Value);
-        if (fechaHastaExclusiva.HasValue) mensajesQuery = mensajesQuery.Where(mensaje => mensaje.dFecha < fechaHastaExclusiva.Value);
-        if (usuarioId.HasValue) mensajesQuery = mensajesQuery.Where(mensaje => mensaje.Conversacion.nUsuarioAsignado == usuarioId.Value);
-
-        var oportunidadesQuery = _context.Oportunidades.AsNoTracking().AsQueryable();
-        if (fechaDesde.HasValue) oportunidadesQuery = oportunidadesQuery.Where(oportunidad => oportunidad.dFechaCreacion >= fechaDesde.Value);
-        if (fechaHastaExclusiva.HasValue) oportunidadesQuery = oportunidadesQuery.Where(oportunidad => oportunidad.dFechaCreacion < fechaHastaExclusiva.Value);
-        if (usuarioId.HasValue) oportunidadesQuery = oportunidadesQuery.Where(oportunidad => oportunidad.nUsuarioAsignado == usuarioId.Value);
-
-        var tareasQuery = _context.Tareas.AsNoTracking().AsQueryable();
-        if (fechaDesde.HasValue) tareasQuery = tareasQuery.Where(tarea => tarea.dFechaCreacion >= fechaDesde.Value);
-        if (fechaHastaExclusiva.HasValue) tareasQuery = tareasQuery.Where(tarea => tarea.dFechaCreacion < fechaHastaExclusiva.Value);
-        if (usuarioId.HasValue) tareasQuery = tareasQuery.Where(tarea => tarea.nAsignadoA == usuarioId.Value);
-
-        var porEstado = await conversacionesQuery
-            .GroupBy(conversacion => conversacion.cEstado)
-            .Select(grupo => new { estado = grupo.Key, cantidad = grupo.Count() })
-            .ToListAsync();
-
-        var totalClientes = await clientesQuery.CountAsync();
-        var estadisticasMensajes = await mensajesQuery
-            .GroupBy(_ => 1)
-            .Select(grupo => new
-            {
-                total = grupo.Count(),
-                entrantes = grupo.Count(mensaje => mensaje.cDireccion == 'E'),
-                salientes = grupo.Count(mensaje => mensaje.cDireccion == 'S')
-            })
-            .FirstOrDefaultAsync();
-        var totalMensajes = estadisticasMensajes?.total ?? 0;
-        var mensajesEntrantes = estadisticasMensajes?.entrantes ?? 0;
-        var mensajesSalientes = estadisticasMensajes?.salientes ?? 0;
-        var oportunidadesPorEtapa = await oportunidadesQuery
-            .GroupBy(oportunidad => oportunidad.cEtapa)
-            .Select(grupo => new
-            {
-                etapa = grupo.Key,
-                cantidad = grupo.Count(),
-                montoTotal = grupo.Sum(oportunidad => oportunidad.nMonto)
-            })
-            .ToListAsync();
-        var ahora = DateTime.Now;
-        var estadisticasTareas = await tareasQuery
-            .GroupBy(_ => 1)
-            .Select(grupo => new
-            {
-                pendientes = grupo.Count(tarea => tarea.cEstado == "PENDIENTE"),
-                vencidas = grupo.Count(tarea =>
-                    tarea.cEstado == "PENDIENTE" && tarea.dFechaVencimiento < ahora),
-                completadas = grupo.Count(tarea => tarea.cEstado == "COMPLETADA")
-            })
-            .FirstOrDefaultAsync();
-        var tareasPendientes = estadisticasTareas?.pendientes ?? 0;
-        var tareasVencidas = estadisticasTareas?.vencidas ?? 0;
-        var tareasCompletadas = estadisticasTareas?.completadas ?? 0;
-        var ventasGanadas = oportunidadesPorEtapa
-            .Where(item => item.etapa == "GANADA")
-            .Sum(item => item.montoTotal);
-        var ventasAbiertas = oportunidadesPorEtapa
-            .Where(item => item.etapa is not "GANADA" and not "PERDIDA")
-            .Sum(item => item.montoTotal);
-        var totalConversaciones = porEstado.Sum(item => item.cantidad);
-        var oportunidadesAbiertas = oportunidadesPorEtapa
-            .Where(item => item.etapa is not "GANADA" and not "PERDIDA")
-            .Sum(item => item.cantidad);
-        var oportunidadesGanadas = oportunidadesPorEtapa
-            .Where(item => item.etapa == "GANADA")
-            .Sum(item => item.cantidad);
-        var oportunidadesPerdidas = oportunidadesPorEtapa
-            .Where(item => item.etapa == "PERDIDA")
-            .Sum(item => item.cantidad);
-
         var usuariosQuery = _context.Usuarios
             .AsNoTracking()
             .Where(usuario => usuario.cEstado == 'A');
@@ -1315,25 +1438,139 @@ public class CrmManagementController : ControllerBase
             .OrderByDescending(item => item.cargaTotal)
             .ThenBy(item => item.nombre)
             .ToList();
+        return cargaAsesores.Cast<object>().ToArray();
+    }
 
-        var clientesPorCanal = await clientesQuery
-            .GroupBy(cliente => cliente.cCanalOrigen)
-            .Select(grupo => new { canal = grupo.Key, cantidad = grupo.Count() })
+    [HttpGet("reportes/carga-asesores")]
+    public async Task<IActionResult> CargaAsesores([FromQuery] int? usuarioId = null)
+    {
+        if (!_access.TieneAccesoGlobal)
+        {
+            if (!UsuarioActualId.HasValue || (usuarioId.HasValue && usuarioId != UsuarioActualId)) return Forbid();
+            usuarioId = UsuarioActualId;
+        }
+        return Ok(await ObtenerCargaAsesoresAsync(usuarioId));
+    }
+
+    [HttpGet("reportes/resumen")]
+    [Authorize(Roles = "Administrador,Supervisor,Asesor,Auditor,Marketing")]
+    public async Task<IActionResult> ReporteResumen(
+        [FromQuery] DateTime? desde = null,
+        [FromQuery] DateTime? hasta = null,
+        [FromQuery] int? usuarioId = null,
+        [FromQuery] bool incluirEquipo = true)
+    {
+        if (!_access.TieneAccesoGlobal)
+        {
+            if (!UsuarioActualId.HasValue)
+            {
+                return Forbid();
+            }
+
+            if (usuarioId.HasValue && usuarioId.Value != UsuarioActualId.Value)
+            {
+                return Forbid();
+            }
+
+            usuarioId = UsuarioActualId.Value;
+        }
+
+        var fechaDesde = desde?.Date;
+        var fechaHasta = hasta?.Date;
+        var fechaHastaExclusiva = fechaHasta?.AddDays(1);
+
+        var clientesQuery = _context.Clientes.AsNoTracking().AsQueryable();
+        if (fechaDesde.HasValue) clientesQuery = clientesQuery.Where(cliente => cliente.dFechaRegistro >= fechaDesde.Value);
+        if (fechaHastaExclusiva.HasValue) clientesQuery = clientesQuery.Where(cliente => cliente.dFechaRegistro < fechaHastaExclusiva.Value);
+        if (usuarioId.HasValue)
+        {
+            clientesQuery = clientesQuery.Where(cliente =>
+                cliente.Conversaciones.Any(conversacion => conversacion.nUsuarioAsignado == usuarioId.Value));
+        }
+
+        var conversacionesQuery = _context.Conversaciones.AsNoTracking().AsQueryable();
+        if (fechaDesde.HasValue) conversacionesQuery = conversacionesQuery.Where(conversacion => conversacion.dFechaInicio >= fechaDesde.Value);
+        if (fechaHastaExclusiva.HasValue) conversacionesQuery = conversacionesQuery.Where(conversacion => conversacion.dFechaInicio < fechaHastaExclusiva.Value);
+        if (usuarioId.HasValue) conversacionesQuery = conversacionesQuery.Where(conversacion => conversacion.nUsuarioAsignado == usuarioId.Value);
+
+        var mensajesQuery = _context.Mensajes.AsNoTracking().AsQueryable();
+        if (fechaDesde.HasValue) mensajesQuery = mensajesQuery.Where(mensaje => mensaje.dFecha >= fechaDesde.Value);
+        if (fechaHastaExclusiva.HasValue) mensajesQuery = mensajesQuery.Where(mensaje => mensaje.dFecha < fechaHastaExclusiva.Value);
+        if (usuarioId.HasValue) mensajesQuery = mensajesQuery.Where(mensaje => mensaje.Conversacion.nUsuarioAsignado == usuarioId.Value);
+
+        var oportunidadesQuery = _context.Oportunidades.AsNoTracking().AsQueryable();
+        if (fechaDesde.HasValue) oportunidadesQuery = oportunidadesQuery.Where(oportunidad => oportunidad.dFechaCreacion >= fechaDesde.Value);
+        if (fechaHastaExclusiva.HasValue) oportunidadesQuery = oportunidadesQuery.Where(oportunidad => oportunidad.dFechaCreacion < fechaHastaExclusiva.Value);
+        if (usuarioId.HasValue) oportunidadesQuery = oportunidadesQuery.Where(oportunidad => oportunidad.nUsuarioAsignado == usuarioId.Value);
+
+        var tareasQuery = _context.Tareas.AsNoTracking().AsQueryable();
+        if (fechaDesde.HasValue) tareasQuery = tareasQuery.Where(tarea => tarea.dFechaCreacion >= fechaDesde.Value);
+        if (fechaHastaExclusiva.HasValue) tareasQuery = tareasQuery.Where(tarea => tarea.dFechaCreacion < fechaHastaExclusiva.Value);
+        if (usuarioId.HasValue) tareasQuery = tareasQuery.Where(tarea => tarea.nAsignadoA == usuarioId.Value);
+
+        var estadosCanales = await conversacionesQuery
+            .GroupBy(c => new { c.cEstado, c.cCanal })
+            .Select(g => new { estado = g.Key.cEstado, canal = g.Key.cCanal, cantidad = g.Count() })
             .ToListAsync();
-        var conversacionesPorCanal = await conversacionesQuery
-            .GroupBy(conversacion => conversacion.cCanal)
-            .Select(grupo => new { canal = grupo.Key, cantidad = grupo.Count() })
-            .ToListAsync();
-        var mensajesPorCanal = await mensajesQuery
-            .GroupBy(mensaje => mensaje.cCanal)
+        var porEstado = estadosCanales.GroupBy(c => c.estado)
+            .Select(g => new { estado = g.Key, cantidad = g.Sum(c => c.cantidad) }).ToList();
+        var clientesPorCanal = await clientesQuery.GroupBy(c => c.cCanalOrigen)
+            .Select(g => new { canal = g.Key, cantidad = g.Count() }).ToListAsync();
+        var totalClientes = clientesPorCanal.Sum(c => c.cantidad);
+        var mensajesPorCanal = await mensajesQuery.GroupBy(m => m.cCanal)
+            .Select(g => new
+            {
+                canal = g.Key, interacciones = g.Count(),
+                entrantes = g.Count(m => m.cDireccion == 'E'),
+                salientes = g.Count(m => m.cDireccion == 'S')
+            }).ToListAsync();
+        var totalMensajes = mensajesPorCanal.Sum(m => m.interacciones);
+        var mensajesEntrantes = mensajesPorCanal.Sum(m => m.entrantes);
+        var mensajesSalientes = mensajesPorCanal.Sum(m => m.salientes);
+        var oportunidadesPorEtapa = await oportunidadesQuery
+            .GroupBy(oportunidad => oportunidad.cEtapa)
             .Select(grupo => new
             {
-                canal = grupo.Key,
-                interacciones = grupo.Count(),
-                entrantes = grupo.Count(mensaje => mensaje.cDireccion == 'E'),
-                salientes = grupo.Count(mensaje => mensaje.cDireccion == 'S')
+                etapa = grupo.Key,
+                cantidad = grupo.Count(),
+                montoTotal = grupo.Sum(oportunidad => oportunidad.nMonto)
             })
             .ToListAsync();
+        var ahora = DateTime.Now;
+        var estadisticasTareas = await tareasQuery
+            .GroupBy(_ => 1)
+            .Select(grupo => new
+            {
+                pendientes = grupo.Count(tarea => tarea.cEstado == "PENDIENTE"),
+                vencidas = grupo.Count(tarea =>
+                    tarea.cEstado == "PENDIENTE" && tarea.dFechaVencimiento < ahora),
+                completadas = grupo.Count(tarea => tarea.cEstado == "COMPLETADA")
+            })
+            .FirstOrDefaultAsync();
+        var tareasPendientes = estadisticasTareas?.pendientes ?? 0;
+        var tareasVencidas = estadisticasTareas?.vencidas ?? 0;
+        var tareasCompletadas = estadisticasTareas?.completadas ?? 0;
+        var ventasGanadas = oportunidadesPorEtapa
+            .Where(item => item.etapa == "GANADA")
+            .Sum(item => item.montoTotal);
+        var ventasAbiertas = oportunidadesPorEtapa
+            .Where(item => item.etapa is not "GANADA" and not "PERDIDA")
+            .Sum(item => item.montoTotal);
+        var totalConversaciones = porEstado.Sum(item => item.cantidad);
+        var oportunidadesAbiertas = oportunidadesPorEtapa
+            .Where(item => item.etapa is not "GANADA" and not "PERDIDA")
+            .Sum(item => item.cantidad);
+        var oportunidadesGanadas = oportunidadesPorEtapa
+            .Where(item => item.etapa == "GANADA")
+            .Sum(item => item.cantidad);
+        var oportunidadesPerdidas = oportunidadesPorEtapa
+            .Where(item => item.etapa == "PERDIDA")
+            .Sum(item => item.cantidad);
+
+        var cargaAsesores = incluirEquipo ? await ObtenerCargaAsesoresAsync(usuarioId) : [];
+
+        var conversacionesPorCanal = estadosCanales.GroupBy(c => c.canal)
+            .Select(g => new { canal = g.Key, cantidad = g.Sum(c => c.cantidad) }).ToList();
 
         var canales = CanalSocial.Soportados.Select(canal =>
         {
@@ -1618,8 +1855,8 @@ public sealed class CrearUsuarioDto
     [MinLength(8, ErrorMessage = "La contraseña debe tener al menos 8 caracteres.")]
     public string? Password { get; set; }
 
-    [Required(ErrorMessage = "El rol es obligatorio.")]
     public string? Rol { get; set; }
+    public int? RolId { get; set; }
 }
 
 public sealed class CambiarPasswordDto
@@ -1636,6 +1873,22 @@ public sealed class EditarUsuarioDto
     public string? Nombre { get; set; }
 
     public string? Password { get; set; }
+    public string? Rol { get; set; }
+    public int? RolId { get; set; }
+}
+
+public sealed class GuardarRolDto
+{
+    [Required]
+    [StringLength(80)]
+    public string? Nombre { get; set; }
+
+    [StringLength(250)]
+    public string? Descripcion { get; set; }
+
+    public string? RolBase { get; set; }
+
+    public List<string>? Permisos { get; set; }
 }
 
 public sealed class ActualizarPermisosDto

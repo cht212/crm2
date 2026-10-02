@@ -373,18 +373,10 @@
         grid-template-columns: minmax(0, 1fr);
         gap: 14px;
         margin-bottom: 14px;
-        padding: 15px;
-        border-radius: 14px;
     }
 
     .module-heading h1 {
-        font-size: 23px;
         overflow-wrap: anywhere;
-    }
-
-    .module-heading p {
-        font-size: 13px;
-        line-height: 1.45;
     }
 
     .module-heading > button,
@@ -454,27 +446,10 @@
     .metric-card {
         min-width: 0;
         min-height: 86px;
-        padding: 11px 12px;
-        border-radius: 12px;
-    }
-
-    .metric-card .metric-label {
-        font-size: 11px;
-        line-height: 1.25;
     }
 
     .metric-card .metric-value {
-        margin-top: 5px;
-        font-size: 22px;
-        line-height: 1.1;
         overflow-wrap: anywhere;
-    }
-
-    .metric-card small {
-        display: block;
-        margin-top: 5px;
-        font-size: 10px;
-        line-height: 1.25;
     }
 
     .kanban-summary-card,
@@ -483,22 +458,11 @@
     .ops-risk-card {
         min-width: 0;
         min-height: 82px;
-        padding: 11px 12px;
-        border-radius: 12px;
     }
 
     .marketing-kpis article {
         min-width: 0;
-        padding: 10px;
     }
-
-    .kanban-summary-card strong,
-    .ops-executive-card > strong,
-    .ops-system-card > strong,
-    .ops-risk-card > strong {
-        font-size: 20px;
-    }
-
 
     .report-section,
     .failure-card,
@@ -506,8 +470,6 @@
     .bot-channel-section,
     .connection-card {
         min-width: 0;
-        padding: 14px;
-        border-radius: 12px;
     }
 
     .metric-card:hover {
@@ -589,12 +551,6 @@
         align-items: center;
         gap: 12px;
         min-width: 0;
-        padding: 14px;
-        border: 1px solid var(--line);
-        border-left: 4px solid var(--primary);
-        border-radius: 12px;
-        background: var(--surface);
-        box-shadow: 0 7px 18px color-mix(in srgb, var(--on-background) 9%, transparent);
     }
 
     .contact-mobile-actions {
@@ -605,8 +561,6 @@
     .table-mobile-card strong {
         min-width: 0;
         overflow: hidden;
-        color: var(--ink);
-        font-size: 15px;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
@@ -623,11 +577,6 @@
         align-items: center;
         gap: 12px;
         min-width: 0;
-        padding: 14px;
-        border: 1px solid var(--line);
-        border-radius: 14px;
-        background: var(--surface);
-        box-shadow: 0 7px 18px color-mix(in srgb, var(--on-background) 9%, transparent);
     }
 
     .table-mobile-view {
@@ -646,11 +595,6 @@
     }
 
     .table-mobile-empty {
-        padding: 18px 14px;
-        border: 1px solid var(--line);
-        border-radius: 12px;
-        background: var(--surface);
-        color: var(--muted);
         text-align: center;
     }
 
@@ -670,11 +614,6 @@
     }
 
     .contact-mobile-empty {
-        padding: 18px 14px;
-        border: 1px solid var(--line);
-        border-radius: 12px;
-        background: var(--surface);
-        color: var(--muted);
         text-align: center;
     }
 
@@ -702,11 +641,6 @@
         gap: 0;
         width: 100%;
         overflow: hidden;
-        border: 1px solid var(--line);
-        border-top: 3px solid color-mix(in srgb, var(--primary) 70%, var(--line));
-        border-radius: 12px;
-        background: var(--surface);
-        box-shadow: 0 7px 18px color-mix(in srgb, var(--on-background) 9%, transparent);
     }
 
     .module-table.responsive-table-ready tbody td {
@@ -719,8 +653,6 @@
         min-width: 0;
         min-height: 66px;
         padding: 9px 11px;
-        border-bottom: 1px solid var(--line);
-        border-right: 1px solid var(--line);
         white-space: normal;
         overflow-wrap: anywhere;
     }
@@ -732,12 +664,7 @@
 
     .module-table.responsive-table-ready tbody td::before {
         content: attr(data-label);
-        color: var(--muted);
-        font-size: 9px;
-        font-weight: 700;
         line-height: 1.25;
-        letter-spacing: .065em;
-        text-transform: uppercase;
     }
 
     .module-table.responsive-table-ready tbody td:last-child {
@@ -760,15 +687,12 @@
     }
 
     .module-table.responsive-table-ready .table-actions,
-    .module-table.responsive-table-ready .user-password-action,
-    .module-table.responsive-table-ready .user-role-action,
     .module-table.responsive-table-ready .user-row-actions {
         min-width: 0;
         width: 100%;
     }
 
     .module-table.responsive-table-ready .table-actions,
-    .module-table.responsive-table-ready .user-password-action,
     .module-table.responsive-table-ready .user-row-actions {
         display: flex;
         flex-flow: row nowrap;
@@ -777,10 +701,7 @@
         gap: 8px;
     }
 
-    .module-table.responsive-table-ready .table-actions button,
-    .module-table.responsive-table-ready .user-password-action button,
-    .module-table.responsive-table-ready .user-permissions-button,
-    .module-table.responsive-table-ready .user-edit-button {
+    .module-table.responsive-table-ready .table-actions button {
         flex: 0 0 40px;
         width: 40px;
         min-width: 40px;
@@ -938,3 +859,31 @@
         font-size: 14px;
     }
 }
+/* Navegacion de listados sin depender del ancho de las tablas. */
+.list-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    padding: 14px 16px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 13px;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+.list-pagination-size,
+.list-pagination-navigation,
+.list-pagination-buttons { display: flex; align-items: center; }
+.list-pagination-size { gap: 10px; margin-right: auto; flex-wrap: wrap; }
+.list-pagination-size select { width: 70px; min-height: 36px; padding: 0 10px; }
+.list-pagination-navigation { gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+.list-pagination-range { white-space: nowrap; }
+.list-pagination-buttons { gap: 4px; }
+.list-pagination .table-icon-action { flex: 0 0 30px; width: 30px; height: 32px; min-height: 32px; }
+.list-pagination .table-icon-action svg { width: 18px; height: 18px; }
+.list-pagination button:disabled { opacity: .45; cursor: default; }
+.conversation-list > .list-pagination { gap: 10px; padding: 14px; }
+.conversation-list > .list-pagination .list-pagination-navigation { margin-left: auto; }

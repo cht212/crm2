@@ -17,7 +17,11 @@
             }).catch(error => console.error("No se pudo enviar el indicador de escribiendo", error));
         }
 
-        document.getElementById("searchInput").addEventListener("input", mostrarConversaciones);
+        let inboxSearchTimer = null;
+        document.getElementById("searchInput").addEventListener("input", () => {
+            clearTimeout(inboxSearchTimer);
+            inboxSearchTimer = setTimeout(recargarBandeja, 250);
+        });
         document.querySelectorAll(".nav-item").forEach(item => {
             item.addEventListener("click", () => {
                 if (item.dataset.module === "inbox") {
@@ -45,7 +49,7 @@
                 filtroActivo = button.dataset.filter;
                 document.querySelectorAll(".filter-button").forEach(item => item.classList.remove("active"));
                 button.classList.add("active");
-                mostrarConversaciones();
+                recargarBandeja();
             });
         });
         document.getElementById("leadBackButton").addEventListener("click", () => abrirModulo(moduloRetornoDetalle));

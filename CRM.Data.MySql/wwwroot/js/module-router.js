@@ -57,6 +57,12 @@
                 chat.classList.remove("hidden");
                 details.classList.toggle("hidden", !puedeVerFicha);
                 document.querySelector(".main")?.classList.toggle("customer-details-collapsed", !puedeVerFicha || fichaClienteColapsada);
+                try {
+                    await cargarConversaciones();
+                } catch (error) {
+                    console.error("No se pudieron cargar las conversaciones al abrir Comunicaciones.", error);
+                    notificar("No se pudieron cargar las conversaciones. Intenta actualizar la bandeja.", "error");
+                }
                 return;
             }
 

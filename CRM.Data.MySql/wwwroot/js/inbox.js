@@ -39,7 +39,7 @@
 
         async function cargarUsuariosInbox() {
             try {
-                const esAsesor = esRol("asesor");
+                const esAsesor = !tienePermiso("comunicaciones.chats.todos");
                 // El asesor no necesita consultar el directorio completo: la
                 // API ya limita la bandeja a sus conversaciones y a las que
                 // están disponibles para tomar.
@@ -50,11 +50,7 @@
                         nombre: sesionActual?.usuario || "Asesor",
                         rol: sesionActual?.rol || "Asesor"
                     }]
-                    : await (async () => {
-                        const response = await api("/api/crm/usuarios");
-                        if (!response.ok) return [];
-                        return await response.json();
-                    })();
+                    : await cargarUsuarios();
                 usuariosCache = usuarios;
                 const menu = document.getElementById("inboxAdvisorMenu");
                 if (esAsesor && sesionActual?.id) {
@@ -91,13 +87,13 @@
                 menu.querySelectorAll(".inbox-advisor-item").forEach(item => {
                     item.addEventListener("click", () => {
                         const nuevoValor = item.dataset.userId || "";
-                        if (esRol("asesor")) {
+                        if (esAsesor) {
                             asesorFiltroActivo = String(sesionActual?.id || "");
                         } else {
                             asesorFiltroActivo = nuevoValor === "unassigned" ? "unassigned" : nuevoValor;
                         }
                         actualizarLabelFiltroAsesor(asesorFiltroActivo);
-                        mostrarConversaciones();
+                        recargarBandeja();
                         if (typeof cargarModuloDashboard === "function" && moduloActual === "dashboard") {
                             const vista = document.querySelector("#moduleView .module-content") || document.getElementById("moduleView");
                             if (vista) cargarModuloDashboard(vista);
@@ -143,17 +139,43 @@
             alternarMenuAsesor();
         });
 
+        let cargaBandejaVersion = 0;
         async function cargarConversaciones() {
-            const response = await api("/api/whatsapp/conversaciones");
+            const version = ++cargaBandejaVersion;
+            const params = new URLSearchParams({ page: String(inboxPagina), pageSize: String(obtenerTamanoPagina("inbox")), canal: inboxCanalActivo, filtro: filtroActivo });
+            const search = document.getElementById("searchInput").value.trim();
+            if (search) params.set("search", search);
+            if (asesorFiltroActivo && (!esRol("asesor") || tienePermiso("comunicaciones.chats.todos"))) params.set("asesor", asesorFiltroActivo);
+            const response = await api(`/api/whatsapp/conversaciones?${params}`);
             if (!response.ok) throw new Error("No se pudieron cargar las conversaciones");
-            const nuevasConversaciones = await response.json();
+            const pagina = await response.json();
+            if (version !== cargaBandejaVersion) return;
+            const nuevasConversaciones = Array.isArray(pagina) ? pagina : pagina.items || [];
+            inboxPaginacion = Array.isArray(pagina) ? { total: pagina.length, page: 1, pageSize: 50 } : pagina;
             procesarNotificacionesMensajesCliente(nuevasConversaciones);
             conversaciones = nuevasConversaciones;
             document.getElementById("conversationCount").textContent =
-                `${conversaciones.length} ${conversaciones.length === 1 ? "chat" : "chats"}`;
+                `${inboxPaginacion.total} ${Number(inboxPaginacion.total) === 1 ? "chat" : "chats"}`;
             actualizarNotificacionesComunicaciones();
             await cargarUsuariosInbox();
             mostrarConversaciones();
+        }
+
+        function recargarBandeja() {
+            inboxPagina = 1;
+            return cargarConversaciones().catch(error => {
+                if (error?.name !== "AbortError") notificar("No se pudo actualizar la bandeja.", "error");
+            });
+        }
+
+        function mostrarPaginacionBandeja() {
+            lista.insertAdjacentHTML("beforeend", renderPaginacion(inboxPaginacion, "inbox"));
+            enlazarPaginacion(lista, page => {
+                inboxPagina = page;
+                return cargarConversaciones().catch(error => {
+                    if (error?.name !== "AbortError") notificar("No se pudo cargar la pagina.", "error");
+                });
+            });
         }
 
         function obtenerTiempo(fecha) {
@@ -284,6 +306,7 @@
             ) {
                 limpiarConversacionSeleccionada();
             }
+            inboxPagina = 1;
             mostrarConversaciones();
 
             if (opciones.abrirModulo !== false && (moduloActual !== "inbox" || cambioCanal)) {
@@ -292,6 +315,7 @@
         }
 
         function limpiarConversacionSeleccionada() {
+            ++seleccionConversacionVersion;
             conversacionSeleccionada = null;
             limpiarRespuestaSeleccionada();
             document.getElementById("chatHeader").classList.remove("chat-header--conversation");
@@ -313,7 +337,7 @@
         function actualizarNotificacionesComunicaciones() {
             const badge = document.getElementById("communicationsBadge");
             if (!badge) return;
-            const pendientes = conversaciones.filter(c => {
+            const pendientes = inboxPaginacion.pendientes ?? conversaciones.filter(c => {
                 const asignadoAMi = !c.usuarioAsignadoId || !sesionActual?.id || Number(c.usuarioAsignadoId) === Number(sesionActual.id);
                 return c.requiereAtencion && asignadoAMi;
             }).length;
@@ -350,7 +374,7 @@
                 // Para un asesor, la autorización y el alcance ya fueron
                 // aplicados en el servidor. Repetir el filtro aquí hacía que
                 // el contador tuviera chats pero la lista apareciera vacía.
-                const coincideAsesor = esRol("asesor")
+                const coincideAsesor = !tienePermiso("comunicaciones.chats.todos")
                     ? true
                     : asesorFiltroActivo === "" ||
                         (asesorFiltroActivo === "unassigned" && !c.usuarioAsignadoId) ||
@@ -375,6 +399,7 @@
             lista.innerHTML = "";
             if (!resultado.length) {
                 lista.innerHTML = '<div class="empty">No hay conversaciones para este filtro.</div>';
+                mostrarPaginacionBandeja();
                 return;
             }
 
@@ -414,19 +439,46 @@
                 elemento.addEventListener("click", () => seleccionarConversacion(conversacion.id));
                 lista.appendChild(elemento);
             });
+            mostrarPaginacionBandeja();
         }
 
+        let seleccionConversacionVersion = 0;
+
         async function seleccionarConversacion(id, opciones = {}) {
+            const refresco = opciones.refresco === true;
+            if (refresco && Number(conversacionSeleccionada?.id) !== Number(id)) return;
+            const version = refresco ? seleccionConversacionVersion : ++seleccionConversacionVersion;
+            const navigationSignal = window.__crmNavigationController?.signal;
             const refrescarFicha = opciones.refrescarFicha !== false;
-            document.body.classList.remove("mobile-contact-details-open");
-            if (Number(conversacionSeleccionada?.id || 0) !== Number(id)) limpiarRespuestaSeleccionada();
+            if (!refresco) document.body.classList.remove("mobile-contact-details-open");
+            if (!refresco && Number(conversacionSeleccionada?.id || 0) !== Number(id)) {
+                limpiarRespuestaSeleccionada();
+                input.value = "";
+            }
             const response = await api(`/api/whatsapp/conversaciones/${id}`);
             if (!response.ok) throw new Error("No se pudo cargar la conversacion");
-            conversacionSeleccionada = await response.json();
-            document.body.classList.add("mobile-chat-open");
+            const data = await response.json();
+            if (version !== seleccionConversacionVersion || navigationSignal?.aborted ||
+                (refresco && Number(conversacionSeleccionada?.id) !== Number(id))) return;
+            if (refresco) {
+                const existentes = conversacionSeleccionada.mensajes || [];
+                const nuevos = data.mensajes || [];
+                const idsNuevos = new Set(nuevos.map(m => String(m.id)));
+                // Si llegan mas mensajes que un bloque completo, conserva un cursor
+                // continuo para poder recuperar los que quedaron entre ambos bloques.
+                if (!existentes.length || existentes.some(m => idsNuevos.has(String(m.id)))) {
+                    data.mensajes = [...existentes.filter(m => !idsNuevos.has(String(m.id)) && Number(m.id) > 0), ...nuevos]
+                        .sort((a, b) => new Date(a.fecha) - new Date(b.fecha) || Number(a.id) - Number(b.id));
+                    data.hayMasMensajes = conversacionSeleccionada.hayMasMensajes;
+                    data.mensajeMasAntiguoId = conversacionSeleccionada.mensajeMasAntiguoId;
+                }
+                if (JSON.stringify(data) === JSON.stringify(conversacionSeleccionada)) return;
+            }
+            conversacionSeleccionada = data;
+            if (!refresco) document.body.classList.add("mobile-chat-open");
             ultimoAvisoEscribiendo = 0;
             mostrarConversaciones();
-            mostrarConversacion({ refrescarFicha });
+            mostrarConversacion({ refrescarFicha, conservarScroll: refresco });
         }
 
         function mostrarConversacion(opciones = {}) {
@@ -440,6 +492,7 @@
             const puedeSolicitarReasignacion = esRol("asesor") &&
                 asesorId === Number(sesionActual?.id || 0);
             const puedeControlarBot = tienePermiso("conversaciones.atender") &&
+                conversacion.puedeAtender !== false &&
                 (!esRol("asesor") || asesorId === Number(sesionActual?.id || 0));
             const nombreAsesor = typeof asesor === "string" ? asesor : asesor?.nombre || asesor?.usuario || "Sin asesor";
             const contieneComentarios = (conversacion.mensajes || []).some(mensaje =>
@@ -507,9 +560,9 @@
             });
             document.getElementById("toggleCustomerDetails")?.addEventListener("click", alternarFichaCliente);
             document.querySelector(".main")?.classList.toggle("customer-details-collapsed", !puedeVerFicha || fichaClienteColapsada);
-            renderizarMensajesConversacion(conversacion.mensajes || []);
+            renderizarMensajesConversacion(conversacion.mensajes || [], { conservarScroll: opciones.conservarScroll });
             renderizarPlantillasRapidas();
-            const puedeEnviar = tienePermiso("mensajes.enviar");
+            const puedeEnviar = tienePermiso("mensajes.enviar") && conversacion.puedeAtender !== false;
             input.disabled = !puedeEnviar;
             boton.disabled = !puedeEnviar;
             attachButton.disabled = !puedeEnviar;
@@ -646,8 +699,14 @@
             }
         }
 
-        function renderizarMensajesConversacion(listaMensajes) {
+        function renderizarMensajesConversacion(listaMensajes, opciones = {}) {
+            const scrollAnterior = mensajes.scrollTop;
+            const estabaAlFinal = mensajes.scrollHeight - mensajes.clientHeight - scrollAnterior < 60;
             mensajes.innerHTML = "";
+            if (conversacionSeleccionada?.hayMasMensajes) {
+                mensajes.innerHTML = '<button type="button" id="loadPreviousMessages" class="secondary-btn history-load">Mensajes anteriores</button>';
+                mensajes.querySelector("#loadPreviousMessages").addEventListener("click", cargarMensajesAnteriores);
+            }
             listaMensajes.forEach(mensaje => {
                 const elemento = document.createElement("div");
                 const entrante = mensaje.direccion === "E";
@@ -692,7 +751,33 @@
             });
             if (window.lucide) window.lucide.createIcons();
             inicializarReproductoresAudio(mensajes);
-            mensajes.scrollTop = mensajes.scrollHeight;
+            mensajes.scrollTop = opciones.conservarScroll && !estabaAlFinal ? scrollAnterior : mensajes.scrollHeight;
+        }
+
+        async function cargarMensajesAnteriores() {
+            const conversacion = conversacionSeleccionada;
+            if (!conversacion?.hayMasMensajes) return;
+            const version = seleccionConversacionVersion;
+            const button = mensajes.querySelector("#loadPreviousMessages");
+            button.disabled = true;
+            try {
+                const response = await api(`/api/whatsapp/conversaciones/${conversacion.id}?antesDe=${conversacion.mensajeMasAntiguoId}&pageSize=50`);
+                if (!response.ok) throw new Error("No se pudo cargar el historial.");
+                const data = await response.json();
+                if (version !== seleccionConversacionVersion || conversacionSeleccionada !== conversacion) return;
+                const height = mensajes.scrollHeight;
+                const top = mensajes.scrollTop;
+                const byId = new Map([...(data.mensajes || []), ...conversacion.mensajes].map(m => [String(m.id), m]));
+                conversacion.mensajes = [...byId.values()].sort((a, b) => new Date(a.fecha) - new Date(b.fecha) || Number(a.id) - Number(b.id));
+                conversacion.hayMasMensajes = data.hayMasMensajes;
+                conversacion.mensajeMasAntiguoId = data.mensajeMasAntiguoId;
+                renderizarMensajesConversacion(conversacion.mensajes, { conservarScroll: true });
+                mensajes.scrollTop = top + mensajes.scrollHeight - height;
+            } catch (error) {
+                if (error?.name !== "AbortError") notificar(error.message, "error");
+            } finally {
+                if (button.isConnected) button.disabled = false;
+            }
         }
 
         function resumenMensajeParaCita(mensaje) {

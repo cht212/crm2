@@ -5,6 +5,38 @@ namespace CRM.Data.Tests;
 public sealed class CrmPermissionServiceTests
 {
     [Theory]
+    [InlineData(CrmRoles.Administrador, true)]
+    [InlineData(CrmRoles.Supervisor, true)]
+    [InlineData(CrmRoles.Auditor, true)]
+    [InlineData(CrmRoles.Asesor, false)]
+    [InlineData(CrmRoles.Marketing, false)]
+    public void AllChatsKeepsExistingRoleDefaults(string role, bool expected)
+    {
+        Assert.Equal(expected, CrmPermissionService.GetBasePermissions(role).Contains(CrmPermissionService.ViewAllChats));
+    }
+
+    [Fact]
+    public void AllChatsCanBeGrantedAndRevokedWithoutGrantingActionsOrChannels()
+    {
+        var selected = CrmPermissionService.GetBasePermissions(CrmRoles.Asesor);
+        selected.Add(CrmPermissionService.ViewAllChats);
+        selected.Remove(CrmPermissionService.ViewInstagram);
+        selected.Remove(CrmPermissionService.SendMessages);
+        var effective = CrmPermissionService.ResolveEffective(CrmRoles.Asesor,
+            CrmPermissionService.BuildOverrides(CrmRoles.Asesor, selected));
+        Assert.Contains(CrmPermissionService.ViewAllChats, effective);
+        Assert.DoesNotContain(CrmPermissionService.ViewInstagram, effective);
+        Assert.DoesNotContain(CrmPermissionService.SendMessages, effective);
+        Assert.DoesNotContain(CrmPermissionService.AssignConversations, effective);
+
+        selected = CrmPermissionService.GetBasePermissions(CrmRoles.Supervisor);
+        selected.Remove(CrmPermissionService.ViewAllChats);
+        effective = CrmPermissionService.ResolveEffective(CrmRoles.Supervisor,
+            CrmPermissionService.BuildOverrides(CrmRoles.Supervisor, selected));
+        Assert.DoesNotContain(CrmPermissionService.ViewAllChats, effective);
+    }
+
+    [Theory]
     [InlineData(CrmRoles.Administrador)]
     [InlineData(CrmRoles.Supervisor)]
     [InlineData(CrmRoles.Asesor)]
@@ -51,6 +83,28 @@ public sealed class CrmPermissionServiceTests
     {
         Assert.Empty(CrmPermissionService.BuildOverrides(CrmRoles.Asesor,
             CrmPermissionService.GetBasePermissions(CrmRoles.Asesor)));
+    }
+
+    [Fact]
+    public void UserOverridesAreCalculatedFromCustomRolePermissions()
+    {
+        var customRole = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            CrmPermissionService.ModuleDashboard,
+            CrmPermissionService.ModuleContacts,
+            CrmPermissionService.CreateContacts
+        };
+        var userSelection = new HashSet<string>(customRole, StringComparer.OrdinalIgnoreCase)
+        {
+            CrmPermissionService.EditContacts
+        };
+        userSelection.Remove(CrmPermissionService.CreateContacts);
+
+        var stored = CrmPermissionService.BuildOverrides(customRole, userSelection);
+        var effective = CrmPermissionService.ApplyOverrides(customRole, stored);
+
+        Assert.True(userSelection.SetEquals(effective));
+        Assert.Contains(CrmPermissionService.DeniedPrefix + CrmPermissionService.CreateContacts, stored);
     }
 
     [Fact]

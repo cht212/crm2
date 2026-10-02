@@ -1,5 +1,14 @@
 // Módulo frontend del CRM.
 
+        function cerrarFichaCliente() {
+            if (window.matchMedia("(max-width: 1100px)").matches) {
+                document.body.classList.remove("mobile-contact-details-open");
+                return;
+            }
+
+            if (!fichaClienteColapsada) alternarFichaCliente();
+        }
+
         function mostrarFichaCliente(conversacion) {
             const puedeFichaCompleta = tienePermiso("comunicaciones.ficha");
             const puedeFichaContacto = tienePermiso("comunicaciones.ficha.contacto");
@@ -58,7 +67,7 @@
                 });
             });
             document.getElementById("mobileDetailsClose")?.addEventListener("click", () => {
-                document.body.classList.remove("mobile-contact-details-open");
+                cerrarFichaCliente();
             });
             vincularSelectorModoFicha(conversacion);
             if (window.lucide) window.lucide.createIcons();
@@ -109,7 +118,7 @@
                     </form>
                 </div>`;
             panel.querySelector("#mobileDetailsClose")?.addEventListener("click", () => {
-                document.body.classList.remove("mobile-contact-details-open");
+                cerrarFichaCliente();
             });
             vincularSelectorModoFicha(conversacion);
             panel.querySelector("#contactOnlyForm")?.addEventListener("submit", async event => {

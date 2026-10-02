@@ -286,7 +286,7 @@ public sealed class IntegracionesController : ControllerBase
             refresh,
             async () =>
             {
-                var result = await _metaGraph.ObtenerDashboardAsync(desde, hasta);
+                var result = await _metaGraph.ObtenerDashboardAsync(desde, hasta, cancellationToken);
                 var duration = result.Success ? TimeSpan.FromMinutes(30) : TimeSpan.FromSeconds(10);
                 return (result, duration);
             },
@@ -314,7 +314,9 @@ public sealed class IntegracionesController : ControllerBase
             refresh,
             async () =>
             {
-                var result = await _publications.GetReportAsync(start, end, cancellationToken);
+                using var budget = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                budget.CancelAfter(TimeSpan.FromSeconds(12));
+                var result = await _publications.GetReportAsync(start, end, budget.Token);
                 var duration = result.Canales.Any(channel =>
                     !string.IsNullOrWhiteSpace(channel.Error) ||
                     !string.IsNullOrWhiteSpace(channel.CommentsError))

@@ -60,7 +60,8 @@ async function cargarModuloDashboard(vista) {
 
     // Todas las consultas empiezan juntas, pero el resumen principal se pinta
     // apenas llega; los paneles secundarios se incorporan después.
-    const responsePromise = api(`/api/crm/reportes/resumen${paramsPeriodo.size ? `?${paramsPeriodo.toString()}` : ""}`);
+    const responsePromise = api(`/api/crm/reportes/resumen?${paramsPeriodo.toString()}&incluirEquipo=false`);
+    const equipoPromise = api(`/api/crm/reportes/carga-asesores?${paramsHoy.toString()}`).catch(() => null);
     const hoyPromise = api(`/api/dashboard/hoy${paramsHoy.size ? `?${paramsHoy.toString()}` : ""}`).catch(() => null);
     const adminPromise = vistaAsesor
         ? Promise.resolve(null)
@@ -85,12 +86,14 @@ async function cargarModuloDashboard(vista) {
     dashboardRenderCache.set(cacheKey, reporte);
     renderDashboard(vista, reporte);
 
-    const [hoyResponse, adminResponse, integracionesResponse, usuarios] = await Promise.all([
+    const [hoyResponse, adminResponse, integracionesResponse, usuarios, equipoResponse] = await Promise.all([
         hoyPromise,
         adminPromise,
         integracionesPromise,
-        usuariosPromise
+        usuariosPromise,
+        equipoPromise
     ]);
+    if (equipoResponse?.ok) reporte.cargaAsesores = await equipoResponse.json();
     if (hoyResponse?.ok) {
         reporte.hoy = await hoyResponse.json();
     }
@@ -317,11 +320,8 @@ function renderDashboard(vista, reporte) {
                         ? "Prioriza respuestas, seguimientos y oportunidades abiertas."
                         : `${escapeHtml(alcance)} · ${escapeHtml(formatearPeriodoDashboard(filtros.desde, filtros.hasta))} · actualizado ${escapeHtml(formatearFecha(generadoEn))}`}</p>
                 </div>
-                <div class="ops-heading-actions">
-                    <button type="button" class="secondary-btn" id="dashboardRefreshButton">Actualizar</button>
-                    <button type="button" class="secondary-btn" data-dashboard-module="inbox">Bandeja</button>
-                    <button type="button" class="secondary-btn" data-dashboard-module="tareas">Tareas</button>
-                    <button type="button" class="secondary-btn" data-dashboard-module="ventas">Ventas</button>
+                <div class="heading-actions ops-heading-actions">
+                    <button type="button" class="secondary-btn" id="dashboardRefreshButton"><i data-lucide="refresh-cw"></i><span>Actualizar</span></button>
                 </div>
             </div>
 

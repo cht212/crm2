@@ -1,10 +1,11 @@
 // Módulo frontend del CRM.
 
+        let leadsPagina = 1;
         async function cargarModuloLeads(vista) {
             // El endpoint ahora pagina (antes traía todo sin límite).
             // Pedimos un lote grande para mantener el kanban tal como
             // estaba; una vista con "cargar más" es un paso pendiente.
-            const response = await api("/api/crm/leads?pageSize=200");
+            const response = await api(`/api/crm/leads?pageSize=${obtenerTamanoPagina("leads")}&page=${leadsPagina}`);
             if (!response.ok) throw new Error("Leads no disponibles");
             const paginaLeads = await response.json();
             const conversacionesLeads = paginaLeads.items || [];
@@ -56,7 +57,7 @@
                         </div>
                         <div class="kanban-summary">
                             ${etapas.map(etapa => {
-                                const total = conversacionesLeads.filter(item => item.estado === etapa).length;
+                                const total = paginaLeads.porEstado?.find(item => item.estado === etapa)?.cantidad ?? conversacionesLeads.filter(item => item.estado === etapa).length;
                                 return `<div class="kanban-summary-card" data-stage="${etapa}">
                                     <span>${etapa}</span>
                                     <strong>${total}</strong>
@@ -65,11 +66,12 @@
                         </div>
                         <div class="stage-columns">${etapas.map(etapa => {
                             const items = conversacionesLeads.filter(item => item.estado === etapa);
+                            const totalEtapa = paginaLeads.porEstado?.find(e => e.estado === etapa)?.cantidad ?? items.length;
                             return `
                             <div class="stage-column" data-stage="${etapa}">
                                 <div class="stage-header">
-                                    <div class="stage-title"><span>${etapa}</span><span>${items.length}</span></div>
-                                    <div class="stage-meta">${items.length} ${items.length === 1 ? "cliente potencial" : "clientes potenciales"}</div>
+                                    <div class="stage-title"><span>${etapa}</span><span>${totalEtapa}</span></div>
+                                    <div class="stage-meta">${items.length} de ${totalEtapa} en esta pagina</div>
                                     <div class="stage-bar"></div>
                                 </div>
                                 ${items.map(item => {
@@ -101,7 +103,9 @@
                             </div>`;
                                 }).join("") || '<div class="empty">Sin conversaciones</div>'}
                             </div>`;
-                        }).join("")}</div>`;
+                        }).join("")}</div>${renderPaginacion(paginaLeads, "leads")}`;
+
+            enlazarPaginacion(vista, page => { leadsPagina = page; return cargarModuloLeads(vista); });
 
             vista.querySelectorAll(".stage-select").forEach(select => {
                 select.addEventListener("change", () => cambiarEstado(select.dataset.id, select.value));
@@ -215,7 +219,6 @@
             document.getElementById("leadDetailBar").classList.remove("hidden");
             if (window.lucide) window.lucide.createIcons();
 
-            await cargarConversaciones();
             await seleccionarConversacion(id);
         }
 

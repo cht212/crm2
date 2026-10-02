@@ -59,17 +59,36 @@ public class OportunidadesController : ControllerBase
         var query = _access.FiltrarOportunidades(_context.Oportunidades.AsNoTracking());
         if (clienteId.HasValue) query = query.Where(o => o.nCliente == clienteId.Value);
         if (conversacionId.HasValue) query = query.Where(o => o.nConversacion == conversacionId.Value);
+        var limiteSemana = DateTime.Today.AddDays(8);
+        var porEtapa = await query.GroupBy(o => o.cEtapa).Select(g => new
+        {
+            etapa = g.Key, cantidad = g.Count(), monto = g.Sum(o => o.nMonto),
+            cierreSemana = g.Count(o => o.cEtapa != "GANADA" && o.cEtapa != "PERDIDA" && o.dFechaCierreEstimada <= limiteSemana)
+        }).ToListAsync();
+        var abiertas = porEtapa.Where(e => e.etapa != "GANADA" && e.etapa != "PERDIDA").ToList();
+        var ganadas = porEtapa.Where(e => e.etapa == "GANADA").ToList();
+        var perdidas = porEtapa.Where(e => e.etapa == "PERDIDA").Sum(e => e.cantidad);
+        var cantidadGanadas = ganadas.Sum(e => e.cantidad);
+        var resumen = new
+        {
+            abiertas = abiertas.Sum(e => e.cantidad), ganadas = cantidadGanadas, perdidas,
+            montoAbierto = abiertas.Sum(e => e.monto), montoGanado = ganadas.Sum(e => e.monto),
+            cierreSemana = abiertas.Sum(e => e.cierreSemana),
+            winRate = cantidadGanadas + perdidas == 0 ? 0m : Math.Round(cantidadGanadas * 100m / (cantidadGanadas + perdidas), 1)
+        };
         if (!string.IsNullOrWhiteSpace(etapa))
         {
             query = query.Where(o => o.cEtapa == etapa.Trim().ToUpperInvariant());
         }
 
         var total = await query.CountAsync();
+        page = Math.Min(page, Math.Max(1, (int)Math.Ceiling(total / (double)pageSize)));
 
         var items = await query
             .Include(o => o.Cliente)
             .Include(o => o.UsuarioAsignado)
             .OrderByDescending(o => o.dFechaCreacion)
+            .ThenByDescending(o => o.nOportunidad)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(o => new
@@ -90,7 +109,7 @@ public class OportunidadesController : ControllerBase
             })
             .ToListAsync();
 
-        return Ok(new { total, page, pageSize, items });
+        return Ok(new { total, page, pageSize, items, resumen, porEtapa });
     }
 
     [HttpGet("exportar")]

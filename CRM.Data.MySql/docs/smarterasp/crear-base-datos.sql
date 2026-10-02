@@ -291,5 +291,82 @@ ALTER TABLE `crm_mensaje` ADD `c_reply_to_external_id` varchar(450) NULL;
 INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`)
 VALUES ('20260930230000_AddMessageReplyContext', '10.0.12');
 
+ALTER TABLE `crm_tarea` MODIFY `c_estado` varchar(32) NOT NULL;
+
+ALTER TABLE `crm_oportunidad` MODIFY `c_etapa` varchar(32) NOT NULL;
+
+ALTER TABLE `crm_mensaje` MODIFY `c_tipo` varchar(50) NULL;
+
+ALTER TABLE `crm_conversacion` MODIFY `c_estado` varchar(32) NOT NULL;
+
+ALTER TABLE `crm_conversacion` MODIFY `c_canal` varchar(32) NOT NULL;
+
+ALTER TABLE `crm_cliente` MODIFY `c_canal_origen` varchar(32) NOT NULL;
+
+CREATE INDEX `IX_crm_tarea_n_asignado_a_c_estado_d_fecha_vencimiento` ON `crm_tarea` (`n_asignado_a`, `c_estado`, `d_fecha_vencimiento`);
+
+CREATE INDEX `IX_crm_tarea_d_fecha_creacion` ON `crm_tarea` (`d_fecha_creacion`);
+
+CREATE INDEX `IX_crm_oportunidad_n_usuario_asignado_c_etapa_d_fecha_cierre_es~` ON `crm_oportunidad` (`n_usuario_asignado`, `c_etapa`, `d_fecha_cierre_estimada`);
+
+CREATE INDEX `IX_crm_oportunidad_d_fecha_creacion` ON `crm_oportunidad` (`d_fecha_creacion`);
+
+CREATE INDEX `IX_crm_mensaje_c_tipo_c_canal_d_fecha` ON `crm_mensaje` (`c_tipo`, `c_canal`, `d_fecha`);
+
+CREATE INDEX `IX_crm_mensaje_n_conversacion_c_tipo_c_reply_to_external_id_d_f~` ON `crm_mensaje` (`n_conversacion`, `c_tipo`, `c_reply_to_external_id`, `d_fecha`);
+
+CREATE INDEX `IX_crm_mensaje_n_conversacion_d_fecha` ON `crm_mensaje` (`n_conversacion`, `d_fecha`);
+
+CREATE INDEX `IX_crm_mensaje_d_fecha` ON `crm_mensaje` (`d_fecha`);
+
+CREATE INDEX `IX_crm_conversacion_c_canal_c_estado_d_ultimo_mensaje` ON `crm_conversacion` (`c_canal`, `c_estado`, `d_ultimo_mensaje`);
+
+CREATE INDEX `IX_crm_conversacion_n_usuario_asignado_c_estado_d_ultimo_mensaje` ON `crm_conversacion` (`n_usuario_asignado`, `c_estado`, `d_ultimo_mensaje`);
+
+CREATE INDEX `IX_crm_conversacion_d_fecha_inicio` ON `crm_conversacion` (`d_fecha_inicio`);
+
+CREATE INDEX `IX_crm_cliente_c_canal_origen_d_fecha_registro` ON `crm_cliente` (`c_canal_origen`, `d_fecha_registro`);
+
+CREATE INDEX `IX_crm_cliente_d_fecha_registro` ON `crm_cliente` (`d_fecha_registro`);
+
+CREATE INDEX `IX_crm_actividad_log_d_fecha` ON `crm_actividad_log` (`d_fecha`);
+
+CREATE INDEX `IX_crm_actividad_log_n_usuario_d_fecha` ON `crm_actividad_log` (`n_usuario`, `d_fecha`);
+
+INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`)
+VALUES ('20261002142642_AddPerformanceIndexes', '10.0.12');
+
+ALTER TABLE `crm_usuario` ADD `n_rol` int NULL;
+
+CREATE TABLE `crm_rol` (
+    `n_rol` int NOT NULL AUTO_INCREMENT,
+    `c_nombre` varchar(80) NOT NULL,
+    `c_descripcion` varchar(250) NOT NULL,
+    `c_rol_base` varchar(30) NOT NULL,
+    `c_estado` varchar(1) NOT NULL,
+    `d_fecha_creacion` datetime(6) NOT NULL,
+    `n_creado_por` int NULL,
+    PRIMARY KEY (`n_rol`),
+    CONSTRAINT `FK_crm_rol_crm_usuario_n_creado_por` FOREIGN KEY (`n_creado_por`) REFERENCES `crm_usuario` (`n_usuario`) ON DELETE SET NULL
+);
+
+CREATE TABLE `crm_rol_permiso` (
+    `n_rol` int NOT NULL,
+    `c_permiso` varchar(100) NOT NULL,
+    PRIMARY KEY (`n_rol`, `c_permiso`),
+    CONSTRAINT `FK_crm_rol_permiso_crm_rol_n_rol` FOREIGN KEY (`n_rol`) REFERENCES `crm_rol` (`n_rol`) ON DELETE CASCADE
+);
+
+CREATE INDEX `IX_crm_usuario_n_rol` ON `crm_usuario` (`n_rol`);
+
+CREATE UNIQUE INDEX `IX_crm_rol_c_nombre` ON `crm_rol` (`c_nombre`);
+
+CREATE INDEX `IX_crm_rol_n_creado_por` ON `crm_rol` (`n_creado_por`);
+
+ALTER TABLE `crm_usuario` ADD CONSTRAINT `FK_crm_usuario_crm_rol_n_rol` FOREIGN KEY (`n_rol`) REFERENCES `crm_rol` (`n_rol`) ON DELETE SET NULL;
+
+INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`)
+VALUES ('20261002181944_AddCustomRoles', '10.0.12');
+
 COMMIT;
 

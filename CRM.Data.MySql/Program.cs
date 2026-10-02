@@ -47,6 +47,7 @@ await DatabaseInitializer.InitializeAsync(app.Services, builder.Configuration, a
 
 app.UseForwardedHeaders();
 app.UseCrmExceptionHandler();
+app.UseAuthentication();
 
 if (!app.Environment.IsDevelopment())
 {
@@ -62,6 +63,18 @@ app.Use(async (context, next) =>
         context.Response.StatusCode = StatusCodes.Status404NotFound;
         return;
     }
+    await next();
+});
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path == "/" &&
+        (HttpMethods.IsGet(context.Request.Method) || HttpMethods.IsHead(context.Request.Method)) &&
+        context.User.Identity?.IsAuthenticated != true)
+    {
+        context.Response.Redirect("/login.html");
+        return;
+    }
+
     await next();
 });
 app.UseDefaultFiles();
@@ -97,8 +110,6 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
-
-app.UseAuthentication();
 
 // Valida accesos y acciones contra los permisos efectivos de cada usuario.
 app.Use(async (context, next) =>

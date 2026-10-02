@@ -64,9 +64,13 @@ public sealed class CrmAccessService
         !conversacion.nUsuarioAsignado.HasValue &&
         conversacion.cEstado is "NUEVO" or "ABIERTO" or "EN_ATENCION";
 
-    public IQueryable<Conversacion> FiltrarConversaciones(IQueryable<Conversacion> query)
+    public async Task<bool> PuedeVerTodasConversacionesAsync() =>
+        UsuarioActualId.HasValue &&
+        await _permissions.HasAsync(UsuarioActualId.Value, RolActual, CrmPermissionService.ViewAllChats);
+
+    public IQueryable<Conversacion> FiltrarConversaciones(IQueryable<Conversacion> query, bool? verTodas = null)
     {
-        if (TieneAccesoGlobal)
+        if (verTodas ?? TieneAccesoGlobal)
         {
             return query;
         }
@@ -112,6 +116,18 @@ public sealed class CrmAccessService
             : query.Where(_ => false);
     }
 
+    public async Task<IQueryable<Mensaje>> FiltrarMensajesLecturaAsync(IQueryable<Mensaje> query)
+    {
+        if (!UsuarioActualId.HasValue) return query.Where(_ => false);
+        var permisos = await _permissions.GetEffectiveAsync(UsuarioActualId.Value, RolActual);
+        if (!permisos.Contains(CrmPermissionService.ModuleInbox) && !permisos.Contains(CrmPermissionService.ModuleLeads))
+            return FiltrarMensajes(query);
+        var canales = CrmPermissionService.GetAllowedChannels(permisos);
+        var visibles = FiltrarConversaciones(_context.Conversaciones.AsNoTracking(), permisos.Contains(CrmPermissionService.ViewAllChats))
+            .Where(c => canales.Contains(c.cCanal)).Select(c => c.nConversacion);
+        return query.Where(m => visibles.Contains(m.nConversacion));
+    }
+
     public IQueryable<Oportunidad> FiltrarOportunidades(IQueryable<Oportunidad> query)
     {
         if (TieneAccesoGlobal)
@@ -155,13 +171,16 @@ public sealed class CrmAccessService
         if (!UsuarioActualId.HasValue) return false;
         var permisos = await _permissions.GetEffectiveAsync(UsuarioActualId.Value, RolActual);
         var canales = CrmPermissionService.GetAllowedChannels(permisos);
-        return await FiltrarConversaciones(_context.Conversaciones.AsNoTracking())
+        // Ver todos los chats no concede atencion sobre chats de otros asesores.
+        var puedeGestionarTodos = TieneAccesoGlobal && permisos.Contains(CrmPermissionService.ViewAllChats);
+        return await FiltrarConversaciones(_context.Conversaciones.AsNoTracking(), puedeGestionarTodos)
             .Where(conversacion => canales.Contains(conversacion.cCanal))
             .AnyAsync(conversacion => conversacion.nConversacion == conversacionId);
     }
 
     public async Task<bool> PuedeControlarBotConversacionAsync(long conversacionId)
     {
+        if (!await PuedeAccederConversacionAsync(conversacionId)) return false;
         if (TieneAccesoGlobal)
         {
             return await _context.Conversaciones.AsNoTracking()

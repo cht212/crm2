@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
 using CRM.Data.Data;
+using MySql.Data.MySqlClient;
 
 namespace CRM.Data.Services;
 
@@ -24,8 +25,18 @@ public async Task<long> ProcesarMensajeSalienteAsync(
     long? usuarioId,
     string tipo,
     string? whatsappId,
-    long? replyToMessageId = null)
+    long? replyToMessageId = null,
+    string? clientRequestId = null)
 {
+    var requestKey = Guid.TryParse(clientRequestId, out var requestId)
+        ? $"{usuarioId}:{requestId:N}"
+        : null;
+    if (requestKey != null)
+    {
+        var existente = await _context.Mensajes.AsNoTracking().FirstOrDefaultAsync(m =>
+            m.nConversacion == conversacionId && m.cClientRequestId == requestKey);
+        if (existente != null) return existente.nMensaje;
+    }
     Conversacion? conversacion =
         await _context.Conversaciones
             .Include(c => c.Cliente)
@@ -100,6 +111,7 @@ public async Task<long> ProcesarMensajeSalienteAsync(
         cExternalId = whatsappId,
 
         cReplyToExternalId = replyToExternalId,
+        cClientRequestId = requestKey,
 
         cDireccion = 'S',
 
@@ -120,7 +132,17 @@ public async Task<long> ProcesarMensajeSalienteAsync(
     // GUARDAR
     // =====================================================
 
-    await _context.SaveChangesAsync();
+    try
+    {
+        await _context.SaveChangesAsync();
+    }
+    catch (DbUpdateException ex) when (requestKey != null && ex.InnerException is MySqlException { Number: 1062 })
+    {
+        _context.ChangeTracker.Clear();
+        return await _context.Mensajes.AsNoTracking()
+            .Where(m => m.nConversacion == conversacionId && m.cClientRequestId == requestKey)
+            .Select(m => m.nMensaje).SingleAsync();
+    }
 
     if (intentoEnviarAMeta)
     {

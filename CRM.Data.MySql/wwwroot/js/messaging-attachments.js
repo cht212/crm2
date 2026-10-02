@@ -1,11 +1,11 @@
 // Módulo frontend del CRM.
 
 async function actualizarCRM() {
-    if (actualizacionEnCurso) return;
+    if (actualizacionEnCurso || envioEnCurso) return;
     if (document.activeElement?.closest("#details")) return;
 
     const requiereInbox = moduloActual === "inbox" || (moduloActual === "dashboard" && puedeVerModulo("inbox"));
-    if (!requiereInbox) {
+    if (!requiereInbox && !modoDetalleConversacion) {
         estado.textContent = "API conectada";
         return;
     }
@@ -13,8 +13,9 @@ async function actualizarCRM() {
     actualizacionEnCurso = true;
     try {
         const id = conversacionSeleccionada ? conversacionSeleccionada.id : null;
-        await cargarConversaciones();
-        if (id) await seleccionarConversacion(id, { refrescarFicha: false });
+        if (requiereInbox) await cargarConversaciones();
+        if (id && Number(conversacionSeleccionada?.id) === Number(id))
+            await seleccionarConversacion(id, { refrescarFicha: false, refresco: true });
         estado.textContent = "API conectada";
     } catch (error) {
         console.error(error);
@@ -24,8 +25,10 @@ async function actualizarCRM() {
     }
 }
 
+const enviosTextoPendientes = new Map();
+
 async function enviarMensaje() {
-    if (!conversacionSeleccionada || envioEnCurso) return;
+    if (!conversacionSeleccionada || envioEnCurso || conversacionSeleccionada.puedeAtender === false) return;
 
     if (archivosPendientes.length) {
         await enviarArchivo();
@@ -39,6 +42,9 @@ async function enviarMensaje() {
     input.value = "";
     const conversacionId = conversacionSeleccionada.id;
     const respuestaSeleccionada = mensajeRespuestaSeleccionado;
+    const claveEnvio = JSON.stringify([conversacionId, texto, respuestaSeleccionada?.id || null]);
+    const requestId = enviosTextoPendientes.get(claveEnvio) || crearIdEnvio();
+    enviosTextoPendientes.set(claveEnvio, requestId);
     limpiarRespuestaSeleccionada();
     const temporalId = agregarMensajeOptimista(texto, respuestaSeleccionada);
     try {
@@ -50,11 +56,15 @@ async function enviarMensaje() {
                 mensaje: texto,
                 usuarioId: sesionActual?.id ? Number(sesionActual.id) : null,
                 tipo: "text",
+                clientRequestId: requestId,
                 replyToMessageId: respuestaSeleccionada?.id ? Number(respuestaSeleccionada.id) : null
             })
         });
         if (!response.ok) throw new Error("No se pudo enviar el mensaje");
-        await seleccionarConversacion(conversacionId, { refrescarFicha: false });
+        enviosTextoPendientes.delete(claveEnvio);
+        if (Number(conversacionSeleccionada?.id) === Number(conversacionId))
+            await seleccionarConversacion(conversacionId, { refrescarFicha: false, refresco: true })
+                .catch(error => console.error("Mensaje enviado; pendiente de refrescar", error));
         cargarConversaciones().catch(error => console.error("No se pudo refrescar la bandeja", error));
     } catch (error) {
         console.error(error);
@@ -65,21 +75,32 @@ async function enviarMensaje() {
                     : mensaje);
             renderizarMensajesConversacion(conversacionSeleccionada.mensajes);
         }
-        input.value = texto;
-        if (respuestaSeleccionada) seleccionarMensajeParaResponder(respuestaSeleccionada);
+        if (Number(conversacionSeleccionada?.id) === Number(conversacionId)) {
+            input.value = texto;
+            if (respuestaSeleccionada) seleccionarMensajeParaResponder(respuestaSeleccionada);
+        }
         notificar("No se pudo enviar el mensaje.", "error");
     } finally {
         envioEnCurso = false;
-        boton.disabled = false;
-        input.focus();
+        boton.disabled = !conversacionSeleccionada || !tienePermiso("mensajes.enviar") || conversacionSeleccionada.puedeAtender === false;
+        if (Number(conversacionSeleccionada?.id) === Number(conversacionId)) input.focus();
     }
 }
 
-async function asegurarConversacionTomada() {
-    if (!conversacionSeleccionada) return;
-    const asignado = conversacionSeleccionada.usuarioAsignadoId || conversacionSeleccionada.usuarioAsignado?.id || conversacionSeleccionada.usuarioAsignado;
+function crearIdEnvio() {
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+    const bytes = window.crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 15) | 64;
+    bytes[8] = (bytes[8] & 63) | 128;
+    const hex = [...bytes].map(byte => byte.toString(16).padStart(2, "0")).join("");
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+async function asegurarConversacionTomada(conversacion = conversacionSeleccionada) {
+    if (!conversacion) return;
+    const asignado = conversacion.usuarioAsignadoId || conversacion.usuarioAsignado?.id || conversacion.usuarioAsignado;
     if (asignado) return;
-    const response = await api(`/api/crm/conversaciones/${conversacionSeleccionada.id}/tomar`, { method: "PUT" });
+    const response = await api(`/api/crm/conversaciones/${conversacion.id}/tomar`, { method: "PUT" });
     if (!response.ok) throw new Error("No se pudo asignar la conversación antes de responder.");
 }
 
@@ -145,7 +166,7 @@ function quitarArchivoPendiente(id) {
 async function enviarArchivo() {
     if (envioEnCurso) return;
 
-    if (!conversacionSeleccionada) {
+    if (!conversacionSeleccionada || conversacionSeleccionada.puedeAtender === false) {
         notificar("Selecciona una conversacion antes de enviar un archivo.", "error");
         return;
     }
@@ -211,7 +232,7 @@ async function enviarArchivo() {
         }
 
         if (refrescarConversacion && conversacionSeleccionada?.id === conversacionId) {
-            seleccionarConversacion(conversacionId, { refrescarFicha: false })
+            seleccionarConversacion(conversacionId, { refrescarFicha: false, refresco: true })
                 .catch(error => console.error("No se pudo actualizar la conversacion", error));
         }
         cargarConversaciones().catch(error => console.error("No se pudo refrescar la bandeja", error));
@@ -220,8 +241,8 @@ async function enviarArchivo() {
         notificar(error.message || "No se pudo enviar el archivo.", "error");
     } finally {
         envioEnCurso = false;
-        attachButton.disabled = !conversacionSeleccionada || !tienePermiso("mensajes.enviar");
-        boton.disabled = !conversacionSeleccionada || !tienePermiso("mensajes.enviar");
+        attachButton.disabled = !conversacionSeleccionada || !tienePermiso("mensajes.enviar") || conversacionSeleccionada.puedeAtender === false;
+        boton.disabled = !conversacionSeleccionada || !tienePermiso("mensajes.enviar") || conversacionSeleccionada.puedeAtender === false;
         renderizarArchivosPendientes();
     }
 }

@@ -23,6 +23,8 @@
        no al paquete de despliegue. Esto evita sobrescribir claves y adjuntos. -->
   <ItemGroup>
     <Content Update="App_Data\**\*" CopyToPublishDirectory="Never" />
+    <Content Update="App_Data\social-integrations.json" CopyToPublishDirectory="PreserveNewest" />
+    <Content Update="App_Data\bot-whatsapp.json" CopyToPublishDirectory="PreserveNewest" />
     <Content Update="wwwroot\uploads\**\*" CopyToPublishDirectory="Never" />
     <Compile Remove="tests\**\*.cs" />
     <Content Remove="tests\**\*" />

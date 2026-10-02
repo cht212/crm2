@@ -37,6 +37,8 @@
             return tareas.filter(t => t.estado !== "CANCELADA");
         }
 
+        let tareasPagina = 1;
+        let ventasPagina = 1;
         async function cargarModuloTareas(vista) {
             const puedeGestionarEquipo = puedeGestionarEquipoCRM();
             const puedeGestionarTareas = tienePermiso("tareas.gestionar");
@@ -44,7 +46,7 @@
                 tareasFiltroActivo = "hoy";
             }
             const [tareasResponse, usuarios] = await Promise.all([
-                api("/api/tareas?pageSize=200"),
+                api(`/api/tareas?pageSize=${obtenerTamanoPagina("tareas")}&page=${tareasPagina}&filtro=${encodeURIComponent(tareasFiltroActivo)}&soloMias=${!puedeGestionarEquipo}`),
                 puedeGestionarEquipo ? cargarUsuarios() : Promise.resolve([])
             ]);
             if (!tareasResponse.ok) throw new Error("Tareas no disponibles");
@@ -54,7 +56,7 @@
             const tareas = puedeGestionarEquipo
                 ? todasLasTareas
                 : todasLasTareas.filter(t => miId > 0 && Number(t.asignadoAId) === miId);
-            const resumen = obtenerResumenTareas(tareas);
+            const resumen = pagina.resumen || obtenerResumenTareas(tareas);
             if (resumen.vencidas > 0 && !tareasVencidasNotificadas) {
                 tareasVencidasNotificadas = true;
                 const mensajeVencidas = `Tienes ${resumen.vencidas} tarea(s) vencida(s).`;
@@ -73,11 +75,11 @@
                     });
                 }
             }
-            const misPendientes = tareas.filter(t =>
+            const misPendientes = pagina.resumen?.mias ?? tareas.filter(t =>
                 Number(t.asignadoAId) === Number(sesionActual?.id || 0) &&
                 t.estado !== "COMPLETADA" &&
                 t.estado !== "CANCELADA").length;
-            const tareasVisibles = filtrarTareas(tareas);
+            const tareasVisibles = pagina.resumen ? tareas : filtrarTareas(tareas);
             const filtros = [
                 ...(puedeGestionarEquipo ? [] : [["mias", "Mis pendientes", misPendientes]]),
                 ["hoy", "Hoy", resumen.hoy],
@@ -126,7 +128,10 @@
                                 </div>
                             </article>`).join("") || '<div class="empty">No hay tareas para este filtro.</div>'}
                     </div>
+                    ${renderPaginacion(pagina, "tareas")}
                 </section>`;
+
+            enlazarPaginacion(vista, page => { tareasPagina = page; return cargarModuloTareas(vista); });
 
             vista.querySelector("#quickTaskForm")?.addEventListener("submit", async event => {
                 event.preventDefault();
@@ -151,6 +156,7 @@
             vista.querySelectorAll("[data-task-filter]").forEach(button => {
                 button.addEventListener("click", async () => {
                     tareasFiltroActivo = button.dataset.taskFilter;
+                    tareasPagina = 1;
                     await cargarModuloTareas(vista);
                 });
             });
@@ -203,7 +209,7 @@
             const puedeExportar = tienePermiso("datos.exportar");
             const fechaMinimaCierre = new Date().toISOString().slice(0, 10);
             const [ventasResponse, contactosResponse, usuarios] = await Promise.all([
-                api("/api/oportunidades?pageSize=200"),
+                api(`/api/oportunidades?pageSize=${obtenerTamanoPagina("ventas")}&page=${ventasPagina}${ventasEtapaFiltro !== "TODAS" ? `&etapa=${encodeURIComponent(ventasEtapaFiltro)}` : ""}`),
                 api("/api/crm/contactos"),
                 puedeGestionarEquipo ? cargarUsuarios() : Promise.resolve([])
             ]);
@@ -214,7 +220,7 @@
             const oportunidades = pagina.items || [];
             const contactos = await contactosResponse.json();
             const etapas = etapasOportunidad();
-            const resumen = resumenVentas(oportunidades);
+            const resumen = pagina.resumen || resumenVentas(oportunidades);
             const oportunidadesVisibles = ventasEtapaFiltro === "TODAS"
                 ? oportunidades
                 : oportunidades.filter(op => op.etapa === ventasEtapaFiltro);
@@ -253,18 +259,19 @@
                     </form>` : ""}
                     <div class="task-filters">
                         ${["TODAS", ...etapas].map(etapa => {
-                            const total = etapa === "TODAS" ? oportunidades.length : oportunidades.filter(op => op.etapa === etapa).length;
+                            const total = etapa === "TODAS" ? pagina.porEtapa?.reduce((sum, e) => sum + e.cantidad, 0) ?? pagina.total : pagina.porEtapa?.find(e => e.etapa === etapa)?.cantidad ?? oportunidades.filter(op => op.etapa === etapa).length;
                             return `<button type="button" class="filter-button ${ventasEtapaFiltro === etapa ? "active" : ""}" data-sales-filter="${etapa}">${etapa} <span>${total}</span></button>`;
                         }).join("")}
                     </div>
                     <div class="sales-board">
                         ${etapas.map(etapa => {
                             const items = oportunidadesVisibles.filter(op => op.etapa === etapa);
+                            const totalEtapa = pagina.porEtapa?.find(e => e.etapa === etapa);
                             if (ventasEtapaFiltro !== "TODAS" && ventasEtapaFiltro !== etapa) return "";
                             return `<section class="sales-column">
                                 <div class="stage-header">
-                                    <div class="stage-title"><span>${etapa}</span><span>${items.length}</span></div>
-                                    <div class="stage-meta">${formatearMoneda(items.reduce((total, op) => total + Number(op.monto || 0), 0))}</div>
+                                    <div class="stage-title"><span>${etapa}</span><span>${totalEtapa?.cantidad ?? items.length}</span></div>
+                                    <div class="stage-meta">${formatearMoneda(totalEtapa?.monto ?? items.reduce((total, op) => total + Number(op.monto || 0), 0))} · ${items.length} en esta pagina</div>
                                     <div class="stage-bar"></div>
                                 </div>
                                 ${items.map(op => `
@@ -281,11 +288,14 @@
                                         <div class="task-actions">
                                             ${op.conversacionId ? `<button type="button" class="mini-action" data-open-sales-chat="${op.conversacionId}">Abrir chat</button>` : ""}
                                         </div>
-                                    </article>`).join("") || '<div class="empty">Sin oportunidades.</div>'}
+                                    </article>`).join("") || '<div class="empty">Sin oportunidades en esta pagina.</div>'}
                             </section>`;
                         }).join("")}
                     </div>
+                    ${renderPaginacion(pagina, "ventas")}
                 </section>`;
+
+            enlazarPaginacion(vista, page => { ventasPagina = page; return cargarModuloVentas(vista); });
 
             vista.querySelector("#salesExportButton")?.addEventListener("click", () => descargarArchivo(`/api/oportunidades/exportar${ventasEtapaFiltro !== "TODAS" ? `?etapa=${encodeURIComponent(ventasEtapaFiltro)}` : ""}`));
 
@@ -317,23 +327,34 @@
                 await cargarModuloVentas(vista);
             });
 
+            let busquedaClientesVersion = 0;
+            let busquedaClientesTimer;
             vista.querySelector("#salesClientSearch")?.addEventListener("input", event => {
-                const termino = event.currentTarget.value.trim().toLowerCase();
+                const termino = event.currentTarget.value.trim();
+                const version = ++busquedaClientesVersion;
                 const selector = vista.querySelector("#salesClientSelect");
-                if (!selector) return;
-                [...selector.options].forEach((option, index) => {
-                    if (index === 0) {
-                        option.hidden = false;
-                        return;
+                clearTimeout(busquedaClientesTimer);
+                busquedaClientesTimer = setTimeout(async () => {
+                    try {
+                        const response = await api(`/api/crm/contactos?page=1&pageSize=50&search=${encodeURIComponent(termino)}`);
+                        if (!response.ok) throw new Error("Busqueda no disponible");
+                        const data = await response.json();
+                        if (version !== busquedaClientesVersion || !selector?.isConnected || moduloActual !== "ventas") return;
+                        const selected = selector.selectedOptions[0];
+                        const items = Array.isArray(data) ? data : data.items || [];
+                        selector.innerHTML = '<option value="">Cliente...</option>' + items.map(c => `<option value="${c.id}">${escapeHtml(c.nombre)} · ${escapeHtml(c.telefono || "")}</option>`).join("");
+                        if (selected?.value && !items.some(c => String(c.id) === selected.value)) selector.appendChild(selected);
+                        if (selected?.value) selector.value = selected.value;
+                    } catch (error) {
+                        if (error?.name !== "AbortError") notificar("No se pudo buscar clientes.", "error");
                     }
-                    option.hidden = Boolean(termino) && !option.textContent.toLowerCase().includes(termino);
-                });
-                if (selector.selectedOptions[0]?.hidden) selector.value = "";
+                }, 250);
             });
 
             vista.querySelectorAll("[data-sales-filter]").forEach(button => {
                 button.addEventListener("click", async () => {
                     ventasEtapaFiltro = button.dataset.salesFilter;
+                    ventasPagina = 1;
                     await cargarModuloVentas(vista);
                 });
             });
